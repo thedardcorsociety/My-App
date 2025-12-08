@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#1a1a2e">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Dardcor AI">
+
+    <title>404 - Halaman Tidak Ditemukan</title>
+    <link rel="icon" href="/logo.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            background-color: #0b0c15; 
+            color: white;
+            overflow: hidden;
+        }
+        .animate-float {
+            animation: float 6s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        .glass-panel {
+            background: rgba(19, 19, 31, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(139, 92, 246, 0.1);
+        }
+    </style>
+</head>
+<body class="h-screen w-full flex items-center justify-center relative">
+
+    <div class="absolute inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[120px]"></div>
+        <div class="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-fuchsia-600/10 rounded-full blur-[120px]"></div>
+    </div>
+
+    <main class="relative z-10 text-center px-4 max-w-lg mx-auto">
+        
+        <div class="mb-8 relative inline-block">
+            <div class="text-[150px] font-bold leading-none text-transparent bg-clip-text bg-gradient-to-r from-violet-500 via-fuchsia-500 to-purple-500 opacity-20 select-none absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 scale-150 blur-sm">
+                404
+            </div>
+            <h1 class="text-9xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-purple-400 relative z-10 animate-float">
+                404
+            </h1>
+        </div>
+
+        <div class="glass-panel p-8 rounded-2xl shadow-2xl border-t border-white/10">
+            <h2 class="text-2xl font-bold mb-3 text-white">Halaman Hilang di Angkasa</h2>
+            <p class="text-gray-400 mb-8 leading-relaxed text-sm md:text-base">
+                Maaf, halaman yang Anda tuju tidak dapat ditemukan. Mungkin URL salah atau halaman telah dipindahkan.
+            </p>
+
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <button onclick="history.back()" class="px-6 py-3 rounded-xl border border-gray-700 hover:bg-gray-800 text-gray-300 hover:text-white font-medium transition-all flex items-center justify-center gap-2 group">
+                    <i class="fas fa-arrow-left group-hover:-translate-x-1 transition-transform"></i>
+                    <span>Kembali</span>
+                </button>
+
+                <a href="/" class="px-8 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-semibold shadow-lg shadow-purple-600/30 transition-all transform hover:scale-105 flex items-center justify-center gap-2">
+                    <i class="fas fa-home"></i>
+                    <span>Ke Home</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="mt-8 text-xs text-gray-600">
+            &copy; Dardcor AI System
+        </div>
+
+    </main>
+
+</body>
+</html>
