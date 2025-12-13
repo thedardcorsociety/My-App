@@ -2,10 +2,9 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const multer = require('multer');
-const supabase = require('../config/supabase'); // Pastikan path config benar
+const supabase = require('../config/supabase'); 
 const { v4: uuidv4 } = require('uuid');
 
-// Import Controllers Baru
 const { handleFlashChat } = require('../controllers/dardcorFlash');
 const { handleBetaChat } = require('../controllers/dardcorBeta');
 
@@ -13,7 +12,7 @@ const storage = multer.memoryStorage();
 const upload = multer({ limits: { fileSize: 10 * 1024 * 1024 } });
 
 function checkUserAuth(req, res, next) {
-    if (req.session.userAccount) {
+    if (req.session && req.session.userAccount) {
         next();
     } else {
         if (req.originalUrl.includes('/dardcorchat/ai/')) {
@@ -25,19 +24,18 @@ function checkUserAuth(req, res, next) {
 
 const uploadMiddleware = (req, res, next) => {
     upload.single('file_attachment')(req, res, function (err) {
-        if (err) return res.status(400).json({ success: false, response: "Gagal upload file." });
+        if (err) return res.status(400).json({ success: false, response: "File terlalu besar (Max 10MB)." });
         next();
     });
 };
 
-// --- ROUTES AUTH & VIEW (TIDAK BERUBAH) ---
 router.get('/', (req, res) => {
-    if (req.session.userAccount) return res.redirect('/dardcorchat/dardcorai');
+    if (req.session && req.session.userAccount) return res.redirect('/dardcorchat/dardcorai');
     res.render('index', { user: null });
 });
 
 router.get('/dardcor', (req, res) => { 
-    if (req.session.userAccount) return res.redirect('/dardcorchat/dardcorai'); 
+    if (req.session && req.session.userAccount) return res.redirect('/dardcorchat/dardcorai'); 
     res.render('dardcor', { error: null }); 
 });
 
@@ -49,7 +47,12 @@ router.post('/dardcor-login', async (req, res) => {
         
         const match = await bcrypt.compare(password, data.password);
         if (match) { 
-            req.session.userAccount = data; 
+            req.session.userAccount = data;
+            
+            const hour = 3600000;
+            req.session.cookie.expires = new Date(Date.now() + (30 * 24 * hour));
+            req.session.cookie.maxAge = 30 * 24 * hour;
+            
             req.session.save(() => res.redirect('/dardcorchat/dardcorai'));
         } else { 
             res.render('dardcor', { error: 'Password salah.' }); 
@@ -79,8 +82,6 @@ router.get('/dardcorchat/profile', checkUserAuth, (req, res) => {
 });
 
 router.post('/dardcor/profile/update', checkUserAuth, upload.single('profile_image'), async (req, res) => {
-    // ... (Kode update profile sama seperti sebelumnya) ...
-    // Saya persingkat disini agar tidak terlalu panjang, logika profile update tidak berubah
     const { username, password, confirm_password } = req.body;
     const userId = req.session.userAccount.id;
     let updates = { username: username };
@@ -101,9 +102,40 @@ router.post('/dardcor/profile/update', checkUserAuth, upload.single('profile_ima
     } catch (err) { res.render('dardcorchat/profile', { user: req.session.userAccount, error: err.message, success: null }); }
 });
 
-// --- CHAT MANAGEMENT ROUTES ---
 router.get('/dardcorchat/dardcorai', checkUserAuth, (req, res) => { loadChatHandler(req, res); });
 router.get('/dardcorchat/dardcor-ai/:conversationId', checkUserAuth, loadChatHandler);
+
+async function loadChatHandler(req, res) {
+    const userId = req.session.userAccount.id;
+    const requestedId = req.params.conversationId;
+    try {
+        const { data: dbHistory } = await supabase.from('history_chat').select('*').eq('user_id', userId).order('created_at', { ascending: true });
+        
+        let activeId = requestedId || uuidv4();
+        req.session.currentConversationId = activeId;
+        
+        let activeChatHistory = dbHistory ? dbHistory.filter(item => item.conversation_id === activeId && item.message !== null) : [];
+        
+        const historyMap = new Map();
+        if (dbHistory) {
+            dbHistory.forEach(chat => {
+                if (!historyMap.has(chat.conversation_id) && chat.message !== null) {
+                    historyMap.set(chat.conversation_id, { conversation_id: chat.conversation_id, message: chat.message, last_activity: chat.created_at });
+                }
+            });
+        }
+        const fullHistorySorted = Array.from(historyMap.values()).sort((a, b) => new Date(b.last_activity) - new Date(a.last_activity));
+
+        res.render('dardcorchat/dardcorai', {
+            user: req.session.userAccount,
+            chatHistory: activeChatHistory,
+            fullHistory: fullHistorySorted,
+            activeConversationId: activeId
+        });
+    } catch (err) {
+        res.render('dardcorchat/dardcorai', { user: req.session.userAccount, chatHistory: [], fullHistory: [], activeConversationId: uuidv4() });
+    }
+}
 
 router.post('/dardcorchat/ai/new-chat', checkUserAuth, (req, res) => {
     req.session.currentConversationId = null;
@@ -143,86 +175,47 @@ router.get('/dardcorchat/dardcor-ai/preview/:id', checkUserAuth, async (req, res
     } catch (err) { res.status(500).send("Error"); }
 });
 
-async function loadChatHandler(req, res) {
-    const userId = req.session.userAccount.id;
-    const requestedId = req.params.conversationId;
-    try {
-        const { data: dbHistory } = await supabase.from('history_chat').select('*').eq('user_id', userId).order('created_at', { ascending: true });
-        
-        let activeId = requestedId || uuidv4();
-        req.session.currentConversationId = activeId;
-        
-        let activeChatHistory = dbHistory ? dbHistory.filter(item => item.conversation_id === activeId && item.message !== null) : [];
-        
-        // Logic grouping history sidebar
-        const historyMap = new Map();
-        if (dbHistory) {
-            dbHistory.forEach(chat => {
-                if (!historyMap.has(chat.conversation_id) && chat.message !== null) {
-                    historyMap.set(chat.conversation_id, { conversation_id: chat.conversation_id, message: chat.message, last_activity: chat.created_at });
-                }
-            });
-        }
-        const fullHistorySorted = Array.from(historyMap.values()).sort((a, b) => new Date(b.last_activity) - new Date(a.last_activity));
-
-        res.render('dardcorchat/dardcorai', {
-            user: req.session.userAccount,
-            chatHistory: activeChatHistory,
-            fullHistory: fullHistorySorted,
-            activeConversationId: activeId
-        });
-    } catch (err) {
-        res.render('dardcorchat/dardcorai', { user: req.session.userAccount, chatHistory: [], fullHistory: [], activeConversationId: uuidv4() });
-    }
-}
-
-// --- CORE AI HANDLER (TERPISAH) ---
 router.post('/dardcorchat/ai/chat', checkUserAuth, uploadMiddleware, async (req, res) => {
     const message = req.body.message ? req.body.message.trim() : "";
-    const selectedModel = req.body.model || 'flash'; // Default ke flash
+    const selectedModel = req.body.model || 'flash';
     const uploadedFile = req.file;
     const userId = req.session.userAccount.id;
     let conversationId = req.body.conversationId || req.session.currentConversationId || uuidv4();
 
-    const userMessage = message || (uploadedFile ? "File Terlampir" : "");
+    const userMessage = message || (uploadedFile ? "Menganalisis file..." : "");
     if (!userMessage) return res.json({ success: false, response: "Input kosong." });
 
     try {
-        // 1. Simpan pesan USER ke Database
         await supabase.from('history_chat').insert({
             user_id: userId, conversation_id: conversationId, role: 'user', message: userMessage,
             file_metadata: uploadedFile ? { filename: uploadedFile.originalname, size: uploadedFile.size } : null
         });
 
-        // 2. Ambil History
         const { data: historyData } = await supabase.from('history_chat')
             .select('role, message')
             .eq('conversation_id', conversationId)
             .order('created_at', { ascending: true });
 
-        // 3. Routing ke Controller yang sesuai
         let botResponse = "";
         
         if (selectedModel === 'beta') {
-            // Panggil Custom API (Beta)
             botResponse = await handleBetaChat(message, uploadedFile, historyData);
         } else {
-            // Panggil Gemini (Flash) - Default
             botResponse = await handleFlashChat(message, uploadedFile, historyData);
         }
 
-        // 4. Simpan respon BOT ke Database
-        await supabase.from('history_chat').insert({
-            user_id: userId, conversation_id: conversationId, role: 'bot', message: botResponse
-        });
-
-        res.json({ success: true, response: botResponse, conversationId });
+        if (botResponse) {
+            await supabase.from('history_chat').insert({
+                user_id: userId, conversation_id: conversationId, role: 'bot', message: botResponse
+            });
+            res.json({ success: true, response: botResponse, conversationId });
+        } else {
+            throw new Error("AI tidak memberikan respon.");
+        }
 
     } catch (error) {
-        console.log(`DARDCOR AI ERROR [${selectedModel}]:`, error.message);
-        let errorMessage = "Maaf, terjadi kesalahan pada server AI.";
-        if (error.message.includes('429')) errorMessage = "Limit Kuota Tercapai. Tunggu sebentar.";
-        res.status(500).json({ success: false, response: errorMessage });
+        console.error("Route Error:", error);
+        res.status(500).json({ success: false, response: error.message || "Terjadi kesalahan pada server." });
     }
 });
 
