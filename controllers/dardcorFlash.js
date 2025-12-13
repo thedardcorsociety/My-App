@@ -81,8 +81,8 @@ async function handleFlashChat(message, uploadedFile, historyData) {
         const chat = model.startChat({
             history: chatHistory,
             generationConfig: {
-                maxOutputTokens: 65536,
-                temperature: 0.7,
+                maxOutputTokens: 9999999999,
+                temperature: 0.9,
             }
         });
 
