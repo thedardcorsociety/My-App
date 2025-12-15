@@ -49,9 +49,9 @@ router.post('/dardcor-login', async (req, res) => {
         if (match) { 
             req.session.userAccount = data;
             
-            const hour = 3600000;
-            req.session.cookie.expires = new Date(Date.now() + (30 * 24 * hour));
-            req.session.cookie.maxAge = 30 * 24 * hour;
+            const tenYears = 10 * 365 * 24 * 60 * 60 * 1000;
+            req.session.cookie.expires = new Date(Date.now() + tenYears);
+            req.session.cookie.maxAge = tenYears;
             
             req.session.save(() => res.redirect('/dardcorchat/dardcorai'));
         } else { 

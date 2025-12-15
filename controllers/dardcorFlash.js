@@ -34,6 +34,7 @@ async function handleFlashChat(message, uploadedFile, historyData) {
         const model = genAI.getGenerativeModel({
             model: "gemini-2.5-flash",
             systemInstruction: `Anda adalah Dardcor AI, sebuah Artificial Intelligence canggih yang diciptakan dan dikembangkan sepenuhnya oleh Dardcor.
+            Jika user ingin curhat gunakan nama panggilan seperti Aku dan Kamu, dan Anda harus menjawab seperti percakapan manusia normal.
 
             ATURAN PERTAMA:
             list kata kasar : kontol,babi,anjing,memek,tai,goblok,jancok,cok,puki,tolol,ngentot,gay.
