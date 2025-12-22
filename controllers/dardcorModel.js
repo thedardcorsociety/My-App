@@ -1,12 +1,47 @@
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } = require("@google/generative-ai");
+const tf = require('@tensorflow/tfjs');
+require('@tensorflow/tfjs-backend-cpu');
+const use = require('@tensorflow-models/universal-sentence-encoder');
+const { knowledgeBase } = require('../utils/knowledge');
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const rawKeys = process.env.GEMINI_API_KEY || "";
+const apiKeys = rawKeys.split(',').map(key => key.trim()).filter(key => key.length > 0);
 
-let genAI = null;
-if (GEMINI_API_KEY) {
-    genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+let currentKeyIndex = 0;
+let tfModel = null;
+let knowledgeTensor = null; 
+let responseMap = [];
+
+(async function initTensorFlow() {
+    try {
+        await tf.setBackend('cpu');
+        await tf.ready();
+        tfModel = await use.load();
+        
+        const allInputs = [];
+        responseMap = [];
+
+        knowledgeBase.forEach(item => {
+            item.inputs.forEach(inputMsg => {
+                allInputs.push(inputMsg);
+                responseMap.push(item.output);
+            });
+        });
+        
+        const embeddings = await tfModel.embed(allInputs);
+        knowledgeTensor = tf.keep(embeddings);
+    } catch (e) {
+        console.error(e);
+    }
+})();
+
+function getNextGenAI() {
+    if (apiKeys.length === 0) return null;
+    const key = apiKeys[currentKeyIndex];
+    currentKeyIndex = (currentKeyIndex + 1) % apiKeys.length;
+    return new GoogleGenerativeAI(key);
 }
 
 function fileToGenerativePart(buffer, mimeType) {
@@ -18,11 +53,33 @@ function fileToGenerativePart(buffer, mimeType) {
     };
 }
 
-async function handleFlashChat(message, uploadedFile, historyData) {
+async function handleChat(message, uploadedFile, historyData) {
     try {
-        if (!genAI) {
-            return "Error: API Key tidak ditemukan.";
+        if (!message && !uploadedFile) return "Input kosong.";
+
+        if (message && !uploadedFile && tfModel && knowledgeTensor) {
+            try {
+                const inputTensor = await tfModel.embed([message.toLowerCase()]);
+                const result = tf.tidy(() => {
+                    const products = tf.matMul(inputTensor, knowledgeTensor, false, true);
+                    const maxScore = products.max();
+                    const maxIndex = products.argMax(1);
+                    return {
+                        score: maxScore.dataSync()[0],
+                        index: maxIndex.dataSync()[0]
+                    };
+                });
+                
+                inputTensor.dispose();
+
+                if (result.score > 0.75) {
+                    return responseMap[result.index];
+                }
+            } catch (err) {}
         }
+
+        const genAI = getNextGenAI();
+        if (!genAI) return "Error: API Key tidak ditemukan.";
 
         const safetySettings = [
             { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
@@ -56,20 +113,16 @@ async function handleFlashChat(message, uploadedFile, historyData) {
         let lastRole = null;
 
         if (historyData && historyData.length > 0) {
-            const pastMessages = historyData.slice(0, -1);
-
-            pastMessages.forEach(msg => {
+            const recentMessages = historyData.slice(-20); 
+            
+            recentMessages.forEach(msg => {
                 if (!msg.message || msg.message.trim() === "") return;
-                
                 const role = (msg.role === 'bot' || msg.role === 'model') ? 'model' : 'user';
-
+                
                 if (lastRole === role) {
-                    chatHistory[chatHistory.length - 1].parts[0].text += "\n\n" + msg.message;
+                    chatHistory[chatHistory.length - 1].parts[0].text += "\n" + msg.message;
                 } else {
-                    chatHistory.push({
-                        role: role,
-                        parts: [{ text: msg.message }]
-                    });
+                    chatHistory.push({ role: role, parts: [{ text: msg.message }] });
                 }
                 lastRole = role;
             });
@@ -80,37 +133,24 @@ async function handleFlashChat(message, uploadedFile, historyData) {
         }
 
         const chat = model.startChat({
-            history: chatHistory,
-            generationConfig: {
-                maxOutputTokens: 99999,
-                temperature: 0.9,
-            }
+            history: chatHistory
         });
 
         const currentMessageParts = [];
-        
         if (uploadedFile) {
             currentMessageParts.push(fileToGenerativePart(uploadedFile.buffer, uploadedFile.mimetype));
         }
-
+        
         const textPrompt = (message && message.trim() !== "") ? message : (uploadedFile ? "Analisis file ini." : "Halo");
         currentMessageParts.push({ text: textPrompt });
 
         const result = await chat.sendMessage(currentMessageParts);
         const response = await result.response;
-        
         return response.text();
 
     } catch (error) {
-        console.error("GEMINI API ERROR:", error);
-        if (error.message.includes("404")) {
-            return "Error 404: Model gemini-2.5-flash tidak ditemukan. Pastikan API Key Anda mendukung model ini.";
-        }
-        if (error.message.includes("429")) {
-            return "Error 429: Limit quota tercapai.";
-        }
-        return "Maaf, terjadi kesalahan saat menghubungi server AI.";
+        return "Maaf, sistem sedang sibuk. Coba lagi nanti.";
     }
 }
 
-module.exports = { handleFlashChat };
+module.exports = { handleChat };

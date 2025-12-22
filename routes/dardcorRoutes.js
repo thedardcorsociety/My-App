@@ -5,8 +5,7 @@ const multer = require('multer');
 const supabase = require('../config/supabase'); 
 const { v4: uuidv4 } = require('uuid');
 
-const { handleFlashChat } = require('../controllers/dardcorFlash');
-const { handleBetaChat } = require('../controllers/dardcorBeta');
+const { handleChat } = require('../controllers/dardcorModel');
 
 const storage = multer.memoryStorage();
 const upload = multer({ limits: { fileSize: 10 * 1024 * 1024 } });
@@ -15,9 +14,6 @@ function checkUserAuth(req, res, next) {
     if (req.session && req.session.userAccount) {
         next();
     } else {
-        if (req.originalUrl.includes('/dardcorchat/ai/')) {
-            return res.status(401).json({ success: false, response: "Sesi habis." });
-        }
         res.redirect('/dardcor');
     }
 }
@@ -30,12 +26,16 @@ const uploadMiddleware = (req, res, next) => {
 };
 
 router.get('/', (req, res) => {
-    if (req.session && req.session.userAccount) return res.redirect('/dardcorchat/dardcorai');
+    if (req.session && req.session.userAccount) {
+        return res.redirect('/dardcorchat/dardcorai');
+    }
     res.render('index', { user: null });
 });
 
 router.get('/dardcor', (req, res) => { 
-    if (req.session && req.session.userAccount) return res.redirect('/dardcorchat/dardcorai'); 
+    if (req.session && req.session.userAccount) {
+        return res.redirect('/dardcorchat/dardcorai'); 
+    }
     res.render('dardcor', { error: null }); 
 });
 
@@ -65,7 +65,12 @@ router.get('/dardcor-logout', (req, res) => {
     res.redirect('/dardcor'); 
 });
 
-router.get('/register', (req, res) => { res.render('register', { error: null }); });
+router.get('/register', (req, res) => { 
+    if (req.session && req.session.userAccount) {
+        return res.redirect('/dardcorchat/dardcorai');
+    }
+    res.render('register', { error: null }); 
+});
 
 router.post('/register', async (req, res) => {
     const { username, email, password } = req.body; 
@@ -98,7 +103,7 @@ router.post('/dardcor/profile/update', checkUserAuth, upload.single('profile_ima
         const { data, error } = await supabase.from('dardcor_users').update(updates).eq('id', userId).select().single();
         if (error) throw error;
         req.session.userAccount = data;
-        res.render('dardcorchat/profile', { user: data, success: "Berhasil!", error: null });
+        req.session.save(() => res.render('dardcorchat/profile', { user: data, success: "Berhasil!", error: null }));
     } catch (err) { res.render('dardcorchat/profile', { user: req.session.userAccount, error: err.message, success: null }); }
 });
 
@@ -177,7 +182,6 @@ router.get('/dardcorchat/dardcor-ai/preview/:id', checkUserAuth, async (req, res
 
 router.post('/dardcorchat/ai/chat', checkUserAuth, uploadMiddleware, async (req, res) => {
     const message = req.body.message ? req.body.message.trim() : "";
-    const selectedModel = req.body.model || 'flash';
     const uploadedFile = req.file;
     const userId = req.session.userAccount.id;
     let conversationId = req.body.conversationId || req.session.currentConversationId || uuidv4();
@@ -196,13 +200,7 @@ router.post('/dardcorchat/ai/chat', checkUserAuth, uploadMiddleware, async (req,
             .eq('conversation_id', conversationId)
             .order('created_at', { ascending: true });
 
-        let botResponse = "";
-        
-        if (selectedModel === 'beta') {
-            botResponse = await handleBetaChat(message, uploadedFile, historyData);
-        } else {
-            botResponse = await handleFlashChat(message, uploadedFile, historyData);
-        }
+        const botResponse = await handleChat(message, uploadedFile, historyData);
 
         if (botResponse) {
             await supabase.from('history_chat').insert({
@@ -214,7 +212,6 @@ router.post('/dardcorchat/ai/chat', checkUserAuth, uploadMiddleware, async (req,
         }
 
     } catch (error) {
-        console.error("Route Error:", error);
         res.status(500).json({ success: false, response: error.message || "Terjadi kesalahan pada server." });
     }
 });

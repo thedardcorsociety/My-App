@@ -147,24 +147,8 @@
             <div class="flex items-center gap-3">
                 <button onclick="toggleSidebar()" class="text-gray-400 p-2 rounded hover:bg-gray-800 transition"><i class="fas fa-bars"></i></button>
             </div>
-
-            <div class="relative">
-                <button onclick="toggleModelDropdown()" class="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-[#1e1e2d] transition text-gray-200 text-sm font-semibold border border-transparent hover:border-purple-500/30">
-                    <span class="text-purple-500"><i class="fas fa-bolt"></i></span>
-                    <span id="current-model-label">Dardcor Flash</span>
-                    <i class="fas fa-chevron-down text-xs text-gray-500 ml-1"></i>
-                </button>
-
-                <div id="model-dropdown" class="hidden absolute top-full right-0 mt-2 w-40 bg-[#13131f] border border-purple-900/50 rounded-xl shadow-2xl z-50 overflow-hidden">
-                    <div class="p-1">
-                        <button onclick="selectModel('flash', 'Dardcor Flash')" class="w-full text-left px-3 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-purple-600 rounded-lg transition flex items-center gap-3 group">
-                            <span class="font-medium">Dardcor Flash</span>
-                        </button>
-                        <button onclick="selectModel('beta', 'Dardcor Beta')" class="w-full text-left px-3 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-purple-600 rounded-lg transition flex items-center gap-3 group">
-                            <span class="font-medium">Dardcor Beta</span>
-                        </button>
-                    </div>
-                </div>
+            <div class="text-purple-500 font-bold tracking-wider text-sm flex items-center gap-2">
+                <i class="fas fa-bolt"></i> Dardcor AI System
             </div>
         </header>
 
@@ -266,26 +250,6 @@
         let targetChatId = null;
         let dragCounter = 0;
         let isSending = false;
-        let currentModel = 'flash';
-
-        function toggleModelDropdown() {
-            const dropdown = document.getElementById('model-dropdown');
-            dropdown.classList.toggle('hidden');
-        }
-
-        function selectModel(model, label) {
-            currentModel = model;
-            document.getElementById('current-model-label').innerText = label;
-            document.getElementById('model-dropdown').classList.add('hidden');
-        }
-
-        document.addEventListener('click', (e) => {
-            const dropdown = document.getElementById('model-dropdown');
-            const btn = document.querySelector('button[onclick="toggleModelDropdown()"]');
-            if (btn && !btn.contains(e.target) && !dropdown.contains(e.target)) {
-                dropdown.classList.add('hidden');
-            }
-        });
 
         function toggleSidebar() {
             if (window.innerWidth < 768) {
@@ -448,7 +412,6 @@
             const formData = new FormData();
             formData.append('message', currentMessage);
             formData.append('conversationId', currentConversationId);
-            formData.append('model', currentModel);
             if (currentFile) formData.append('file_attachment', currentFile);
 
             try {
@@ -458,7 +421,6 @@
                 
                 if (data.success) {
                     typeBotMessage(data.response);
-                    
                     const newChatLabel = document.getElementById('active-new-chat');
                     if(newChatLabel) {
                         newChatLabel.querySelector('span').innerText = currentMessage.substring(0, 22) + '...';
@@ -522,7 +484,6 @@
                         <div class="markdown-body typing-target"></div>
                     </div>
                 </div>`;
-            
             messageList.insertBefore(div, loadingIndicator);
             scrollToBottom();
 
@@ -530,7 +491,6 @@
             let index = 0;
             const speed = 10;
             const chunk = 5;
-
             const interval = setInterval(() => {
                 index += chunk;
                 if (index > rawText.length) index = rawText.length;

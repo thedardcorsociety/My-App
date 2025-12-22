@@ -12,6 +12,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
+const sessionDuration = 10 * 365 * 24 * 60 * 60 * 1000;
+
 app.use(session({
     secret: process.env.SESSION_SECRET || 'dardcor_secret_key',
     resave: false,
@@ -19,7 +21,9 @@ app.use(session({
     cookie: { 
         secure: process.env.NODE_ENV === 'production',
         sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-        maxAge: 24 * 60 * 60 * 1000
+        maxAge: sessionDuration,
+        path: '/',
+        httpOnly: true
     }
 }));
 
