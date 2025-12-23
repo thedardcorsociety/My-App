@@ -4,11 +4,28 @@ const bcrypt = require('bcryptjs');
 const multer = require('multer');
 const supabase = require('../config/supabase'); 
 const { v4: uuidv4 } = require('uuid');
+const dns = require('dns');
+const rateLimit = require('express-rate-limit');
+const { body, validationResult } = require('express-validator');
 
 const { handleChat } = require('../controllers/dardcorModel');
 
 const storage = multer.memoryStorage();
-const upload = multer({ limits: { fileSize: 10 * 1024 * 1024 } });
+const upload = multer({ limits: { fileSize: 5 * 1024 * 1024 } });
+
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, 
+    max: 10, 
+    message: "Terlalu banyak percobaan login. Silakan coba lagi nanti.",
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+const registerLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, 
+    max: 5, 
+    message: "Batas pembuatan akun tercapai. Coba lagi nanti."
+});
 
 function checkUserAuth(req, res, next) {
     if (req.session && req.session.userAccount) {
@@ -18,9 +35,24 @@ function checkUserAuth(req, res, next) {
     }
 }
 
+function checkEmailDomain(email) {
+    return new Promise((resolve) => {
+        const domain = email.split('@')[1];
+        if (!domain) return resolve(false);
+        
+        dns.resolveMx(domain, (err, addresses) => {
+            if (err || !addresses || addresses.length === 0) {
+                resolve(false);
+            } else {
+                resolve(true);
+            }
+        });
+    });
+}
+
 const uploadMiddleware = (req, res, next) => {
     upload.single('file_attachment')(req, res, function (err) {
-        if (err) return res.status(400).json({ success: false, response: "File terlalu besar (Max 10MB)." });
+        if (err) return res.status(400).json({ success: false, response: "File terlalu besar atau error upload." });
         next();
     });
 };
@@ -39,30 +71,46 @@ router.get('/dardcor', (req, res) => {
     res.render('dardcor', { error: null }); 
 });
 
-router.post('/dardcor-login', async (req, res) => {
+router.post('/dardcor-login', authLimiter, [
+    body('email').isEmail().normalizeEmail(),
+    body('password').notEmpty().trim()
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.render('dardcor', { error: 'Format input tidak valid.' });
+    }
+
     const { email, password } = req.body;
     try {
         const { data } = await supabase.from('dardcor_users').select('*').eq('email', email).single();
-        if (!data) return res.render('dardcor', { error: 'Email tidak ditemukan.' });
+        if (!data) return res.render('dardcor', { error: 'Email atau password salah.' });
         
         const match = await bcrypt.compare(password, data.password);
         if (match) { 
-            req.session.userAccount = data;
-            
-            const tenYears = 10 * 365 * 24 * 60 * 60 * 1000;
-            req.session.cookie.expires = new Date(Date.now() + tenYears);
-            req.session.cookie.maxAge = tenYears;
-            
-            req.session.save(() => res.redirect('/dardcorchat/dardcorai'));
+            req.session.regenerate(async (err) => {
+                if (err) return res.render('dardcor', { error: 'Login Error.' });
+                
+                req.session.userAccount = data;
+                const tenYears = 10 * 365 * 24 * 60 * 60 * 1000;
+                req.session.cookie.expires = new Date(Date.now() + tenYears);
+                req.session.cookie.maxAge = tenYears;
+                
+                req.session.save(() => res.redirect('/dardcorchat/dardcorai'));
+            });
         } else { 
-            res.render('dardcor', { error: 'Password salah.' }); 
+            res.render('dardcor', { error: 'Email atau password salah.' }); 
         }
-    } catch (err) { res.render('dardcor', { error: 'Server Error.' }); }
+    } catch (err) { res.render('dardcor', { error: 'Terjadi kesalahan sistem.' }); }
 });
 
 router.get('/dardcor-logout', (req, res) => { 
-    req.session.destroy(); 
-    res.redirect('/dardcor'); 
+    req.session.userAccount = null;
+    req.session.save((err) => {
+        if (err) console.error(err);
+        req.session.regenerate((err) => {
+            res.redirect('/dardcor');
+        });
+    });
 });
 
 router.get('/register', (req, res) => { 
@@ -72,28 +120,54 @@ router.get('/register', (req, res) => {
     res.render('register', { error: null }); 
 });
 
-router.post('/register', async (req, res) => {
+router.post('/register', registerLimiter, [
+    body('username').trim().escape().isLength({ min: 3 }),
+    body('email').isEmail().normalizeEmail(),
+    body('password').notEmpty()
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ success: false, message: 'Data tidak valid.' });
+    }
+
     const { username, email, password } = req.body; 
+
     try {
-        const hashedPassword = await bcrypt.hash(password, 10);
+        const isValidDomain = await checkEmailDomain(email);
+        if (!isValidDomain) {
+            return res.status(400).json({ success: false, message: 'Email tidak valid atau domain tidak ditemukan.' });
+        }
+
+        const { data: existingUser } = await supabase.from('dardcor_users').select('email').eq('email', email).single();
+        if (existingUser) {
+            return res.status(400).json({ success: false, message: 'Email sudah terdaftar.' });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 12);
         const { error } = await supabase.from('dardcor_users').insert([{ username, email, password: hashedPassword }]);
         if (error) throw error;
+        
         res.status(200).json({ success: true });
-    } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+    } catch (err) { 
+        res.status(500).json({ success: false, message: 'Terjadi kesalahan server.' }); 
+    }
 });
 
 router.get('/dardcorchat/profile', checkUserAuth, (req, res) => {
     res.render('dardcorchat/profile', { user: req.session.userAccount, success: null, error: null });
 });
 
-router.post('/dardcor/profile/update', checkUserAuth, upload.single('profile_image'), async (req, res) => {
+router.post('/dardcor/profile/update', checkUserAuth, upload.single('profile_image'), [
+    body('username').trim().escape()
+], async (req, res) => {
     const { username, password, confirm_password } = req.body;
     const userId = req.session.userAccount.id;
     let updates = { username: username };
+    
     try {
         if (password && password.trim() !== "") {
-            if (password !== confirm_password) return res.render('dardcorchat/profile', { user: req.session.userAccount, error: "Password beda.", success: null });
-            updates.password = await bcrypt.hash(password, 10);
+            if (password !== confirm_password) return res.render('dardcorchat/profile', { user: req.session.userAccount, error: "Password konfirmasi tidak cocok.", success: null });
+            updates.password = await bcrypt.hash(password, 12);
         }
         if (req.file) {
             const fileName = `${userId}-${Date.now()}.${req.file.originalname.split('.').pop()}`;
@@ -102,9 +176,10 @@ router.post('/dardcor/profile/update', checkUserAuth, upload.single('profile_ima
         }
         const { data, error } = await supabase.from('dardcor_users').update(updates).eq('id', userId).select().single();
         if (error) throw error;
+        
         req.session.userAccount = data;
-        req.session.save(() => res.render('dardcorchat/profile', { user: data, success: "Berhasil!", error: null }));
-    } catch (err) { res.render('dardcorchat/profile', { user: req.session.userAccount, error: err.message, success: null }); }
+        req.session.save(() => res.render('dardcorchat/profile', { user: data, success: "Profil berhasil diperbarui!", error: null }));
+    } catch (err) { res.render('dardcorchat/profile', { user: req.session.userAccount, error: "Gagal update profil.", success: null }); }
 });
 
 router.get('/dardcorchat/dardcorai', checkUserAuth, (req, res) => { loadChatHandler(req, res); });
@@ -212,7 +287,7 @@ router.post('/dardcorchat/ai/chat', checkUserAuth, uploadMiddleware, async (req,
         }
 
     } catch (error) {
-        res.status(500).json({ success: false, response: error.message || "Terjadi kesalahan pada server." });
+        res.status(500).json({ success: false, response: "Terjadi gangguan sistem." });
     }
 });
 

@@ -3,24 +3,42 @@ require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const session = require('express-session');
+const helmet = require('helmet');
 const app = express();
 const port = process.env.PORT || 3000;
 
 app.set('trust proxy', 1);
 
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "cdn.tailwindcss.com", "cdnjs.cloudflare.com", "cdn.jsdelivr.net", "fonts.googleapis.com"],
+            styleSrc: ["'self'", "'unsafe-inline'", "cdn.tailwindcss.com", "cdnjs.cloudflare.com", "fonts.googleapis.com"],
+            imgSrc: ["'self'", "data:", "https:", "blob:"],
+            connectSrc: ["'self'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"],
+            fontSrc: ["'self'", "cdnjs.cloudflare.com", "fonts.gstatic.com"],
+            objectSrc: ["'none'"],
+            upgradeInsecureRequests: [],
+        },
+    },
+    crossOriginEmbedderPolicy: false
+}));
+
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
 
 const sessionDuration = 10 * 365 * 24 * 60 * 60 * 1000;
 
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'dardcor_secret_key',
+    name: '__Secure-DardcorID',
+    secret: process.env.SESSION_SECRET || 'dardcor_super_secure_secret_key_v2',
     resave: false,
     saveUninitialized: false,
     cookie: { 
         secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
         maxAge: sessionDuration,
         path: '/',
         httpOnly: true
@@ -39,7 +57,7 @@ app.use((req, res, next) => {
 });
 
 const server = app.listen(port, () => {
-    console.log(`Server berjalan di http://localhost:${port}`);
+    console.log(`Server berjalan dengan keamanan tinggi di http://localhost:${port}`);
 });
 
 server.keepAliveTimeout = 600000;

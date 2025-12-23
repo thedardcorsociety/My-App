@@ -124,8 +124,7 @@
             </form>
 
             <div class="mt-6 pt-4 border-t border-slate-700/50 text-center">
-                <p class="text-slate-400 text-sm">Already have an account?
-                <a href="/dardcor" class="text-purple-400 hover:text-purple-300 font-semibold transition-colors">Login Here</a></p>
+                <p class="text-slate-400 text-sm">Already have an account? <a href="/dardcor" class="text-purple-400 hover:text-purple-300 font-semibold transition-colors">Login Here</a></p>
                 <a href="/" class="inline-block mt-4 text-xs text-slate-500 hover:text-white transition-colors">
                     <i class="fas fa-arrow-left mr-1"></i> Back to Home
                 </a>
@@ -166,6 +165,7 @@
                 icon.classList.add('fa-eye');
             }
         });
+
         document.getElementById('registerForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -177,7 +177,7 @@
             const successModal = document.getElementById('successModal');
             
             submitBtn.disabled = true;
-            btnText.textContent = 'Processing...';
+            btnText.textContent = 'Verifying Email...'; // Feedback user
             btnLoader.classList.remove('hidden');
             errorMessage.classList.add('hidden');
 
