@@ -15,7 +15,7 @@ app.use(helmet({
             defaultSrc: ["'self'"],
             scriptSrc: ["'self'", "'unsafe-inline'", "cdn.tailwindcss.com", "cdnjs.cloudflare.com", "cdn.jsdelivr.net", "fonts.googleapis.com"],
             styleSrc: ["'self'", "'unsafe-inline'", "cdn.tailwindcss.com", "cdnjs.cloudflare.com", "fonts.googleapis.com"],
-            imgSrc: ["'self'", "data:", "https:", "blob:"],
+            imgSrc: ["'self'", "data:", "https:", "blob:", "https://ui-avatars.com"],
             connectSrc: ["'self'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"],
             fontSrc: ["'self'", "cdnjs.cloudflare.com", "fonts.gstatic.com"],
             objectSrc: ["'none'"],
@@ -57,7 +57,7 @@ app.use((req, res, next) => {
 });
 
 const server = app.listen(port, () => {
-    console.log(`Server berjalan dengan keamanan tinggi di http://localhost:${port}`);
+    console.log(`Server berjalan di http://localhost:${port}`);
 });
 
 server.keepAliveTimeout = 600000;

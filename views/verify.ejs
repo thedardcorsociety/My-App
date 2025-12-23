@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verifikasi OTP - Dardcor AI</title>
+    <link rel="icon" href="/logo.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Poppins', sans-serif; background-color: #0b0c15; }
+        .glass-card {
+            background: rgba(19, 19, 31, 0.6); backdrop-filter: blur(20px);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            box-shadow: 0 0 40px rgba(139, 92, 246, 0.15);
+        }
+        .otp-input {
+            width: 3rem; height: 3.5rem; text-align: center; font-size: 1.5rem; font-weight: bold;
+            background: rgba(30, 41, 59, 0.5); border: 1px solid #334155; color: white; border-radius: 0.5rem;
+        }
+        .otp-input:focus { border-color: #8b5cf6; outline: none; box-shadow: 0 0 10px rgba(139, 92, 246, 0.3); }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+    <div class="glass-card p-8 rounded-2xl w-full max-w-md text-center relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-violet-600 to-fuchsia-600"></div>
+        <div class="w-16 h-16 bg-purple-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-purple-500/30">
+            <i class="fas fa-shield-alt text-3xl text-purple-400"></i>
+        </div>
+        <h2 class="text-2xl font-bold text-white mb-2">Verifikasi Email</h2>
+        <p class="text-gray-400 text-sm mb-6">Kode OTP telah dikirim ke <span class="text-purple-300 font-medium"><%= email %></span></p>
+
+        <form id="otpForm" class="space-y-6">
+            <input type="hidden" id="userEmail" value="<%= email %>">
+            <div class="flex justify-center gap-2">
+                <input type="text" maxlength="6" id="otp" class="w-full h-14 text-center text-2xl font-bold tracking-[0.5em] bg-[#1e293b] border border-gray-600 rounded-xl text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none placeholder-gray-600" placeholder="000000" autocomplete="off">
+            </div>
+            <p id="msg" class="text-sm text-red-400 hidden"></p>
+            <button type="submit" id="btnVerify" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-bold transition shadow-lg shadow-purple-600/20 flex justify-center items-center gap-2">
+                <span>Verifikasi</span>
+                <i class="fas fa-arrow-right"></i>
+            </button>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('otpForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const otp = document.getElementById('otp').value.trim();
+            const email = document.getElementById('userEmail').value;
+            const btn = document.getElementById('btnVerify');
+            const msg = document.getElementById('msg');
+            
+            if(otp.length < 6) {
+                msg.textContent = "Masukkan 6 digit kode OTP.";
+                msg.classList.remove('hidden'); return;
+            }
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+            msg.classList.add('hidden');
+
+            try {
+                const res = await fetch('/verify-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, otp }) 
+                });
+                const data = await res.json();
+
+                if(data.success) {
+                    btn.innerHTML = '<i class="fas fa-check"></i> Berhasil!';
+                    btn.classList.add('bg-green-600');
+                    setTimeout(() => {
+                        window.location.href = data.redirectUrl || '/dardcorchat/dardcorai';
+                    }, 500);
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (err) {
+                msg.textContent = err.message || "Gagal verifikasi.";
+                msg.classList.remove('hidden');
+                btn.disabled = false;
+                btn.innerHTML = 'Verifikasi <i class="fas fa-arrow-right"></i>';
+            }
+        });
+    </script>
+</body>
+</html>

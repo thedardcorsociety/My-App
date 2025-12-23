@@ -5,11 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">    
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#1a1a2e">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="Dardcor AI">
-
-    <title>Dardcor AI</title>
+    <title>Dardcor AI - Register</title>
     <link rel="icon" href="/logo.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -24,47 +20,12 @@
             box-shadow: 0 0 40px rgba(139, 92, 246, 0.15);
             animation: floatUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
-        @keyframes floatUp {
-            from { opacity: 0; transform: translateY(40px) scale(0.95); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
+        @keyframes floatUp { from { opacity: 0; transform: translateY(40px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
         .input-group { position: relative; transition: all 0.3s; }
         .input-group:focus-within { transform: scale(1.02); }
-        input {
-            background: rgba(30, 41, 59, 0.5) !important;
-            border: 1px solid #334155 !important;
-            color: white !important;
-            transition: all 0.3s;
-        }
-        input:focus {
-            border-color: #8b5cf6 !important;
-            box-shadow: 0 0 20px rgba(139, 92, 246, 0.2) !important;
-            background: rgba(30, 41, 59, 0.8) !important;
-        }
-        .cyber-line {
-            height: 2px;
-            background: linear-gradient(90deg, transparent, #8b5cf6, transparent);
-            width: 100%;
-            position: absolute;
-            top: 0;
-            left: 0;
-            opacity: 0.5;
-        }
-        .success-container { width: 100%; max-width: 300px; margin: 0 auto; }
-        .success-checkmark { width: 100%; max-width: 80px; height: auto; aspect-ratio: 1; margin: 0 auto 1.5rem; position: relative; }
-        .check-icon { width: 100%; height: 100%; position: relative; border-radius: 50%; border: 3px solid #4CAF50; box-sizing: border-box; }
-        .check-icon::before, .check-icon::after { content: ''; height: 100%; position: absolute; background: transparent; transform: rotate(-45deg); transform-origin: 0 50%; }
-        .check-icon::after { top: 0; left: 37.5%; width: 75%; border-radius: 0 100px 100px 0; animation: rotate-circle 4.25s ease-in; }
-        .icon-line { height: 4px; background-color: #4CAF50; display: block; border-radius: 2px; position: absolute; z-index: 10; }
-        .icon-line.line-tip { top: 46%; left: 17.5%; width: 31.25%; transform: rotate(45deg); animation: icon-line-tip 0.75s; }
-        .icon-line.line-long { top: 38%; right: 10%; width: 58.75%; transform: rotate(-45deg); animation: icon-line-long 0.75s; }
-        @keyframes rotate-circle { 0% { transform: rotate(-45deg); } 5% { transform: rotate(-45deg); } 12% { transform: rotate(-405deg); } 100% { transform: rotate(-405deg); } }
-        @keyframes icon-line-tip { 0% { width: 0; left: 1.25%; top: 23.75%; } 54% { width: 0; left: 1.25%; top: 23.75%; } 70% { width: 62.5%; left: -10%; top: 46.25%; } 84% { width: 21.25%; left: 26.25%; top: 60%; } 100% { width: 31.25%; left: 17.5%; top: 46%; } }
-        @keyframes icon-line-long { 0% { width: 0; right: 57.5%; top: 67.5%; } 65% { width: 0; right: 57.5%; top: 67.5%; } 84% { width: 68.75%; right: 0%; top: 43.75%; } 100% { width: 58.75%; right: 10%; top: 38%; } }
-        @keyframes loading { 0% { width: 0; } 100% { width: 100%; } }
-        .animate-loading { animation: loading 2s linear forwards; }
-        @media (max-width: 640px) { .register-card { padding: 1.5rem; margin: 1rem; } .success-checkmark { max-width: 60px; } .check-icon { border-width: 2px; } .icon-line { height: 3px; } .success-container { max-width: 200px; } }
-        @media (max-width: 480px) { .register-card { padding: 1.25rem; margin: 0.5rem; } .success-checkmark { max-width: 50px; } .icon-line { height: 2.5px; } }
+        input { background: rgba(30, 41, 59, 0.5) !important; border: 1px solid #334155 !important; color: white !important; transition: all 0.3s; }
+        input:focus { border-color: #8b5cf6 !important; box-shadow: 0 0 20px rgba(139, 92, 246, 0.2) !important; background: rgba(30, 41, 59, 0.8) !important; }
+        .cyber-line { height: 2px; background: linear-gradient(90deg, transparent, #8b5cf6, transparent); width: 100%; position: absolute; top: 0; left: 0; opacity: 0.5; }
     </style>
 </head>
 <body class="relative flex items-center justify-center min-h-screen p-4">
@@ -75,10 +36,9 @@
     </div>
 
     <main class="relative z-10 w-full max-w-md">
-        
         <div id="registerCard" class="register-card p-8 rounded-2xl relative overflow-hidden">
             <div class="cyber-line"></div>
-
+        
             <div class="text-center mb-8">
                 <div class="w-20 h-20 bg-purple-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-purple-500/30 shadow-[0_0_30px_rgba(139,92,246,0.3)]">
                     <i class="fas fa-user-plus text-3xl text-purple-400"></i>
@@ -95,7 +55,6 @@
                         <input type="email" name="email" class="w-full py-3 pl-10 pr-4 rounded-lg focus:outline-none" placeholder="name@example.com" required>
                     </div>
                 </div>
-
                  <div class="input-group">
                     <label class="block text-xs font-semibold text-purple-400 uppercase tracking-wider mb-1 ml-1">Username</label>
                     <div class="relative">
@@ -103,7 +62,7 @@
                         <input type="text" name="username" class="w-full py-3 pl-10 pr-4 rounded-lg focus:outline-none" placeholder="Choose a username" required>
                     </div>
                 </div>
-
+                
                 <div class="input-group">
                     <label class="block text-xs font-semibold text-purple-400 uppercase tracking-wider mb-1 ml-1">Password</label>
                     <div class="relative">
@@ -114,9 +73,7 @@
                         </button>
                     </div>
                 </div>
-
                 <p id="errorMessage" class="text-center text-red-400 text-sm hidden bg-red-500/10 p-2 rounded border border-red-500/20"></p>
-                
                 <button type="submit" id="submitBtn" class="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-bold py-3.5 rounded-xl transition-all transform hover:scale-[1.02] shadow-lg shadow-purple-600/30 mt-2 flex justify-center items-center gap-2">
                     <span>Register</span>
                     <div id="btnLoader" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin hidden"></div>
@@ -130,24 +87,6 @@
                 </a>
             </div>
         </div>
-
-        <div id="successModal" class="hidden register-card p-8 sm:p-10 rounded-2xl text-center relative overflow-hidden">
-            <div class="cyber-line"></div>
-            <div class="success-container">
-                <div class="success-checkmark">
-                    <div class="check-icon">
-                        <span class="icon-line line-tip"></span>
-                        <span class="icon-line line-long"></span>
-                    </div>
-                </div>
-                <h2 class="text-xl sm:text-2xl font-bold text-white mb-2">Registration Successful!</h2>
-                <p class="text-slate-300 mb-4 text-sm sm:text-base">Creating your digital identity...</p>
-                <div class="w-full max-w-48 bg-slate-800 rounded-full h-1.5 sm:h-2 overflow-hidden mx-auto">
-                    <div class="h-full bg-green-500 animate-loading"></div>
-                </div>
-            </div>
-        </div>
-
     </main>
 
     <script>
@@ -165,19 +104,15 @@
                 icon.classList.add('fa-eye');
             }
         });
-
         document.getElementById('registerForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-            
             const submitBtn = document.getElementById('submitBtn');
             const btnText = submitBtn.querySelector('span');
             const btnLoader = document.getElementById('btnLoader');
             const errorMessage = document.getElementById('errorMessage');
-            const registerCard = document.getElementById('registerCard');
-            const successModal = document.getElementById('successModal');
             
             submitBtn.disabled = true;
-            btnText.textContent = 'Verifying Email...'; // Feedback user
+            btnText.textContent = 'Mengirim OTP...'; 
             btnLoader.classList.remove('hidden');
             errorMessage.classList.add('hidden');
 
@@ -193,13 +128,7 @@
                 const result = await response.json();
 
                 if (response.ok && result.success) {
-                    registerCard.classList.add('opacity-0', 'pointer-events-none');
-                    setTimeout(() => {
-                        registerCard.style.display = 'none';
-                        successModal.classList.remove('hidden');
-                        successModal.classList.add('flex', 'flex-col', 'justify-center');
-                    }, 300);
-                    setTimeout(() => { window.location.href = '/dardcor'; }, 2500);
+                    window.location.href = result.redirectUrl || '/verify-otp';
                 } else {
                     throw new Error(result.message || 'Registration failed');
                 }
