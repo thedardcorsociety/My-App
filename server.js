@@ -7,6 +7,8 @@ const helmet = require('helmet');
 const app = express();
 const port = process.env.PORT || 3000;
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 app.set('trust proxy', 1);
 
 app.use(helmet({
@@ -27,18 +29,18 @@ app.use(helmet({
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json({ limit: '10mb' }));
 
 const sessionDuration = 10 * 365 * 24 * 60 * 60 * 1000;
 
 app.use(session({
-    name: '__Secure-DardcorID',
+    name: isProduction ? '__Secure-DardcorID' : 'dardcor_session_id',
     secret: process.env.SESSION_SECRET || 'dardcor_super_secure_secret_key_v2',
     resave: false,
     saveUninitialized: false,
     cookie: { 
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+        secure: isProduction, 
+        sameSite: isProduction ? 'strict' : 'lax', 
         maxAge: sessionDuration,
         path: '/',
         httpOnly: true
@@ -58,6 +60,7 @@ app.use((req, res, next) => {
 
 const server = app.listen(port, () => {
     console.log(`Server berjalan di http://localhost:${port}`);
+    console.log(`Mode: ${isProduction ? 'Production' : 'Development'}`);
 });
 
 server.keepAliveTimeout = 600000;

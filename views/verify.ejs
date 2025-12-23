@@ -11,7 +11,8 @@
     <style>
         body { font-family: 'Poppins', sans-serif; background-color: #0b0c15; }
         .glass-card {
-            background: rgba(19, 19, 31, 0.6); backdrop-filter: blur(20px);
+            background: rgba(19, 19, 31, 0.6);
+            backdrop-filter: blur(20px);
             border: 1px solid rgba(139, 92, 246, 0.2);
             box-shadow: 0 0 40px rgba(139, 92, 246, 0.15);
         }
@@ -23,21 +24,21 @@
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
-    <div class="glass-card p-8 rounded-2xl w-full max-w-md text-center relative overflow-hidden">
+    <div class="glass-card p-6 md:p-8 rounded-2xl w-full max-w-md text-center relative overflow-hidden">
         <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-violet-600 to-fuchsia-600"></div>
-        <div class="w-16 h-16 bg-purple-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-purple-500/30">
-            <i class="fas fa-shield-alt text-3xl text-purple-400"></i>
+        <div class="w-14 h-14 md:w-16 md:h-16 bg-purple-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-purple-500/30">
+            <i class="fas fa-shield-alt text-2xl md:text-3xl text-purple-400"></i>
         </div>
-        <h2 class="text-2xl font-bold text-white mb-2">Verifikasi Email</h2>
-        <p class="text-gray-400 text-sm mb-6">Kode OTP telah dikirim ke <span class="text-purple-300 font-medium"><%= email %></span></p>
+        <h2 class="text-xl md:text-2xl font-bold text-white mb-2">Verifikasi Email</h2>
+        <p class="text-gray-400 text-xs md:text-sm mb-6">Kode OTP telah dikirim ke <br><span class="text-purple-300 font-medium break-all"><%= email %></span></p>
 
         <form id="otpForm" class="space-y-6">
             <input type="hidden" id="userEmail" value="<%= email %>">
             <div class="flex justify-center gap-2">
-                <input type="text" maxlength="6" id="otp" class="w-full h-14 text-center text-2xl font-bold tracking-[0.5em] bg-[#1e293b] border border-gray-600 rounded-xl text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none placeholder-gray-600" placeholder="000000" autocomplete="off">
+                <input type="text" maxlength="6" id="otp" class="w-full h-12 md:h-14 text-center text-xl md:text-2xl font-bold tracking-[0.5em] bg-[#1e293b] border border-gray-600 rounded-xl text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none placeholder-gray-600" placeholder="000000" autocomplete="off">
             </div>
             <p id="msg" class="text-sm text-red-400 hidden"></p>
-            <button type="submit" id="btnVerify" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-bold transition shadow-lg shadow-purple-600/20 flex justify-center items-center gap-2">
+            <button type="submit" id="btnVerify" class="w-full py-3 md:py-3.5 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-bold transition shadow-lg shadow-purple-600/20 flex justify-center items-center gap-2 text-sm md:text-base">
                 <span>Verifikasi</span>
                 <i class="fas fa-arrow-right"></i>
             </button>
@@ -51,7 +52,6 @@
             const email = document.getElementById('userEmail').value;
             const btn = document.getElementById('btnVerify');
             const msg = document.getElementById('msg');
-            
             if(otp.length < 6) {
                 msg.textContent = "Masukkan 6 digit kode OTP.";
                 msg.classList.remove('hidden'); return;
@@ -69,19 +69,24 @@
                 const data = await res.json();
 
                 if(data.success) {
-                    btn.innerHTML = '<i class="fas fa-check"></i> Berhasil!';
+                    btn.innerHTML = '<i class="fas fa-check"></i> Akun Dibuat!';
                     btn.classList.add('bg-green-600');
+                    msg.textContent = "Mengalihkan ke Dardcor AI...";
+                    msg.classList.remove('text-red-400', 'hidden');
+                    msg.classList.add('text-green-400');
                     setTimeout(() => {
                         window.location.href = data.redirectUrl || '/dardcorchat/dardcorai';
-                    }, 500);
+                    }, 1000);
                 } else {
                     throw new Error(data.message);
                 }
             } catch (err) {
                 msg.textContent = err.message || "Gagal verifikasi.";
-                msg.classList.remove('hidden');
+                msg.classList.remove('hidden', 'text-green-400');
+                msg.classList.add('text-red-400');
                 btn.disabled = false;
                 btn.innerHTML = 'Verifikasi <i class="fas fa-arrow-right"></i>';
+                btn.classList.remove('bg-green-600');
             }
         });
     </script>

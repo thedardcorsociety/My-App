@@ -5,10 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#1a1a2e">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="Dardcor AI">
-    
     <title>Dardcor AI</title>
     <link rel="icon" href="/logo.png">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -17,17 +13,15 @@
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
-        .desktop-collapsed { width: 0 !important; padding: 0 !important; opacity: 0; overflow: hidden; }
-        #sidebar { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .message-bubble { max-width: 85%; }
-        @media (max-width: 768px) { .message-bubble { max-width: 92%; } }
+        .h-dvh { height: 100vh; height: 100dvh; }
+        #sidebar { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
     </style>
 </head>
 <body class="bg-[#0b0c15] text-white font-sans h-dvh flex overflow-hidden relative">
 
     <div id="mobile-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 z-40 hidden md:hidden backdrop-blur-sm"></div>
 
-    <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 bg-[#13131f] border-r border-purple-900/30 flex flex-col w-72 h-full transform -translate-x-full md:translate-x-0 md:static shrink-0 whitespace-nowrap overflow-hidden desktop-collapsed">
+    <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 bg-[#13131f] border-r border-purple-900/30 flex flex-col w-72 h-full transform -translate-x-full md:relative md:translate-x-0 shrink-0 whitespace-nowrap overflow-hidden shadow-2xl md:shadow-none">
         <div class="p-4 flex items-center justify-between border-b border-purple-900/30 h-16 min-h-[4rem]">
             <span class="font-bold text-lg tracking-wider text-purple-500">Dardcor <span class="text-white">AI</span></span>
             <button onclick="toggleSidebar()" class="md:hidden text-gray-400 hover:text-white p-2"><i class="fas fa-times"></i></button>
@@ -43,17 +37,17 @@
         </div>
     </aside>
 
-    <main class="flex-1 flex flex-col h-dvh relative w-full min-w-0 bg-[#0b0c15]">
+    <main class="flex-1 flex flex-col h-full relative w-full min-w-0 bg-[#0b0c15]">
         <header class="h-16 flex items-center justify-between px-4 border-b border-purple-900/30 bg-[#0b0c15] z-30 shrink-0">
             <div class="flex items-center gap-3">
-                <button onclick="toggleSidebar()" class="text-gray-400 p-2 rounded hover:bg-gray-800 transition"><i class="fas fa-bars"></i></button>
+                <button onclick="toggleSidebar()" class="md:hidden text-gray-400 p-2 rounded hover:bg-gray-800 transition"><i class="fas fa-bars"></i></button>
             </div>
 
-            <div class="flex items-center gap-3">
-                <a href="/dardcor" class="px-4 py-2 text-sm font-medium text-white bg-violet-600 hover:bg-violet-500 rounded-lg transition shadow-lg shadow-violet-600/20">
+            <div class="flex items-center gap-2 sm:gap-3">
+                <a href="/dardcor" class="px-4 py-2 text-sm font-medium text-white bg-violet-600 hover:bg-violet-500 rounded-lg transition shadow-lg shadow-violet-600/20 whitespace-nowrap">
                     Login
                 </a>
-                <a href="/register" class="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white border border-gray-700 hover:bg-gray-800 rounded-lg transition hidden sm:inline-block">
+                <a href="/register" class="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white border border-gray-700 hover:bg-gray-800 rounded-lg transition inline-block whitespace-nowrap">
                     Register
                 </a>
             </div>
@@ -62,12 +56,12 @@
         <div id="chat-container" class="flex-1 overflow-y-auto w-full scrollbar-hide pt-4 md:pt-6">
             <div class="max-w-4xl mx-auto px-4 space-y-6 pb-6 h-full flex flex-col justify-center">
                 <div id="empty-state" class="flex flex-col items-center justify-center text-gray-500 opacity-80 pb-20">
-                    <div class="w-24 h-24 bg-gray-800/50 rounded-full flex items-center justify-center mb-6 overflow-hidden border border-gray-700 shadow-xl bg-black relative group">
+                    <div class="w-20 h-20 md:w-24 md:h-24 bg-gray-800/50 rounded-full flex items-center justify-center mb-6 overflow-hidden border border-gray-700 shadow-xl bg-black relative group">
                         <div class="absolute inset-0 bg-purple-500/20 blur-md group-hover:bg-purple-500/30 transition"></div>
                         <img src="/logo.png" alt="Dardcor Logo" class="w-full h-full object-cover relative z-10">
                     </div>
-                    <h2 class="text-2xl font-bold text-white mb-2">Selamat Datang di Dardcor AI</h2>
-                    <p class="text-sm font-medium text-gray-400">Login untuk mulai ngobrol dengan AI tercerdas.</p>
+                    <h2 class="text-xl md:text-2xl font-bold text-white mb-2 text-center">Selamat Datang di Dardcor AI</h2>
+                    <p class="text-sm font-medium text-gray-400 text-center px-4">Login untuk mulai ngobrol dengan AI tercerdas.</p>
                 </div>
             </div>
         </div>
@@ -79,11 +73,9 @@
                         <div class="p-2.5 md:p-3 text-gray-600 rounded-xl mb-0.5 shrink-0">
                             <i class="fas fa-paperclip text-lg"></i>
                         </div>
-                        
                         <div class="flex-1 flex flex-col justify-center min-h-[44px] px-2 py-1 min-w-0">
                             <textarea disabled rows="1" class="w-full bg-transparent border-none outline-none text-gray-500 resize-none max-h-32 placeholder-gray-600 text-sm md:text-base py-3 cursor-not-allowed" placeholder="Silakan login untuk mengirim pesan..."></textarea>
                         </div>
-
                         <button disabled class="p-2.5 md:p-3 text-gray-600 rounded-xl mb-0.5 shrink-0">
                             <i class="fas fa-paper-plane text-lg"></i>
                         </button>
@@ -99,19 +91,10 @@
         const overlay = document.getElementById('mobile-overlay');
 
         function toggleSidebar() {
-            if (window.innerWidth < 768) {
-                // Mobile behavior
-                sidebar.classList.toggle('-translate-x-full');
-                overlay.classList.toggle('hidden');
-                // Pastikan class desktop tidak mengganggu mobile
-                sidebar.classList.remove('desktop-collapsed');
-            } else {
-                // Desktop behavior
-                sidebar.classList.toggle('desktop-collapsed');
-            }
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
         }
 
-        // PWA Install Logic (Opsional, disamakan dengan request sebelumnya)
         let deferredPrompt;
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();

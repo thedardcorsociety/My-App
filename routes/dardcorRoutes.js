@@ -7,11 +7,10 @@ const { v4: uuidv4 } = require('uuid');
 const rateLimit = require('express-rate-limit');
 const { body, validationResult } = require('express-validator');
 const nodemailer = require('nodemailer');
-
 const { handleChat } = require('../controllers/dardcorModel');
 
 const storage = multer.memoryStorage();
-const upload = multer({ limits: { fileSize: 5 * 1024 * 1024 } });
+const upload = multer({ limits: { fileSize: 10 * 1024 * 1024 } });
 
 const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -23,7 +22,7 @@ const transporter = nodemailer.createTransport({
 
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, 
-    max: 10, 
+    max: 20, 
     message: "Terlalu banyak percobaan. Silakan coba lagi nanti."
 });
 
@@ -62,26 +61,32 @@ router.get('/register', (req, res) => {
 router.post('/dardcor-login', authLimiter, async (req, res) => {
     let { email, password } = req.body;
     
-    email = email ? email.trim().toLowerCase() : '';
-    password = password ? password.trim() : '';
+    if (!email || !password) {
+        return res.status(400).json({ success: false, message: "Email dan Password wajib diisi." });
+    }
+
+    email = email.trim().toLowerCase();
+    password = password.trim();
 
     try {
-        const { data } = await supabase.from('dardcor_users').select('*').eq('email', email).single();
+        const { data: user, error } = await supabase.from('dardcor_users').select('*').eq('email', email).single();
         
-        if (!data) return res.json({ success: false, message: 'Email tidak ditemukan.' });
+        if (error || !user) {
+            return res.status(400).json({ success: false, message: 'Email tidak terdaftar.' });
+        }
         
-        const match = await bcrypt.compare(password, data.password);
+        const match = await bcrypt.compare(password, user.password);
+
         if (match) { 
-            req.session.userAccount = data;
-            
+            req.session.userAccount = user;
             req.session.save((err) => {
                 if (err) {
-                    return res.status(500).json({ success: false, message: 'Gagal menyimpan sesi.' });
+                    return res.status(500).json({ success: false, message: 'Gagal memproses login.' });
                 }
                 res.status(200).json({ success: true, redirectUrl: '/dardcorchat/dardcorai' });
             });
         } else { 
-            res.json({ success: false, message: 'Password salah.' }); 
+            res.status(400).json({ success: false, message: 'Password salah.' }); 
         }
     } catch (err) { 
         res.status(500).json({ success: false, message: 'Terjadi kesalahan sistem.' }); 
@@ -90,6 +95,7 @@ router.post('/dardcor-login', authLimiter, async (req, res) => {
 
 router.get('/dardcor-logout', (req, res) => { 
     req.session.destroy((err) => {
+        res.clearCookie('connect.sid');
         res.redirect('/dardcor'); 
     });
 });
@@ -125,7 +131,7 @@ router.post('/register', authLimiter, [
             from: '"Dardcor Security" <no-reply@dardcor.com>',
             to: email,
             subject: 'Kode Verifikasi Dardcor AI',
-            html: `<div style="padding:20px;"><h2>OTP Anda: ${otp}</h2></div>`
+            html: `<div style="font-family: sans-serif; padding:20px;"><h2>OTP Anda:</h2><h1 style="color: #8b5cf6;">${otp}</h1></div>`
         };
 
         await transporter.sendMail(mailOptions);
@@ -152,13 +158,9 @@ router.post('/verify-otp', async (req, res) => {
     otp = otp.trim();
     
     try {
-        const { data: record } = await supabase.from('verification_codes')
-            .select('*')
-            .eq('email', email)
-            .eq('otp', otp)
-            .single();
+        const { data: record, error: otpError } = await supabase.from('verification_codes').select('*').eq('email', email).eq('otp', otp).single();
 
-        if (!record) return res.status(400).json({ success: false, message: "Kode OTP Salah!" });
+        if (otpError || !record) return res.status(400).json({ success: false, message: "Kode OTP Salah!" });
 
         const { data: newUser, error: insertError } = await supabase.from('dardcor_users').insert([{ 
             username: record.username, 
@@ -166,21 +168,17 @@ router.post('/verify-otp', async (req, res) => {
             password: record.password 
         }]).select().single();
 
-        if (insertError || !newUser) throw new Error("Gagal membuat user database.");
+        if (insertError) throw new Error("Gagal menyimpan user.");
 
         await supabase.from('verification_codes').delete().eq('email', email);
         
         req.session.userAccount = newUser;
-        
         req.session.save((err) => {
-            if (err) {
-                return res.status(500).json({ success: false, message: "Gagal membuat sesi." });
-            }
-            
-            return res.status(200).json({ 
+             if (err) return res.status(500).json({ success: false, message: "Gagal membuat sesi." });
+             return res.status(200).json({ 
                 success: true, 
-                message: "Verifikasi Berhasil",
-                redirectUrl: '/dardcorchat/dardcorai' 
+                message: "Akun berhasil dibuat!",
+                redirectUrl: '/dardcorchat/dardcorai'
             });
         });
 
@@ -199,23 +197,30 @@ router.post('/dardcor/profile/update', checkUserAuth, upload.single('profile_ima
     let updates = { username: username };
     try {
         if (password && password.trim() !== "") {
-            if (password !== confirm_password) return res.render('dardcorchat/profile', { user: req.session.userAccount, error: "Password beda.", success: null });
+            if (password !== confirm_password) return res.render('dardcorchat/profile', { user: req.session.userAccount, error: "Password tidak sama.", success: null });
             updates.password = await bcrypt.hash(password.trim(), 12);
         }
         if (req.file) {
             const fileName = `${userId}-${Date.now()}.${req.file.originalname.split('.').pop()}`;
-            const { error: upErr } = await supabase.storage.from('avatars').upload(fileName, req.file.buffer, { contentType: req.file.mimetype });
-            if (!upErr) updates.profile_image = supabase.storage.from('avatars').getPublicUrl(fileName).data.publicUrl;
+            const { error: upErr } = await supabase.storage.from('avatars').upload(fileName, req.file.buffer, { contentType: req.file.mimetype, upsert: true });
+            
+            if (!upErr) {
+                const { data: publicData } = supabase.storage.from('avatars').getPublicUrl(fileName);
+                updates.profile_image = publicData.publicUrl;
+            }
         }
+        
         const { data, error } = await supabase.from('dardcor_users').update(updates).eq('id', userId).select().single();
         if (error) throw error;
         
         req.session.userAccount = data;
         req.session.save(() => {
-            res.render('dardcorchat/profile', { user: data, success: "Berhasil!", error: null });
+            res.render('dardcorchat/profile', { user: data, success: "Profil diperbarui!", error: null });
         });
         
-    } catch (err) { res.render('dardcorchat/profile', { user: req.session.userAccount, error: err.message, success: null }); }
+    } catch (err) { 
+        res.render('dardcorchat/profile', { user: req.session.userAccount, error: err.message, success: null }); 
+    }
 });
 
 router.get('/dardcorchat/dardcorai', checkUserAuth, (req, res) => { loadChatHandler(req, res); });
@@ -224,18 +229,24 @@ router.get('/dardcorchat/dardcor-ai/:conversationId', checkUserAuth, loadChatHan
 async function loadChatHandler(req, res) {
     const userId = req.session.userAccount.id;
     const requestedId = req.params.conversationId;
+    
     try {
         const { data: dbHistory } = await supabase.from('history_chat').select('*').eq('user_id', userId).order('created_at', { ascending: true });
-        let activeId = requestedId || uuidv4();
         
+        let activeId = requestedId || uuidv4();
         req.session.currentConversationId = activeId;
         
         let activeChatHistory = dbHistory ? dbHistory.filter(item => item.conversation_id === activeId && item.message !== null) : [];
+        
         const historyMap = new Map();
         if (dbHistory) {
             dbHistory.forEach(chat => {
                 if (!historyMap.has(chat.conversation_id) && chat.message !== null) {
-                    historyMap.set(chat.conversation_id, { conversation_id: chat.conversation_id, message: chat.message, last_activity: chat.created_at });
+                    historyMap.set(chat.conversation_id, { 
+                        conversation_id: chat.conversation_id, 
+                        message: chat.message, 
+                        last_activity: chat.created_at 
+                    });
                 }
             });
         }
@@ -248,7 +259,12 @@ async function loadChatHandler(req, res) {
             activeConversationId: activeId
         });
     } catch (err) {
-        res.render('dardcorchat/dardcorai', { user: req.session.userAccount, chatHistory: [], fullHistory: [], activeConversationId: uuidv4() });
+        res.render('dardcorchat/dardcorai', { 
+            user: req.session.userAccount, 
+            chatHistory: [], 
+            fullHistory: [], 
+            activeConversationId: uuidv4() 
+        });
     }
 }
 
@@ -262,7 +278,9 @@ router.post('/dardcorchat/ai/new-chat', checkUserAuth, (req, res) => {
 router.post('/dardcorchat/ai/rename-chat', checkUserAuth, async (req, res) => {
     try {
         await supabase.from('history_chat').update({ message: req.body.newTitle })
-            .eq('conversation_id', req.body.conversationId).eq('user_id', req.session.userAccount.id).eq('role', 'user')
+            .eq('conversation_id', req.body.conversationId)
+            .eq('user_id', req.session.userAccount.id)
+            .eq('role', 'user')
             .order('created_at', { ascending: true }).limit(1);
         res.json({ success: true });
     } catch (error) { res.status(500).json({ success: false }); }
@@ -297,20 +315,28 @@ router.post('/dardcorchat/ai/chat', checkUserAuth, uploadMiddleware, async (req,
     const uploadedFile = req.file;
     const userId = req.session.userAccount.id;
     let conversationId = req.body.conversationId || req.session.currentConversationId || uuidv4();
+    
     const userMessage = message || (uploadedFile ? "Menganalisis file..." : "");
     if (!userMessage) return res.json({ success: false, response: "Input kosong." });
+    
     try {
         await supabase.from('history_chat').insert({
             user_id: userId, conversation_id: conversationId, role: 'user', message: userMessage,
             file_metadata: uploadedFile ? { filename: uploadedFile.originalname, size: uploadedFile.size } : null
         });
+        
         const { data: historyData } = await supabase.from('history_chat').select('role, message').eq('conversation_id', conversationId).order('created_at', { ascending: true });
         const botResponse = await handleChat(message, uploadedFile, historyData);
+        
         if (botResponse) {
             await supabase.from('history_chat').insert({ user_id: userId, conversation_id: conversationId, role: 'bot', message: botResponse });
             res.json({ success: true, response: botResponse, conversationId });
-        } else { throw new Error("AI tidak memberikan respon."); }
-    } catch (error) { res.status(500).json({ success: false, response: "Terjadi gangguan sistem." }); }
+        } else { 
+            throw new Error("AI tidak memberikan respon."); 
+        }
+    } catch (error) { 
+        res.status(500).json({ success: false, response: "Terjadi gangguan sistem." }); 
+    }
 });
 
 module.exports = router;
