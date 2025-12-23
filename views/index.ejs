@@ -2,122 +2,178 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#1a1a2e">
+    <meta name="theme-color" content="#0b0c15">
     <title>Dardcor AI</title>
     <link rel="icon" href="/logo.png">
+    <link rel="apple-touch-icon" href="/logo.png">
     <link rel="stylesheet" href="/css/tailwind.css">
     <link rel="stylesheet" href="/vendor/fontawesome/css/all.min.css">
     <style>
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-        html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
-        .h-dvh { height: 100vh; height: 100dvh; }
-        #main-content { transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        #sidebar { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        html, body {
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+        }
+        .h-dvh {
+            height: 100dvh;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .safe-pt {
+            padding-top: env(safe-area-inset-top);
+        }
+        .safe-pb {
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        .safe-pl {
+            padding-left: env(safe-area-inset-left);
+        }
+        .safe-pr {
+            padding-right: env(safe-area-inset-right);
+        }
     </style>
 </head>
-<body class="bg-[#0b0c15] text-white font-sans h-dvh flex overflow-hidden relative">
 
-    <div id="mobile-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 z-40 hidden md:hidden backdrop-blur-sm transition-opacity"></div>
+<body class="bg-[#0b0c15] text-white font-sans h-dvh flex overflow-hidden">
+    <div id="overlay" class="fixed inset-0 bg-black/60 hidden z-40 backdrop-blur-sm transition-opacity duration-300"></div>
 
-    <aside id="sidebar" class="fixed inset-y-0 left-0 w-72 bg-[#13131f] border-r border-purple-900/30 flex flex-col transform -translate-x-full z-[60] shadow-2xl">
-        <div class="p-4 flex items-center justify-between border-b border-purple-900/30 h-16 min-h-[4rem]">
-            <span class="font-bold text-lg tracking-wider text-purple-500">Dardcor <span class="text-white">AI</span></span>
-            <button onclick="toggleSidebar()" class="text-gray-400 hover:text-white p-2 cursor-pointer"><i class="fas fa-times"></i></button>
-        </div>
-        
-        <div class="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide flex flex-col items-center justify-center text-center opacity-50">
-            <i class="fas fa-lock text-4xl text-gray-600 mb-2"></i>
-            <p class="text-sm text-gray-500">Silakan login untuk melihat<br>riwayat percakapan.</p>
+    <aside id="sidebar" class="fixed inset-y-0 left-0 w-64 md:w-72 bg-[#13131f] border-r border-purple-900/30 flex flex-col transform -translate-x-full z-50 transition-transform duration-300 safe-pl">
+        <div class="h-16 min-h-[4rem] flex items-center justify-between px-4 border-b border-purple-900/30 safe-pt">
+            <span class="font-bold tracking-wider text-purple-500 text-sm md:text-base">Dardcor <span class="text-white">AI</span></span>
+            <button onclick="toggleSidebar()" class="text-gray-400 p-2 hover:text-white transition-colors">
+                <i class="fas fa-times"></i>
+            </button>
         </div>
 
-        <div class="p-3 border-t border-purple-900/30 bg-[#0e0f19] min-h-[4rem] flex items-center justify-center">
+        <div class="flex-1 flex flex-col items-center justify-center text-center opacity-60 px-4">
+            <i class="fas fa-lock text-3xl md:text-4xl text-gray-600 mb-3"></i>
+            <p class="text-xs md:text-sm text-gray-500 leading-relaxed">Silakan login untuk melihat<br>riwayat percakapan.</p>
+        </div>
+
+        <div class="h-14 flex items-center justify-center border-t border-purple-900/30 bg-[#0e0f19] safe-pb">
             <span class="text-xs text-gray-600">Dardcor AI v2.5</span>
         </div>
     </aside>
 
-    <main id="main-content" class="flex-1 flex flex-col h-full relative w-full min-w-0 bg-[#0b0c15] z-0">
-        <header class="h-16 flex items-center justify-between px-4 border-b border-purple-900/30 bg-[#0b0c15] z-30 shrink-0">
+    <main id="content" class="flex-1 flex flex-col min-w-0 bg-[#0b0c15] safe-pr transition-all duration-300">
+        <header class="h-16 min-h-[4rem] flex items-center px-4 md:px-6 border-b border-purple-900/30 shrink-0 safe-pt">
             <div class="flex items-center gap-3">
-                <button onclick="toggleSidebar()" class="text-gray-400 p-2 rounded hover:bg-gray-800 transition"><i class="fas fa-bars"></i></button>
+                <button onclick="toggleSidebar()" class="text-gray-400 p-2 hover:text-white transition-colors">
+                    <i class="fas fa-bars"></i>
+                </button>
             </div>
 
-            <div class="flex items-center gap-2 sm:gap-3">
-                <a href="/dardcor" class="px-4 py-2 text-sm font-medium text-white bg-violet-600 hover:bg-violet-500 rounded-lg transition shadow-lg shadow-violet-600/20 whitespace-nowrap">
-                    Login
-                </a>
-                <a href="/register" class="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white border border-gray-700 hover:bg-gray-800 rounded-lg transition inline-block whitespace-nowrap">
-                    Register
-                </a>
+            <div class="ml-auto flex items-center gap-2 md:gap-3">
+                <a href="/dardcor" class="px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm bg-violet-600 hover:bg-violet-700 rounded-lg shadow-lg shadow-violet-600/20 whitespace-nowrap transition-colors duration-200">Login</a>
+                <a href="/register" class="px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm border border-gray-700 hover:border-gray-600 rounded-lg text-gray-300 hover:text-white hover:bg-gray-800/50 whitespace-nowrap transition-colors duration-200">Register</a>
             </div>
         </header>
 
-        <div id="chat-container" class="flex-1 overflow-y-auto w-full scrollbar-hide pt-4 md:pt-6">
-            <div class="max-w-4xl mx-auto px-4 space-y-6 pb-6 h-full flex flex-col justify-center">
-                <div id="empty-state" class="flex flex-col items-center justify-center text-gray-500 opacity-80 pb-20">
-                    <div class="w-20 h-20 md:w-24 md:h-24 bg-gray-800/50 rounded-full flex items-center justify-center mb-6 overflow-hidden border border-gray-700 shadow-xl bg-black relative group">
-                        <div class="absolute inset-0 bg-purple-500/20 blur-md group-hover:bg-purple-500/30 transition"></div>
-                        <img src="/logo.png" alt="Dardcor Logo" class="w-full h-full object-cover relative z-10">
-                    </div>
-                    <h2 class="text-xl md:text-2xl font-bold text-white mb-2 text-center">Selamat Datang di Dardcor AI</h2>
-                    <p class="text-sm font-medium text-gray-400 text-center px-4">Login untuk mulai ngobrol dengan AI tercerdas.</p>
+        <section class="flex-1 overflow-y-auto scrollbar-hide">
+            <div class="max-w-4xl mx-auto px-4 md:px-6 py-8 md:py-10 flex flex-col items-center justify-center min-h-full">
+                <div class="w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden border border-gray-700 bg-black shadow-xl mb-4 md:mb-6 relative">
+                    <div class="absolute inset-0 bg-purple-500/20 blur-lg"></div>
+                    <img src="/logo.png" alt="Dardcor AI Logo" class="relative z-10 w-full h-full object-cover">
                 </div>
+                <h2 class="text-xl md:text-2xl font-bold mb-2 text-center">Selamat Datang di Dardcor AI</h2>
+                <p class="text-xs md:text-sm text-gray-400 text-center max-w-md px-4 md:px-0 leading-relaxed">Login untuk mulai ngobrol dengan AI tercerdas.</p>
             </div>
-        </div>
+        </section>
 
-        <div class="shrink-0 w-full z-30 px-3 pb-3 pt-2 md:px-6 md:pb-6 bg-transparent">
-            <div class="max-w-3xl mx-auto w-full">
-                <div class="relative group opacity-75">
-                    <form onsubmit="return false;" class="bg-[#13131f] border border-gray-700/50 rounded-2xl flex items-end shadow-2xl p-2 transition w-full relative z-10 cursor-not-allowed">
-                        <div class="p-2.5 md:p-3 text-gray-600 rounded-xl mb-0.5 shrink-0">
-                            <i class="fas fa-paperclip text-lg"></i>
-                        </div>
-                        <div class="flex-1 flex flex-col justify-center min-h-[44px] px-2 py-1 min-w-0">
-                            <textarea disabled rows="1" class="w-full bg-transparent border-none outline-none text-gray-500 resize-none max-h-32 placeholder-gray-600 text-sm md:text-base py-3 cursor-not-allowed" placeholder="Silakan login untuk mengirim pesan..."></textarea>
-                        </div>
-                        <button disabled class="p-2.5 md:p-3 text-gray-600 rounded-xl mb-0.5 shrink-0">
-                            <i class="fas fa-paper-plane text-lg"></i>
-                        </button>
-                    </form>
-                </div>
-                <p class="text-center text-[10px] text-gray-600 mt-2 font-medium">AI dapat membuat kesalahan. Cek info penting.</p>
+        <footer class="shrink-0 px-3 md:px-6 pt-2 pb-3 md:pb-6 safe-pb">
+            <div class="max-w-3xl mx-auto">
+                <form class="bg-[#13131f] border border-gray-700/50 rounded-2xl flex items-end p-1.5 md:p-2 opacity-70 cursor-not-allowed">
+                    <div class="p-2 md:p-3 text-gray-600">
+                        <i class="fas fa-paperclip text-sm md:text-base"></i>
+                    </div>
+                    <textarea 
+                        disabled 
+                        rows="1" 
+                        class="flex-1 bg-transparent resize-none outline-none text-gray-500 px-2 py-2 md:py-3 text-sm md:text-base placeholder:text-gray-600"
+                        placeholder="Silakan login untuk mengirim pesan..."
+                    ></textarea>
+                    <button disabled class="p-2 md:p-3 text-gray-600 cursor-not-allowed">
+                        <i class="fas fa-paper-plane text-sm md:text-base"></i>
+                    </button>
+                </form>
+                <p class="text-center text-[10px] md:text-xs text-gray-600 mt-2 md:mt-3">AI dapat membuat kesalahan. Cek info penting.</p>
             </div>
-        </div>
+        </footer>
     </main>
 
     <script>
         const sidebar = document.getElementById('sidebar');
-        const mainContent = document.getElementById('main-content');
-        const overlay = document.getElementById('mobile-overlay');
+        const overlay = document.getElementById('overlay');
+        const content = document.getElementById('content');
 
         function toggleSidebar() {
-            const isMobile = window.innerWidth < 768;
-            if (isMobile) {
-                sidebar.classList.toggle('-translate-x-full');
-                overlay.classList.toggle('hidden');
+            const isOpen = !sidebar.classList.contains('-translate-x-full');
+            
+            if (isOpen) {
+                closeSidebar();
             } else {
-                sidebar.classList.toggle('md:translate-x-0');
-                mainContent.classList.toggle('md:ml-72');
+                openSidebar();
             }
         }
-        
-        window.addEventListener('resize', () => {
+
+        function openSidebar() {
+            sidebar.classList.remove('-translate-x-full');
+            overlay.classList.remove('hidden');
+            
             if (window.innerWidth >= 768) {
-                overlay.classList.add('hidden');
-            } else {
-                sidebar.classList.remove('md:translate-x-0');
-                mainContent.classList.remove('md:ml-72');
-                overlay.classList.add('hidden');
+                content.style.marginLeft = '16rem';
+            }
+        }
+
+        function closeSidebar() {
+            sidebar.classList.add('-translate-x-full');
+            overlay.classList.add('hidden');
+            content.style.marginLeft = '0';
+        }
+
+        overlay.addEventListener('click', closeSidebar);
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeSidebar();
             }
         });
 
-        let deferredPrompt;
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
+        window.addEventListener('resize', handleResize);
+
+        function handleResize() {
+            if (window.innerWidth >= 768) {
+                if (!sidebar.classList.contains('-translate-x-full')) {
+                    content.style.marginLeft = '16rem';
+                }
+                overlay.classList.add('hidden');
+            } else {
+                content.style.marginLeft = '0';
+                if (!sidebar.classList.contains('-translate-x-full')) {
+                    closeSidebar();
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            closeSidebar();
+            handleResize();
         });
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js');
+            });
+        }
     </script>
 </body>
 </html>
