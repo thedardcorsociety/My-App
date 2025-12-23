@@ -2,14 +2,17 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#1a1a2e">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Dardcor AI">
+    
     <title>Dardcor AI</title>
     <link rel="icon" href="/logo.png">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/tailwind.css">
+    <link rel="stylesheet" href="/vendor/fontawesome/css/all.min.css">
     
     <style>
         body { font-family: 'Poppins', sans-serif; overflow-x: hidden; background-color: #0b0c15; }
@@ -36,7 +39,6 @@
     <main class="relative z-10 w-full max-w-md">
         <div class="login-card p-6 md:p-8 rounded-2xl relative overflow-hidden">
             <div class="cyber-line"></div>
-         
             <div class="text-center mb-6 md:mb-8">
                 <div class="w-16 h-16 md:w-20 md:h-20 bg-purple-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-purple-500/30 shadow-[0_0_30px_rgba(139,92,246,0.3)]">
                     <i class="fas fa-user-astronaut text-3xl md:text-4xl text-purple-400"></i>
@@ -78,9 +80,13 @@
         const icon = toggleBtn.querySelector('i');
         toggleBtn.addEventListener('click', () => {
             if (passwordInput.type === 'password') {
-                passwordInput.type = 'text'; icon.classList.remove('fa-eye'); icon.classList.add('fa-eye-slash');
+                passwordInput.type = 'text'; 
+                icon.classList.remove('fa-eye'); 
+                icon.classList.add('fa-eye-slash');
             } else {
-                passwordInput.type = 'password'; icon.classList.remove('fa-eye-slash'); icon.classList.add('fa-eye');
+                passwordInput.type = 'password'; 
+                icon.classList.remove('fa-eye-slash'); 
+                icon.classList.add('fa-eye');
             }
         });
         document.getElementById('loginForm').addEventListener('submit', async function(e) {
@@ -90,7 +96,10 @@
             const btnLoader = document.getElementById('btnLoader');
             const errorMessage = document.getElementById('errorMessage');
             
-            submitBtn.disabled = true; btnText.textContent = 'Signing In...'; btnLoader.classList.remove('hidden'); errorMessage.classList.add('hidden');
+            submitBtn.disabled = true; 
+            btnText.textContent = 'Signing In...'; 
+            btnLoader.classList.remove('hidden'); 
+            errorMessage.classList.add('hidden');
             
             const formData = new FormData(this);
             const data = Object.fromEntries(formData.entries());
@@ -104,7 +113,7 @@
                 if (result.success) {
                     setTimeout(() => {
                          const targetUrl = result.redirectUrl || '/dardcorchat/dardcorai';
-                         window.location.replace(`${targetUrl}?t=${Date.now()}`);
+                         window.location.replace(targetUrl);
                     }, 500);
                 } else {
                     throw new Error(result.message || 'Login failed');

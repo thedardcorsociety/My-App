@@ -2,12 +2,18 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verifikasi OTP - Dardcor AI</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#1a1a2e">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Dardcor AI">
+
+    <title>Dardcor AI</title>
     <link rel="icon" href="/logo.png">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/tailwind.css">
+    <link rel="stylesheet" href="/vendor/fontawesome/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body { font-family: 'Poppins', sans-serif; background-color: #0b0c15; }
         .glass-card {
@@ -15,10 +21,6 @@
             backdrop-filter: blur(20px);
             border: 1px solid rgba(139, 92, 246, 0.2);
             box-shadow: 0 0 40px rgba(139, 92, 246, 0.15);
-        }
-        .otp-input {
-            width: 3rem; height: 3.5rem; text-align: center; font-size: 1.5rem; font-weight: bold;
-            background: rgba(30, 41, 59, 0.5); border: 1px solid #334155; color: white; border-radius: 0.5rem;
         }
         .otp-input:focus { border-color: #8b5cf6; outline: none; box-shadow: 0 0 10px rgba(139, 92, 246, 0.3); }
     </style>
@@ -29,6 +31,7 @@
         <div class="w-14 h-14 md:w-16 md:h-16 bg-purple-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-purple-500/30">
             <i class="fas fa-shield-alt text-2xl md:text-3xl text-purple-400"></i>
         </div>
+        
         <h2 class="text-xl md:text-2xl font-bold text-white mb-2">Verifikasi Email</h2>
         <p class="text-gray-400 text-xs md:text-sm mb-6">Kode OTP telah dikirim ke <br><span class="text-purple-300 font-medium break-all"><%= email %></span></p>
 
@@ -52,6 +55,7 @@
             const email = document.getElementById('userEmail').value;
             const btn = document.getElementById('btnVerify');
             const msg = document.getElementById('msg');
+            
             if(otp.length < 6) {
                 msg.textContent = "Masukkan 6 digit kode OTP.";
                 msg.classList.remove('hidden'); return;

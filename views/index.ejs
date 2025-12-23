@@ -5,23 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#1a1a2e">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Dardcor AI">
+    
     <title>Dardcor AI</title>
     <link rel="icon" href="/logo.png">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/tailwind.css">
+    <link rel="stylesheet" href="/vendor/fontawesome/css/all.min.css">
     <style>
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
         .h-dvh { height: 100vh; height: 100dvh; }
-        #sidebar { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        #sidebar, #main-content { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
     </style>
 </head>
 <body class="bg-[#0b0c15] text-white font-sans h-dvh flex overflow-hidden relative">
 
-    <div id="mobile-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 z-40 hidden md:hidden backdrop-blur-sm"></div>
+    <div id="mobile-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 z-40 hidden md:hidden backdrop-blur-sm transition-opacity"></div>
 
-    <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 bg-[#13131f] border-r border-purple-900/30 flex flex-col w-72 h-full transform -translate-x-full md:relative md:translate-x-0 shrink-0 whitespace-nowrap overflow-hidden shadow-2xl md:shadow-none">
+    <aside id="sidebar" class="fixed inset-y-0 left-0 w-72 bg-[#13131f] border-r border-purple-900/30 flex flex-col transform -translate-x-full md:translate-x-0 z-50 shadow-2xl transition-transform duration-300">
         <div class="p-4 flex items-center justify-between border-b border-purple-900/30 h-16 min-h-[4rem]">
             <span class="font-bold text-lg tracking-wider text-purple-500">Dardcor <span class="text-white">AI</span></span>
             <button onclick="toggleSidebar()" class="md:hidden text-gray-400 hover:text-white p-2"><i class="fas fa-times"></i></button>
@@ -37,7 +41,7 @@
         </div>
     </aside>
 
-    <main class="flex-1 flex flex-col h-full relative w-full min-w-0 bg-[#0b0c15]">
+    <main id="main-content" class="flex-1 flex flex-col h-full relative w-full min-w-0 bg-[#0b0c15] md:ml-72 transition-all duration-300">
         <header class="h-16 flex items-center justify-between px-4 border-b border-purple-900/30 bg-[#0b0c15] z-30 shrink-0">
             <div class="flex items-center gap-3">
                 <button onclick="toggleSidebar()" class="md:hidden text-gray-400 p-2 rounded hover:bg-gray-800 transition"><i class="fas fa-bars"></i></button>
@@ -88,12 +92,37 @@
 
     <script>
         const sidebar = document.getElementById('sidebar');
+        const mainContent = document.getElementById('main-content');
         const overlay = document.getElementById('mobile-overlay');
 
         function toggleSidebar() {
-            sidebar.classList.toggle('-translate-x-full');
-            overlay.classList.toggle('hidden');
+            const isMobile = window.innerWidth < 768;
+            if (isMobile) {
+                sidebar.classList.toggle('-translate-x-full');
+                overlay.classList.toggle('hidden');
+            } else {
+                const isHidden = sidebar.classList.contains('-translate-x-full');
+                if (isHidden) {
+                    sidebar.classList.remove('-translate-x-full');
+                    mainContent.classList.add('md:ml-72');
+                } else {
+                    sidebar.classList.add('-translate-x-full');
+                    mainContent.classList.remove('md:ml-72');
+                }
+            }
         }
+        
+        window.addEventListener('resize', () => {
+            if (window.innerWidth >= 768) {
+                overlay.classList.add('hidden');
+                sidebar.classList.remove('-translate-x-full');
+                mainContent.classList.add('md:ml-72');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                mainContent.classList.remove('md:ml-72');
+                overlay.classList.add('hidden');
+            }
+        });
 
         let deferredPrompt;
         window.addEventListener('beforeinstallprompt', (e) => {
