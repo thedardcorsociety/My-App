@@ -53,10 +53,25 @@ function fileToGenerativePart(buffer, mimeType) {
     };
 }
 
-async function handleChat(message, uploadedFile, historyData) {
+async function handleChat(message, uploadedFile, historyData, toolType = 'chat') {
     try {
         if (!message && !uploadedFile) return "Input kosong.";
 
+        // --- IMAGE GENERATION LOGIC ---
+        if (toolType === 'image') {
+            const promptEncoded = encodeURIComponent(message);
+            // Menggunakan Pollinations AI untuk generate gambar tanpa API Key
+            const imageUrl = `https://image.pollinations.ai/prompt/${promptEncoded}`;
+            return `Berikut adalah gambar "${message}" yang Anda minta:\n\n![Generated Image](${imageUrl})`;
+        }
+
+        // --- VIDEO GENERATION LOGIC ---
+        if (toolType === 'video') {
+            // Placeholder karena video generation butuh API berbayar/berat
+            return `Maaf, saat ini server pembuatan video sedang sibuk atau memerlukan API Key khusus (seperti Replicate/Runway). \n\nSaya merekomendasikan untuk menggunakan fitur **Create Image** terlebih dahulu yang sudah stabil.`;
+        }
+
+        // --- NORMAL CHAT LOGIC ---
         if (message && !uploadedFile && tfModel && knowledgeTensor) {
             try {
                 const inputTensor = await tfModel.embed([message.toLowerCase()]);

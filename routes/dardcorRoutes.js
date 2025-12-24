@@ -226,9 +226,15 @@ router.post('/dardcor/profile/update', checkUserAuth, upload.single('profile_ima
 router.get('/dardcorchat/dardcorai', checkUserAuth, (req, res) => { loadChatHandler(req, res); });
 router.get('/dardcorchat/dardcor-ai/:conversationId', checkUserAuth, loadChatHandler);
 
+// Route untuk Tools (Image/Video)
+router.get('/dardcorchat/tool/:toolType', checkUserAuth, (req, res) => {
+    loadChatHandler(req, res);
+});
+
 async function loadChatHandler(req, res) {
     const userId = req.session.userAccount.id;
     const requestedId = req.params.conversationId;
+    const toolType = req.params.toolType || 'chat'; // Menangkap tipe tool
     
     try {
         const { data: dbHistory } = await supabase.from('history_chat').select('*').eq('user_id', userId).order('created_at', { ascending: true });
@@ -256,14 +262,16 @@ async function loadChatHandler(req, res) {
             user: req.session.userAccount,
             chatHistory: activeChatHistory,
             fullHistory: fullHistorySorted,
-            activeConversationId: activeId
+            activeConversationId: activeId,
+            toolType: toolType // Mengirim toolType ke frontend
         });
     } catch (err) {
         res.render('dardcorchat/dardcorai', { 
             user: req.session.userAccount, 
             chatHistory: [], 
             fullHistory: [], 
-            activeConversationId: uuidv4() 
+            activeConversationId: uuidv4(),
+            toolType: toolType
         });
     }
 }
@@ -314,6 +322,7 @@ router.post('/dardcorchat/ai/chat', checkUserAuth, uploadMiddleware, async (req,
     const message = req.body.message ? req.body.message.trim() : "";
     const uploadedFile = req.file;
     const userId = req.session.userAccount.id;
+    const toolType = req.body.toolType || 'chat'; // Menangkap toolType dari request body
     let conversationId = req.body.conversationId || req.session.currentConversationId || uuidv4();
     
     const userMessage = message || (uploadedFile ? "Menganalisis file..." : "");
@@ -326,7 +335,9 @@ router.post('/dardcorchat/ai/chat', checkUserAuth, uploadMiddleware, async (req,
         });
         
         const { data: historyData } = await supabase.from('history_chat').select('role, message').eq('conversation_id', conversationId).order('created_at', { ascending: true });
-        const botResponse = await handleChat(message, uploadedFile, historyData);
+        
+        // Kirim toolType ke handleChat
+        const botResponse = await handleChat(message, uploadedFile, historyData, toolType);
         
         if (botResponse) {
             await supabase.from('history_chat').insert({ user_id: userId, conversation_id: conversationId, role: 'bot', message: botResponse });
