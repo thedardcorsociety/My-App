@@ -109,8 +109,6 @@ async function handleChat(message, uploadedFiles, historyData, toolType = 'chat'
                - WAJIB menyertakan CDN Tailwind CSS dan FontAwesome.
                - Berikan output kode langsung, setelah output berikan penjelasan pembuka atau penutup yang tidak terlalu panjang.
                
-        ANDA ADALAH DARDCOR AI.
-        Pencipta: Dardcor.
 
         PERINTAH SUPER STRICT (WAJIB DIPATUHI):
         1. OUTPUT KODE HARUS DIBUNGKUS DALAM MARKDOWN HTML: \`\`\`html ... \`\`\`
