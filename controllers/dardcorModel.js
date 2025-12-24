@@ -21,14 +21,17 @@ const delay = ms => new Promise(res => setTimeout(res, ms));
         await tf.setBackend('cpu');
         await tf.ready();
         tfModel = await use.load();
+        
         const allInputs = [];
         responseMap = [];
+
         knowledgeBase.forEach(item => {
             item.inputs.forEach(inputMsg => {
                 allInputs.push(inputMsg);
                 responseMap.push(item.output);
             });
         });
+        
         const embeddings = await tfModel.embed(allInputs);
         knowledgeTensor = tf.keep(embeddings);
     } catch (e) {
@@ -56,7 +59,6 @@ async function handleChat(message, uploadedFile, historyData, toolType = 'chat')
     try {
         if (!message && !uploadedFile) return "Input kosong.";
 
-        // --- IMAGE GEN ---
         if (toolType === 'image') {
             const safePrompt = encodeURIComponent(message);
             const seed = Math.floor(Math.random() * 100000);
@@ -64,7 +66,6 @@ async function handleChat(message, uploadedFile, historyData, toolType = 'chat')
             return `### ✨ Gambar Berhasil Dibuat\n\nPrompt: *"${message}"*\n\n![Generated Image](${imageUrl})`;
         }
 
-        // --- KNOWLEDGE BASE ---
         if (message && !uploadedFile && tfModel && knowledgeTensor) {
             try {
                 const inputTensor = await tfModel.embed([message.toLowerCase()]);
@@ -89,22 +90,30 @@ async function handleChat(message, uploadedFile, historyData, toolType = 'chat')
             { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
         ];
 
-        // --- STRICT CODE ONLY MODE ---
+        const systemPrompt = `
+        ANDA ADALAH DARDCOR AI.
+        Pencipta: Dardcor.
+
+        PERINTAH SUPER STRICT (WAJIB DIPATUHI):
+        1. OUTPUT KODE HARUS DIBUNGKUS DALAM MARKDOWN HTML: \`\`\`html ... \`\`\`
+        2. JANGAN PERNAH LUPA MENULIS 'html' SETELAH TANDA BACKTICKS (\`\`\`).
+        3. JANGAN MEMBERIKAN PENJELASAN, TUTORIAL, ATAU BASA-BASI. LANGSUNG KODE.
+        4. KODE HARUS LENGKAP (HTML, CSS, JS JADI SATU).
+        5. WAJIB GUNAKAN TAILWIND CSS (CDN).
+        6. JANGAN MEMISAHKAN FILE.
+        
+        CONTOH OUTPUT BENAR:
+        \`\`\`html
+        <!DOCTYPE html>
+        <html>
+        ...kode...
+        </html>
+        \`\`\`
+        `;
+
         const model = genAI.getGenerativeModel({
             model: "gemini-2.5-flash",
-            systemInstruction: `Anda adalah Dardcor AI.
-
-            ATURAN SANGAT KETAT (CODE GENERATION):
-            1. Jika user meminta "buatkan website", "kode html", atau script:
-               - HANYA BERIKAN BLOK KODE MARKDOWN.
-               - JANGAN ada kata pembuka (contoh: "Tentu", "Berikut kodenya").
-               - JANGAN ada kata penutup.
-               - Format wajib: \`\`\`html [kode] \`\`\`
-               - Kode harus SINGLE FILE (gabungkan HTML, CSS, JS dalam satu file).
-               - Gunakan Tailwind CSS CDN & FontAwesome CDN.
-            
-            2. Pertanyaan umum: Jawab singkat.
-            `,
+            systemInstruction: systemPrompt,
             safetySettings
         });
 
@@ -125,7 +134,13 @@ async function handleChat(message, uploadedFile, historyData, toolType = 'chat')
         }
 
         const chat = model.startChat({ history: chatHistory });
-        const currentMessageParts = [{ text: (message && message.trim() !== "") ? message : (uploadedFile ? "Analisis file ini." : "Halo") }];
+        
+        let userPrompt = message;
+        if (message && (message.toLowerCase().includes('buat') || message.toLowerCase().includes('code') || message.toLowerCase().includes('html'))) {
+            userPrompt = `${message} \n\n(SYSTEM OVERRIDE: OUTPUT ONLY RAW CODE WRAPPED IN \`\`\`html BLOCK. NO TEXT EXPLANATION.)`;
+        }
+
+        const currentMessageParts = [{ text: (userPrompt && userPrompt.trim() !== "") ? userPrompt : (uploadedFile ? "Analisis file ini." : "Halo") }];
         if (uploadedFile) {
             currentMessageParts.unshift(fileToGenerativePart(uploadedFile.buffer, uploadedFile.mimetype));
         }
@@ -152,7 +167,7 @@ async function handleChat(message, uploadedFile, historyData, toolType = 'chat')
 
     } catch (error) {
         console.error("Main Error:", error.message);
-        return "Terjadi kesalahan.";
+        return "Terjadi kesalahan sistem.";
     }
 }
 

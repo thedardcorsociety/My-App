@@ -5,10 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Dardcor AI</title>
     <link rel="icon" href="/logo.png">
+    <link rel="manifest" href="/manifest.json">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
@@ -17,92 +18,92 @@
     <link rel="stylesheet" href="/css/atom-one-dark.min.css">
     <script src="/js/highlight.min.js"></script>
     <script src="/js/marked.min.js"></script>
-    
+
     <style>
-        html, body { height: 100dvh; width: 100%; margin: 0; padding: 0; overflow: hidden; background-color: #0b0c15; position: fixed; inset: 0; }
+        html, body { 
+            height: 100dvh; width: 100%; margin: 0; padding: 0; overflow: hidden;
+            background-color: #0b0c15; position: fixed; inset: 0; 
+        }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         pre { margin: 0; padding: 0; background: transparent; }
         .safe-pt { padding-top: env(safe-area-inset-top); }
         .safe-pb { padding-bottom: env(safe-area-inset-bottom); }
+        .safe-pl { padding-left: env(safe-area-inset-left); }
         .message-bubble { max-width: 95%; }
 
-        /* --- TERMINAL HITAM POLOS (FIXED) --- */
-        .terminal-wrapper {
-            margin: 10px 0;
-            background-color: #000000; /* Hitam Pekat */
-            border: 1px solid #333;
-            border-radius: 6px;
-            overflow: hidden;
-            font-family: 'Consolas', 'Monaco', monospace;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.5);
-            width: 100%;
+        /* TERMINAL HITAM POLOS (FIXED) */
+        .terminal-container { 
+            margin: 12px 0;
+            background-color: #000000; 
+            border: 1px solid #333; 
+            border-radius: 6px; 
+            overflow: hidden; 
+            font-family: 'Consolas', 'Monaco', monospace; 
+            width: 100%; 
         }
-
-        .terminal-header {
+        .terminal-head { 
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: #1a1a1a;
-            padding: 8px 12px;
-            border-bottom: 1px solid #333;
+            justify-content: space-between; 
+            align-items: center; 
+            background-color: #111; 
+            padding: 6px 12px; 
+            border-bottom: 1px solid #333; 
+            height: 40px;
         }
-
-        .terminal-lang {
-            color: #888;
-            font-size: 11px;
-            text-transform: uppercase;
-            font-weight: bold;
+        .terminal-label { 
+            color: #ccc;
+            font-size: 11px; 
+            font-weight: 700; 
+            text-transform: uppercase; 
         }
-
-        .terminal-actions {
+        .terminal-opts { display: flex; gap: 8px; align-items: center; }
+        
+        .cmd-btn { 
             display: flex;
-            gap: 8px;
+            align-items: center; gap: 5px; 
+            padding: 4px 10px; border-radius: 4px; 
+            font-size: 11px; font-weight: 600; 
+            cursor: pointer; border: none; transition: all 0.2s;
         }
-
-        .t-btn {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            padding: 4px 10px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 600;
-            cursor: pointer;
-            border: none;
-            transition: opacity 0.2s;
+        .btn-preview { background-color: #0e639c; color: white; }
+        .btn-preview:hover { background-color: #1177bb; }
+        .btn-cp { background-color: #333; color: #e5e5e5; }
+        .btn-cp:hover { background-color: #444; }
+        
+        .terminal-code { 
+            padding: 0;
+            overflow-x: auto; 
+            background-color: #000000; 
+            color: #f8f8f2; 
         }
-        .t-btn:hover { opacity: 0.8; }
-
-        .btn-preview { background-color: #7c3aed; color: white; } /* Ungu */
-        .btn-copy { background-color: #333; color: #ccc; }
-
-        .terminal-body {
-            padding: 15px;
-            overflow-x: auto;
-            color: #f0f0f0;
-            font-size: 13px;
-            line-height: 1.5;
-            background-color: #0c0c0c;
+        .terminal-code pre { margin: 0; }
+        .terminal-code code { 
+            font-family: 'Consolas', monospace;
+            font-size: 13px; line-height: 1.5; 
+            background: transparent !important; 
+            padding: 16px !important;
+            display: block;
         }
+        /* Fix Markdown Rendering */
+        .markdown-body p { margin-bottom: 1em; }
+        .markdown-body a { color: #a78bfa; text-decoration: underline; }
     </style>
 </head>
-<body class="flex text-white font-sans" id="body-drop-zone">
+<body class="flex text-white font-sans">
 
-    <div id="drag-overlay" class="fixed inset-0 bg-purple-500/20 backdrop-blur-sm z-[100] hidden flex-col items-center justify-center border-4 border-purple-500 border-dashed m-4 rounded-xl pointer-events-none">
-        <i class="fas fa-cloud-upload-alt text-6xl text-purple-400 mb-4 animate-bounce"></i>
-        <h2 class="text-xl font-bold text-white text-center">Lepaskan file disini</h2>
-    </div>
-    
-    <div id="mobile-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 z-40 hidden lg:hidden backdrop-blur-sm transition-opacity"></div>
+    <div id="mobile-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 z-40 hidden backdrop-blur-sm transition-opacity"></div>
 
     <aside id="sidebar" class="fixed inset-y-0 left-0 w-72 bg-[#13131f] border-r border-purple-900/30 flex flex-col transform -translate-x-full z-[60] shadow-2xl safe-pl transition-transform duration-300">
         <div class="h-16 shrink-0 flex items-center justify-between px-4 border-b border-purple-900/30 safe-pt">
             <span class="font-bold text-lg tracking-wider text-purple-500 flex items-center gap-2">
                 <img src="/logo.png" class="w-6 h-6 rounded-full"> Dardcor <span class="text-white">AI</span>
             </span>
-            <button onclick="toggleSidebar()" class="text-gray-400 hover:text-white p-2 rounded-lg hover:bg-white/10 transition-colors"><i class="fas fa-times text-lg"></i></button>
+            <button onclick="toggleSidebar()" class="text-gray-400 hover:text-white p-2 rounded hover:bg-white/10 transition-colors">
+                <i class="fas fa-times text-lg"></i>
+            </button>
         </div>
+        
         <div class="flex-1 overflow-y-auto p-3 space-y-1.5 scrollbar-hide relative z-40">
             <button onclick="createNewChat()" class="w-full flex items-center gap-3 p-3 rounded-lg border border-purple-900/30 hover:bg-purple-900/20 text-left transition text-sm text-gray-300 mb-4 h-[44px]">
                 <div class="w-6 h-6 bg-purple-500/20 rounded flex items-center justify-center text-purple-400"><i class="fas fa-plus text-xs"></i></div><span>New Chat</span>
@@ -132,10 +133,17 @@
         </div>
     </aside>
 
-    <main id="main-content" class="flex-1 flex flex-col h-full relative w-full min-w-0 bg-[#0b0c15] transition-all duration-300">
-        <header class="absolute top-0 left-0 right-0 h-16 flex items-center justify-between px-4 border-b border-purple-900/30 bg-[#0b0c15]/95 backdrop-blur-md z-50 safe-pt">
-            <button onclick="toggleSidebar()" class="text-gray-400 p-2 rounded hover:bg-gray-800 transition-colors"><i class="fas fa-bars text-lg"></i></button>
-            <div class="relative">
+    <main id="main-content" class="absolute inset-0 left-0 transition-all duration-300 flex flex-col bg-[#0b0c15]">
+        <header class="h-16 shrink-0 flex items-center justify-between px-4 border-b border-purple-900/30 bg-[#0b0c15]/95 backdrop-blur-md z-50 safe-pt">
+            
+            <div class="flex items-center">
+                <button onclick="toggleSidebar()" class="text-gray-400 p-2 rounded hover:bg-gray-800 transition-colors">
+                    <i class="fas fa-bars text-lg"></i>
+                </button>
+            </div>
+            
+
+            <div class="relative ml-auto">
                 <button onclick="toggleToolsMenu()" class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-purple-500/30 bg-purple-500/10 text-purple-400 text-xs md:text-sm font-medium hover:bg-purple-500/20 hover:text-white transition-all">
                     <% if (typeof toolType !== 'undefined' && toolType === 'image') { %><i class="fas fa-image"></i> <span>Image Gen</span><% } else { %><i class="fas fa-bolt"></i> <span>Dardcor Tools</span><% } %>
                     <i class="fas fa-chevron-down text-[10px] ml-1 transition-transform" id="tools-chevron"></i>
@@ -147,8 +155,9 @@
             </div>
         </header>
 
-        <div id="chat-container" class="absolute top-16 bottom-[88px] lg:bottom-[100px] left-0 right-0 overflow-y-auto scrollbar-hide px-4 pt-4 pb-2 w-full">
+        <div id="chat-container" class="flex-1 overflow-y-auto scrollbar-hide px-4 pt-4 w-full relative">
             <%- include(contentPage) %>
+            <div class="h-[120px]"></div> 
         </div>
 
         <%- include('input') %>
@@ -170,7 +179,6 @@
         const filePreview = document.getElementById('file-preview');
         const fileNameText = document.getElementById('file-name-text');
         const sidebar = document.getElementById('sidebar');
-        const mainContent = document.getElementById('main-content');
         const overlay = document.getElementById('mobile-overlay');
         const toolsMenu = document.getElementById('tools-menu');
         const messageList = document.getElementById('message-list');
@@ -178,131 +186,116 @@
         let targetChatId = null;
         let isSending = false;
 
-        // --- RENDERER MARKDOWN CUSTOM (FIXED OBJECT BUG) ---
+        const escapeHtml = (unsafe) => {
+            return unsafe.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        };
+
         const renderer = new marked.Renderer();
         renderer.code = function(code, language) {
-            // FIX 1: Pastikan code selalu string
             let validCode = "";
-            if (typeof code === 'string') {
-                validCode = code;
-            } else if (code && code.text) { 
-                validCode = code.text; 
-            } else {
-                validCode = String(code);
+            if (typeof code === 'string') { validCode = code; }
+            else if (code && code.text) { validCode = code.text; }
+            else { validCode = String(code); }
+
+            let highlighted = "";
+            let lang = (language || '').toLowerCase().trim();
+            
+            // AUTO DETECT HTML IF LANG MISSING
+            if (!lang && (validCode.includes('<!DOCTYPE') || validCode.includes('<html') || validCode.includes('<body'))) {
+                lang = 'html';
             }
 
-            // FIX 2: Logic Highlight yang Aman (Fail-safe)
-            let highlighted = validCode;
-            let lang = language || 'text';
-            
             if (lang && hljs.getLanguage(lang)) {
                 try {
                     const result = hljs.highlight(validCode, { language: lang });
-                    // Cek apakah result mengembalikan object atau string
-                    highlighted = (typeof result === 'object' && result.value) ? result.value : result;
-                } catch (e) {
-                    try {
-                        const result = hljs.highlight(lang, validCode);
-                        highlighted = (typeof result === 'object' && result.value) ? result.value : result;
-                    } catch(e2) {
-                        highlighted = validCode; // Fallback ke teks biasa
-                    }
-                }
+                    highlighted = result.value; 
+                } catch (e) { highlighted = escapeHtml(validCode); }
+            } else { 
+                highlighted = escapeHtml(validCode); 
             }
 
-            // Jika hasil highlight malah jadi [object Object], paksa balik ke validCode
-            if (String(highlighted) === '[object Object]') {
-                highlighted = validCode;
+            if (!highlighted || String(highlighted) === '[object Object]') { 
+                highlighted = escapeHtml(validCode); 
             }
 
-            // FIX 3: Logic Tombol Preview
             let previewButton = '';
-            // Deteksi bahasa kode web
-            const isWebCode = !lang || ['html', 'xml', 'ejs', 'php', 'javascript', 'css'].includes(lang.toLowerCase());
-            
-            if (isWebCode) {
-                previewButton = `
-                <button onclick="previewCode(this)" class="t-btn btn-preview">
-                    <i class="fas fa-play text-[9px]"></i> Preview
-                </button>`;
+            // FORCE PREVIEW BUTTON IF HTML-LIKE
+            if (['html', 'xml', 'ejs', 'php', 'javascript', 'css'].includes(lang) || lang === '') {
+                previewButton = `<button onclick="previewCode(this)" class="cmd-btn btn-preview"><i class="fas fa-play text-[9px]"></i> Preview</button>`;
             }
 
-            // Render HTML Terminal
             return `
-            <div class="terminal-wrapper code-block-wrapper">
-                <div class="terminal-header">
-                    <span class="terminal-lang">${lang}</span>
-                    <div class="terminal-actions">
+            <div class="terminal-container code-block-wrapper">
+                <div class="terminal-head">
+                    <div class="terminal-label"><i class="fas fa-code mr-1"></i> ${lang ? lang.toUpperCase() : 'CODE'}</div>
+                    <div class="terminal-opts">
                         ${previewButton}
-                        <button onclick="copyCode(this)" class="t-btn btn-copy">
-                            <i class="fas fa-copy"></i> Copy
-                        </button>
+                        <button onclick="copyCode(this)" class="cmd-btn btn-cp"><i class="fas fa-copy"></i> Copy</button>
                     </div>
                 </div>
-                <div class="terminal-body">
+                <div class="terminal-code">
                     <pre><code class="hljs ${lang}">${highlighted}</code></pre>
-                    <textarea class="raw-code hidden">${validCode}</textarea>
+                    <textarea class="raw-code hidden">${escapeHtml(validCode)}</textarea>
                 </div>
             </div>`;
         };
         marked.setOptions({ renderer: renderer });
 
-        // --- FUNGSI PREVIEW YANG BENAR ---
         async function previewCode(btn) {
-            const wrapper = btn.closest('.terminal-wrapper');
-            // Ambil dari textarea hidden untuk menjamin teks murni
-            let rawCode = wrapper.querySelector('.raw-code') ? wrapper.querySelector('.raw-code').value : wrapper.querySelector('code').innerText;
-            
-            const originalHtml = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ...';
-            btn.disabled = true;
+            const wrapper = btn.closest('.terminal-container');
+            const textArea = wrapper.querySelector('.raw-code');
+            const txt = document.createElement("textarea");
+            txt.innerHTML = textArea.value;
+            let rawCode = txt.value;
 
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            btn.disabled = true;
             try {
                 const res = await fetch('/dardcorchat/ai/store-preview', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ code: rawCode })
                 });
-                
                 const data = await res.json();
-                
-                if (data.success) {
-                    window.open(`/dardcorchat/dardcor-ai/preview/${data.previewId}`, '_blank');
-                } else {
-                    alert('Gagal membuat preview.');
-                }
-            } catch(e) {
-                console.error(e);
-                alert('Terjadi kesalahan koneksi.');
-            } finally {
+                if (data.success) window.open(`/dardcorchat/dardcor-ai/preview/${data.previewId}`, '_blank');
+                else alert('Gagal memproses preview.');
+            } catch(e) { alert('Error sistem preview.'); } 
+            finally { 
                 btn.innerHTML = originalHtml;
-                btn.disabled = false;
+                btn.disabled = false; 
             }
         }
 
         function copyCode(btn) {
-            const wrapper = btn.closest('.terminal-wrapper');
-            const code = wrapper.querySelector('.raw-code') ? wrapper.querySelector('.raw-code').value : wrapper.querySelector('code').innerText;
+            const wrapper = btn.closest('.terminal-container');
+            const textArea = wrapper.querySelector('.raw-code');
+            const txt = document.createElement("textarea");
+            txt.innerHTML = textArea.value;
+            const code = txt.value;
+            
             navigator.clipboard.writeText(code).then(() => {
-                btn.innerHTML = '<i class="fas fa-check text-green-400"></i>';
-                setTimeout(() => { btn.innerHTML = '<i class="fas fa-copy"></i> Copy'; }, 2000);
+                const originalHtml = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-check"></i>';
+                setTimeout(() => { btn.innerHTML = originalHtml; }, 2000);
             });
         }
 
-        // --- FUNGSI UI STANDARD ---
         function toggleSidebar() {
-            const isClosed = sidebar.classList.contains('-translate-x-full');
-            if (isClosed) {
+            if (sidebar.classList.contains('-translate-x-full')) {
                 sidebar.classList.remove('-translate-x-full');
-                if (window.innerWidth < 1024) overlay.classList.remove('hidden');
-                else mainContent.classList.add('lg:ml-72');
+                overlay.classList.remove('hidden');
             } else {
                 sidebar.classList.add('-translate-x-full');
                 overlay.classList.add('hidden');
-                mainContent.classList.remove('lg:ml-72');
             }
         }
-        window.addEventListener('resize', () => { if(window.innerWidth >= 1024) overlay.classList.add('hidden'); });
+        
+        window.addEventListener('resize', () => { 
+            if(window.innerWidth >= 1024) {
+                overlay.classList.add('hidden'); 
+            }
+        });
         function toggleToolsMenu() { toolsMenu.classList.toggle('hidden'); document.getElementById('tools-chevron')?.classList.toggle('rotate-180'); }
         document.addEventListener('click', (e) => { 
             if (!toolsMenu.contains(e.target) && !e.target.closest('button[onclick="toggleToolsMenu()"]')) {
@@ -310,7 +303,7 @@
             }
             document.querySelectorAll('.dropdown-menu').forEach(e => e.classList.add('hidden')); 
         });
-        function toggleMenu(e, id) { e.stopPropagation(); document.getElementById(id).classList.toggle('hidden'); }
+        function toggleMenu(e, id) { e.stopPropagation(); document.querySelectorAll('.dropdown-menu').forEach(e => e.classList.add('hidden')); document.getElementById(id).classList.toggle('hidden'); }
 
         async function sendMessage() {
             if(isSending) return;
@@ -319,7 +312,7 @@
             if(!msg && !file) return;
             
             isSending = true;
-            document.getElementById('send-btn').disabled = true; 
+            document.getElementById('send-btn').disabled = true;
             messageInput.value = ''; messageInput.style.height = 'auto'; clearFile();
             
             const emptyState = document.getElementById('empty-state');
@@ -342,7 +335,7 @@
                 else appendError(data.response);
             } catch(e) { 
                 loadingIndicator.classList.add('hidden');
-                appendError("Gagal terhubung."); 
+                appendError("Gagal terhubung ke Dardcor Server."); 
             } finally {
                 isSending = false;
                 document.getElementById('send-btn').disabled = false;
@@ -361,7 +354,7 @@
         function typeBotMessage(raw) {
             const div = document.createElement('div');
             div.className = "flex w-full justify-start mb-6";
-            div.innerHTML = `<div class="flex flex-col items-start message-bubble"><div class="rounded-2xl p-4 shadow-lg text-sm bg-[#13131f] text-gray-200 rounded-bl-none border border-gray-800 w-full"><div class="markdown-body typing-target"></div></div></div>`;
+            div.innerHTML = `<div class="flex flex-col items-start message-bubble"><div class="flex items-center gap-2 mb-1 px-1"><span class="text-[10px] uppercase tracking-wide text-gray-500 font-bold">Dardcor AI</span></div><div class="rounded-2xl p-4 shadow-lg text-sm bg-[#13131f] text-gray-200 rounded-bl-none border border-gray-800 w-full overflow-hidden"><div class="markdown-body typing-target"></div></div></div>`;
             document.getElementById('message-list').appendChild(div);
             
             const target = div.querySelector('.typing-target');
@@ -370,13 +363,21 @@
                 scrollToBottom();
                 return;
             }
+            
+            const fullHtml = marked.parse(raw);
+            let currentHtml = "";
             let i = 0;
-            const int = setInterval(() => {
-                i += 10;
-                if(i > raw.length) i = raw.length;
-                target.innerHTML = marked.parse(raw.substring(0, i));
+            const step = 20; 
+            const interval = setInterval(() => {
+                if (i >= raw.length) {
+                    target.innerHTML = fullHtml; 
+                    clearInterval(interval);
+                    scrollToBottom();
+                    return;
+                }
+                target.innerHTML = marked.parse(raw.substring(0, i + step)); 
+                i += step;
                 scrollToBottom();
-                if(i >= raw.length) clearInterval(int);
             }, 5);
         }
 
@@ -388,7 +389,7 @@
             scrollToBottom();
         }
 
-        function scrollToBottom() { if(chatContainer) chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' }); }
+        function scrollToBottom() { if(chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight; }
         messageInput.addEventListener('keydown', (e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }});
         messageInput.addEventListener('input', function() { this.style.height='auto'; this.style.height=Math.min(this.scrollHeight,120)+'px'; });
         fileInput.addEventListener('change', () => { if(fileInput.files[0]) { fileNameText.textContent = fileInput.files[0].name; filePreview.classList.remove('hidden'); filePreview.classList.add('flex'); } });
@@ -399,7 +400,13 @@
         async function submitDelete() { await fetch('/dardcorchat/ai/delete-chat-history', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({conversationId:targetChatId})}); if(targetChatId === currentConversationId) window.location.href = '/dardcorchat/dardcor-ai'; else window.location.reload(); }
 
         document.addEventListener("DOMContentLoaded", () => {
-            document.querySelectorAll('.markdown-body').forEach(el => el.innerHTML = marked.parse(el.textContent));
+            document.querySelectorAll('.message-bubble-container').forEach(container => {
+                const rawEl = container.querySelector('.raw-message-content');
+                const targetEl = container.querySelector('.markdown-body');
+                if (rawEl && targetEl) {
+                    targetEl.innerHTML = marked.parse(rawEl.value);
+                }
+            });
             scrollToBottom();
             if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
         });

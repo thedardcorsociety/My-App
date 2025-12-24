@@ -43,7 +43,6 @@ const uploadMiddleware = (req, res, next) => {
     });
 };
 
-// --- PUBLIC ROUTES ---
 router.get('/', (req, res) => {
     if (req.session && req.session.userAccount) return res.redirect('/dardcorchat/dardcor-ai');
     res.render('index', { user: null });
@@ -59,7 +58,6 @@ router.get('/register', (req, res) => {
     res.render('register', { error: null }); 
 });
 
-// --- AUTH HANDLERS ---
 router.post('/dardcor-login', authLimiter, async (req, res) => {
     let { email, password } = req.body;
     if (!email || !password) return res.status(400).json({ success: false, message: "Email dan Password wajib diisi." });
@@ -199,7 +197,6 @@ router.post('/dardcor/profile/update', checkUserAuth, upload.single('profile_ima
     }
 });
 
-// --- CHAT ROUTES ---
 router.get('/dardcorchat/dardcorai', checkUserAuth, (req, res) => { 
     res.redirect('/dardcorchat/dardcor-ai');
 });
@@ -215,7 +212,6 @@ router.get('/dardcorchat/tool/:toolType', checkUserAuth, (req, res) => {
     loadChatHandler(req, res);
 });
 
-// --- MAIN HANDLER (UPDATED PATH) ---
 async function loadChatHandler(req, res) {
     const userId = req.session.userAccount.id;
     const requestedId = req.params.conversationId;
@@ -243,14 +239,13 @@ async function loadChatHandler(req, res) {
         }
         const fullHistorySorted = Array.from(historyMap.values()).sort((a, b) => new Date(b.last_activity) - new Date(a.last_activity));
         
-        // FIX: Mengarah ke 'dardcorchat/layout'
         res.render('dardcorchat/layout', {
             user: req.session.userAccount,
             chatHistory: activeChatHistory,
             fullHistory: fullHistorySorted,
             activeConversationId: activeId,
             toolType: toolType,
-            contentPage: 'dardcorai' // Nama file partial (akan dicari di folder yang sama)
+            contentPage: 'dardcorai' 
         });
     } catch (err) {
         console.error(err);
