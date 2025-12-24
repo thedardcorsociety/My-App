@@ -32,7 +32,7 @@
         .safe-pl { padding-left: env(safe-area-inset-left); }
         .message-bubble { max-width: 95%; }
 
-        /* TERMINAL HITAM POLOS (FIXED) */
+        /* TERMINAL HITAM POLOS */
         .terminal-container { 
             margin: 12px 0;
             background-color: #000000; 
@@ -85,7 +85,6 @@
             padding: 16px !important;
             display: block;
         }
-        /* Fix Markdown Rendering */
         .markdown-body p { margin-bottom: 1em; }
         .markdown-body a { color: #a78bfa; text-decoration: underline; }
     </style>
@@ -109,16 +108,37 @@
                 <div class="w-6 h-6 bg-purple-500/20 rounded flex items-center justify-center text-purple-400"><i class="fas fa-plus text-xs"></i></div><span>New Chat</span>
             </button>
             <div class="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2 px-2">Riwayat</div>
-            <% if (fullHistory) { fullHistory.forEach(chat => { %>
-                <div onclick="window.location.href='/dardcorchat/dardcor-ai/<%= chat.conversation_id %>'" class="group relative flex items-center px-3 h-[44px] rounded-lg hover:bg-[#202336] cursor-pointer w-full <%= chat.conversation_id === activeConversationId ? 'bg-[#202336] border-l-4 border-purple-500' : 'border-l-4 border-transparent' %>">
+            
+            <% 
+                // Cek apakah chat aktif ada di list riwayat
+                let isNewChat = true;
+                if (conversationList && conversationList.length > 0) {
+                    isNewChat = !conversationList.some(c => c.id === activeConversationId);
+                }
+            %>
+
+            <% if (isNewChat) { %>
+                <div class="group relative flex items-center px-3 h-[44px] rounded-lg bg-[#202336] border-l-4 border-purple-500 cursor-default w-full mb-1">
+                    <div class="flex-1 min-w-0 pr-2 flex items-center h-full pointer-events-none">
+                        <i class="fas fa-message text-purple-500 mr-3 text-xs flex-shrink-0"></i>
+                        <span class="text-sm text-white font-medium truncate">Percakapan Baru</span>
+                    </div>
+                </div>
+            <% } %>
+
+            <% if (conversationList) { conversationList.forEach(chat => { %>
+                <div id="chat-item-<%= chat.id %>" onclick="window.location.href='/dardcorchat/dardcor-ai/<%= chat.id %>'" class="group relative flex items-center px-3 h-[44px] rounded-lg hover:bg-[#202336] cursor-pointer w-full <%= chat.id === activeConversationId ? 'bg-[#202336] border-l-4 border-purple-500' : 'border-l-4 border-transparent' %>">
                     <div class="flex-1 min-w-0 pr-2 flex items-center h-full pointer-events-none">
                         <i class="fas fa-message text-gray-500 mr-3 text-xs flex-shrink-0"></i>
-                        <span class="text-sm text-gray-300 truncate"><%= chat.message ? chat.message.substring(0, 22) : 'Percakapan' %>...</span>
+                        <span id="title-<%= chat.id %>" class="text-sm text-gray-300 truncate"><%= chat.title ? chat.title.substring(0, 22) : 'Percakapan' %>...</span>
+                        
+                        <input type="hidden" id="raw-title-<%= chat.id %>" value="<%= chat.title %>">
                     </div>
                     <div class="relative flex items-center h-full">
-                        <button onclick="event.stopPropagation(); toggleMenu(event, 'menu-<%= chat.conversation_id %>')" class="p-1.5 text-gray-500 hover:text-white rounded opacity-0 group-hover:opacity-100 focus:opacity-100"><i class="fas fa-ellipsis-v text-xs"></i></button>
-                        <div id="menu-<%= chat.conversation_id %>" class="dropdown-menu hidden absolute right-0 top-8 w-32 bg-[#2a2d3d] border border-gray-700 rounded-lg shadow-xl z-[70] py-1 overflow-hidden">
-                            <button onclick="openDeleteModal('<%= chat.conversation_id %>')" class="w-full text-left px-3 py-2 text-xs text-red-400 hover:bg-red-600 hover:text-white flex items-center gap-2"><i class="fas fa-trash"></i> Delete</button>
+                        <button onclick="event.stopPropagation(); toggleMenu(event, 'menu-<%= chat.id %>')" class="p-1.5 text-gray-500 hover:text-white rounded opacity-0 group-hover:opacity-100 focus:opacity-100"><i class="fas fa-ellipsis-v text-xs"></i></button>
+                        <div id="menu-<%= chat.id %>" class="dropdown-menu hidden absolute right-0 top-8 w-32 bg-[#2a2d3d] border border-gray-700 rounded-lg shadow-xl z-[70] py-1 overflow-hidden">
+                            <button onclick="openRenameModal('<%= chat.id %>')" class="w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-gray-700 hover:text-white flex items-center gap-2"><i class="fas fa-edit"></i> Edit</button>
+                            <button onclick="openDeleteModal('<%= chat.id %>')" class="w-full text-left px-3 py-2 text-xs text-red-400 hover:bg-red-600 hover:text-white flex items-center gap-2"><i class="fas fa-trash"></i> Delete</button>
                         </div>
                     </div>
                 </div>
@@ -141,7 +161,6 @@
                     <i class="fas fa-bars text-lg"></i>
                 </button>
             </div>
-            
 
             <div class="relative ml-auto">
                 <button onclick="toggleToolsMenu()" class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-purple-500/30 bg-purple-500/10 text-purple-400 text-xs md:text-sm font-medium hover:bg-purple-500/20 hover:text-white transition-all">
@@ -166,7 +185,21 @@
     <div id="delete-modal" class="fixed inset-0 z-[110] hidden items-center justify-center bg-black/80 backdrop-blur-sm p-4 safe-pb">
         <div class="bg-[#13131f] border border-purple-900 rounded-2xl w-full max-w-sm p-6 text-center">
             <h3 class="text-lg font-bold text-white mb-4">Hapus Chat?</h3>
-            <div class="flex justify-center gap-3"><button onclick="closeModal('delete-modal')" class="px-5 py-2.5 text-gray-300 bg-gray-800 rounded-lg w-full">Batal</button><button onclick="submitDelete()" class="px-5 py-2.5 bg-red-600 text-white rounded-lg w-full">Hapus</button></div>
+            <div class="flex justify-center gap-3">
+                <button onclick="closeModal('delete-modal')" class="px-5 py-2.5 text-gray-300 bg-gray-800 rounded-lg w-full">Batal</button>
+                <button onclick="submitDelete()" class="px-5 py-2.5 bg-red-600 text-white rounded-lg w-full">Hapus</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="rename-modal" class="fixed inset-0 z-[110] hidden items-center justify-center bg-black/80 backdrop-blur-sm p-4 safe-pb">
+        <div class="bg-[#13131f] border border-purple-900 rounded-2xl w-full max-w-sm p-6 text-center">
+            <h3 class="text-lg font-bold text-white mb-4">Ubah Nama</h3>
+            <input type="text" id="rename-input" class="w-full bg-black/30 border border-gray-700 rounded-lg p-3 text-white mb-4 outline-none focus:border-purple-500" placeholder="Nama chat baru...">
+            <div class="flex justify-center gap-3">
+                <button onclick="closeModal('rename-modal')" class="px-5 py-2.5 text-gray-300 bg-gray-800 rounded-lg w-full">Batal</button>
+                <button onclick="submitRename()" class="px-5 py-2.5 bg-purple-600 text-white rounded-lg w-full">Simpan</button>
+            </div>
         </div>
     </div>
 
@@ -175,9 +208,7 @@
         const currentToolType = "<%= typeof toolType !== 'undefined' ? toolType : 'chat' %>";
         const chatContainer = document.getElementById('chat-container');
         const messageInput = document.getElementById('message-input');
-        const fileInput = document.getElementById('file-upload');
-        const filePreview = document.getElementById('file-preview');
-        const fileNameText = document.getElementById('file-name-text');
+        // File input logic now handled in input.ejs
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('mobile-overlay');
         const toolsMenu = document.getElementById('tools-menu');
@@ -200,7 +231,6 @@
             let highlighted = "";
             let lang = (language || '').toLowerCase().trim();
             
-            // AUTO DETECT HTML IF LANG MISSING
             if (!lang && (validCode.includes('<!DOCTYPE') || validCode.includes('<html') || validCode.includes('<body'))) {
                 lang = 'html';
             }
@@ -219,7 +249,6 @@
             }
 
             let previewButton = '';
-            // FORCE PREVIEW BUTTON IF HTML-LIKE
             if (['html', 'xml', 'ejs', 'php', 'javascript', 'css'].includes(lang) || lang === '') {
                 previewButton = `<button onclick="previewCode(this)" class="cmd-btn btn-preview"><i class="fas fa-play text-[9px]"></i> Preview</button>`;
             }
@@ -308,24 +337,40 @@
         async function sendMessage() {
             if(isSending) return;
             const msg = messageInput.value.trim();
-            const file = fileInput.files[0];
-            if(!msg && !file) return;
+            // selectedFiles global variable comes from input.ejs
+            if(!msg && selectedFiles.length === 0) return;
             
             isSending = true;
             document.getElementById('send-btn').disabled = true;
-            messageInput.value = ''; messageInput.style.height = 'auto'; clearFile();
+            messageInput.blur(); 
+            messageInput.value = ''; messageInput.style.height = 'auto'; 
             
             const emptyState = document.getElementById('empty-state');
             if(emptyState) emptyState.style.display = 'none';
-            appendUserMessage(msg, file ? file.name : null);
+            
+            // Create preview string for user message
+            let fileInfo = null;
+            if(selectedFiles.length > 0) {
+                fileInfo = `${selectedFiles.length} file`;
+            }
+            appendUserMessage(msg, fileInfo);
             
             messageList.appendChild(loadingIndicator);
             loadingIndicator.classList.remove('hidden');
             scrollToBottom();
 
             const fd = new FormData();
-            fd.append('message', msg); fd.append('conversationId', currentConversationId); fd.append('toolType', currentToolType);
-            if(file) fd.append('file_attachment', file);
+            fd.append('message', msg); 
+            fd.append('conversationId', currentConversationId); 
+            fd.append('toolType', currentToolType);
+            
+            // Append multiple files
+            selectedFiles.forEach(file => {
+                fd.append('file_attachment', file);
+            });
+
+            // Clear input visual immediately
+            clearFiles(); 
 
             try {
                 const res = await fetch('/dardcorchat/ai/chat', { method: 'POST', body: fd });
@@ -339,7 +384,6 @@
             } finally {
                 isSending = false;
                 document.getElementById('send-btn').disabled = false;
-                setTimeout(() => messageInput.focus(), 100);
             }
         }
 
@@ -392,12 +436,74 @@
         function scrollToBottom() { if(chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight; }
         messageInput.addEventListener('keydown', (e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }});
         messageInput.addEventListener('input', function() { this.style.height='auto'; this.style.height=Math.min(this.scrollHeight,120)+'px'; });
-        fileInput.addEventListener('change', () => { if(fileInput.files[0]) { fileNameText.textContent = fileInput.files[0].name; filePreview.classList.remove('hidden'); filePreview.classList.add('flex'); } });
-        function clearFile() { fileInput.value=''; filePreview.classList.add('hidden'); filePreview.classList.remove('flex'); }
-        function openDeleteModal(id) { targetChatId = id; document.getElementById('delete-modal').classList.remove('hidden'); document.getElementById('delete-modal').classList.add('flex'); }
-        function closeModal(id) { document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); }
-        async function createNewChat() { try { const res = await fetch('/dardcorchat/ai/new-chat', { method: 'POST' }); const data = await res.json(); if(data.success) window.location.href = data.redirectUrl; } catch(e) {} }
-        async function submitDelete() { await fetch('/dardcorchat/ai/delete-chat-history', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({conversationId:targetChatId})}); if(targetChatId === currentConversationId) window.location.href = '/dardcorchat/dardcor-ai'; else window.location.reload(); }
+        
+        // --- MODAL & LOGIC ---
+        function closeModal(id) { 
+            document.getElementById(id).classList.add('hidden'); 
+            document.getElementById(id).classList.remove('flex'); 
+        }
+        
+        function openDeleteModal(id) { 
+            targetChatId = id; 
+            document.getElementById('delete-modal').classList.remove('hidden'); 
+            document.getElementById('delete-modal').classList.add('flex'); 
+        }
+
+        function openRenameModal(id) { 
+            targetChatId = id;
+            // AMBIL VALUE DARI HIDDEN INPUT (AMAN DARI ERROR SYNTAX)
+            const hiddenInput = document.getElementById('raw-title-' + id);
+            const currentTitle = hiddenInput ? hiddenInput.value : '';
+            
+            document.getElementById('rename-input').value = currentTitle;
+            document.getElementById('rename-modal').classList.remove('hidden'); 
+            document.getElementById('rename-modal').classList.add('flex');
+            document.getElementById('rename-input').blur(); 
+        }
+
+        async function createNewChat() { 
+            try { 
+                const res = await fetch('/dardcorchat/ai/new-chat', { method: 'POST' }); 
+                const data = await res.json(); 
+                if(data.success) window.location.href = data.redirectUrl; 
+            } catch(e) {} 
+        }
+        
+        async function submitDelete() { 
+            closeModal('delete-modal');
+            await fetch('/dardcorchat/ai/delete-chat-history', { 
+                method: 'POST', 
+                headers:{'Content-Type':'application/json'}, 
+                body: JSON.stringify({conversationId:targetChatId})
+            }); 
+            
+            if(targetChatId === currentConversationId) {
+                window.location.href = '/dardcorchat/dardcor-ai';
+            } else {
+                const elem = document.getElementById(`chat-item-${targetChatId}`);
+                if(elem) elem.remove();
+            }
+        }
+
+        async function submitRename() {
+            const newName = document.getElementById('rename-input').value;
+            closeModal('rename-modal');
+            if(!newName.trim()) return;
+
+            const res = await fetch('/dardcorchat/ai/rename-chat', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ conversationId: targetChatId, newTitle: newName })
+            });
+            
+            if(res.ok) {
+                const titleElem = document.getElementById(`title-${targetChatId}`);
+                if(titleElem) titleElem.innerText = newName.substring(0, 22) + (newName.length > 22 ? '...' : '');
+                // Update hidden value juga
+                const hiddenElem = document.getElementById(`raw-title-${targetChatId}`);
+                if(hiddenElem) hiddenElem.value = newName;
+            }
+        }
 
         document.addEventListener("DOMContentLoaded", () => {
             document.querySelectorAll('.message-bubble-container').forEach(container => {

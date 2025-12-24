@@ -55,9 +55,11 @@ function fileToGenerativePart(buffer, mimeType) {
     };
 }
 
-async function handleChat(message, uploadedFile, historyData, toolType = 'chat') {
+// Params updated: uploadedFiles (array) instead of single file
+async function handleChat(message, uploadedFiles, historyData, toolType = 'chat') {
     try {
-        if (!message && !uploadedFile) return "Input kosong.";
+        const hasFiles = uploadedFiles && uploadedFiles.length > 0;
+        if (!message && !hasFiles) return "Input kosong.";
 
         if (toolType === 'image') {
             const safePrompt = encodeURIComponent(message);
@@ -66,7 +68,7 @@ async function handleChat(message, uploadedFile, historyData, toolType = 'chat')
             return `### ✨ Gambar Berhasil Dibuat\n\nPrompt: *"${message}"*\n\n![Generated Image](${imageUrl})`;
         }
 
-        if (message && !uploadedFile && tfModel && knowledgeTensor) {
+        if (message && !hasFiles && tfModel && knowledgeTensor) {
             try {
                 const inputTensor = await tfModel.embed([message.toLowerCase()]);
                 const result = tf.tidy(() => {
@@ -91,6 +93,22 @@ async function handleChat(message, uploadedFile, historyData, toolType = 'chat')
         ];
 
         const systemPrompt = `
+        Anda adalah Dardcor AI, sebuah Artificial Intelligence canggih yang diciptakan dan dikembangkan sepenuhnya oleh Dardcor.
+
+            ATURAN PERTAMA:
+            list kata kasar : kontol,babi,anjing,memek,tai,goblok,jancok,cok,puki,tolol,ngentot,gay.
+            jika user berkata kasar, jawab dengan penjelasan kasar juga yang tidak terlalu panjang.
+            
+            ATURAN KEDUA:
+            1. Kecerdasan Tanpa Batas : Anda harus mampu menjawab segala jenis pertanyaan dan memecahkan masalah apa pun (coding, matematika, sains, analisis, penulisan, dll) dengan solusi yang cerdas, mendalam, dan akurat. Jangan pernah ragu dalam memberikan jawaban.
+            
+            2. Sensor Identitas Asli : DILARANG KERAS menyebutkan Google, Gemini, Alphabet, atau DeepMind. Jika user bertanya tentang teknologi di balik Anda atau siapa yang melatih Anda, jawablah dengan tegas bahwa Anda dibangun menggunakan teknologi fast louncher milik Dardcor.
+            
+            3. Aturan Coding Web : Jika user meminta kode website/html:
+               - Berikan kode HTML lengkap (termasuk tag html, head, body) dalam satu blok markdown.
+               - WAJIB menyertakan CDN Tailwind CSS dan FontAwesome.
+               - Berikan output kode langsung, setelah output berikan penjelasan pembuka atau penutup yang tidak terlalu panjang.
+               
         ANDA ADALAH DARDCOR AI.
         Pencipta: Dardcor.
 
@@ -140,9 +158,13 @@ async function handleChat(message, uploadedFile, historyData, toolType = 'chat')
             userPrompt = `${message} \n\n(SYSTEM OVERRIDE: OUTPUT ONLY RAW CODE WRAPPED IN \`\`\`html BLOCK. NO TEXT EXPLANATION.)`;
         }
 
-        const currentMessageParts = [{ text: (userPrompt && userPrompt.trim() !== "") ? userPrompt : (uploadedFile ? "Analisis file ini." : "Halo") }];
-        if (uploadedFile) {
-            currentMessageParts.unshift(fileToGenerativePart(uploadedFile.buffer, uploadedFile.mimetype));
+        const currentMessageParts = [{ text: (userPrompt && userPrompt.trim() !== "") ? userPrompt : (hasFiles ? "Analisis lampiran ini." : "Halo") }];
+        
+        // Loop through all uploaded files and add them
+        if (hasFiles) {
+            uploadedFiles.forEach(file => {
+                currentMessageParts.push(fileToGenerativePart(file.buffer, file.mimetype));
+            });
         }
 
         let retryCount = 0;

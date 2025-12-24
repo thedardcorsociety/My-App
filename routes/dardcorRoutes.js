@@ -37,8 +37,8 @@ function checkUserAuth(req, res, next) {
 }
 
 const uploadMiddleware = (req, res, next) => {
-    upload.single('file_attachment')(req, res, function (err) {
-        if (err) return res.status(400).json({ success: false, response: "File terlalu besar (Max 10MB)." });
+    upload.array('file_attachment', 5)(req, res, function (err) {
+        if (err) return res.status(400).json({ success: false, response: "Error upload file (Max 5 file @ 10MB)." });
         next();
     });
 };
@@ -218,31 +218,34 @@ async function loadChatHandler(req, res) {
     const toolType = req.params.toolType || 'chat';
     
     try {
-        const { data: dbHistory } = await supabase.from('history_chat').select('*').eq('user_id', userId).order('created_at', { ascending: true });
+        // Ambil Daftar Percakapan untuk Sidebar
+        const { data: conversationList } = await supabase
+            .from('conversations')
+            .select('*')
+            .eq('user_id', userId)
+            .order('updated_at', { ascending: false });
+
+        let activeId = requestedId;
         
-        let activeId = requestedId || uuidv4();
-        req.session.currentConversationId = activeId;
-        
-        let activeChatHistory = dbHistory ? dbHistory.filter(item => item.conversation_id === activeId && item.message !== null) : [];
-        
-        const historyMap = new Map();
-        if (dbHistory) {
-            dbHistory.forEach(chat => {
-                if (!historyMap.has(chat.conversation_id) && chat.message !== null) {
-                    historyMap.set(chat.conversation_id, { 
-                        conversation_id: chat.conversation_id, 
-                        message: chat.message, 
-                        last_activity: chat.created_at 
-                    });
-                }
-            });
+        // Cek validitas ID, jika tidak valid buat baru
+        if (!activeId || activeId.length < 10) {
+            activeId = uuidv4();
+            return res.redirect(`/dardcorchat/dardcor-ai/${activeId}`);
         }
-        const fullHistorySorted = Array.from(historyMap.values()).sort((a, b) => new Date(b.last_activity) - new Date(a.last_activity));
+
+        // Ambil History Chat untuk ID yang aktif
+        const { data: activeChatHistory } = await supabase
+            .from('history_chat')
+            .select('*')
+            .eq('conversation_id', activeId)
+            .order('created_at', { ascending: true });
+
+        req.session.currentConversationId = activeId;
         
         res.render('dardcorchat/layout', {
             user: req.session.userAccount,
-            chatHistory: activeChatHistory,
-            fullHistory: fullHistorySorted,
+            chatHistory: activeChatHistory || [],
+            conversationList: conversationList || [],
             activeConversationId: activeId,
             toolType: toolType,
             contentPage: 'dardcorai' 
@@ -252,7 +255,7 @@ async function loadChatHandler(req, res) {
         res.render('dardcorchat/layout', { 
             user: req.session.userAccount, 
             chatHistory: [], 
-            fullHistory: [], 
+            conversationList: [], 
             activeConversationId: uuidv4(),
             toolType: toolType,
             contentPage: 'dardcorai'
@@ -269,16 +272,21 @@ router.post('/dardcorchat/ai/new-chat', checkUserAuth, (req, res) => {
 
 router.post('/dardcorchat/ai/rename-chat', checkUserAuth, async (req, res) => {
     try {
-        await supabase.from('history_chat').update({ message: req.body.newTitle })
-            .eq('conversation_id', req.body.conversationId).eq('user_id', req.session.userAccount.id).eq('role', 'user')
-            .order('created_at', { ascending: true }).limit(1);
+        await supabase.from('conversations')
+            .update({ title: req.body.newTitle })
+            .eq('id', req.body.conversationId)
+            .eq('user_id', req.session.userAccount.id);
         res.json({ success: true });
     } catch (error) { res.status(500).json({ success: false }); }
 });
 
 router.post('/dardcorchat/ai/delete-chat-history', checkUserAuth, async (req, res) => {
     try {
-        await supabase.from('history_chat').delete().eq('conversation_id', req.body.conversationId).eq('user_id', req.session.userAccount.id);
+        // Hapus dari tabel conversations (history_chat akan terhapus otomatis karena cascade)
+        await supabase.from('conversations')
+            .delete()
+            .eq('id', req.body.conversationId)
+            .eq('user_id', req.session.userAccount.id);
         res.json({ success: true });
     } catch (error) { res.status(500).json({ success: false }); }
 });
@@ -302,23 +310,50 @@ router.get('/dardcorchat/dardcor-ai/preview/:id', checkUserAuth, async (req, res
 
 router.post('/dardcorchat/ai/chat', checkUserAuth, uploadMiddleware, async (req, res) => {
     const message = req.body.message ? req.body.message.trim() : "";
-    const uploadedFile = req.file;
+    const uploadedFiles = req.files; // Array of files
     const userId = req.session.userAccount.id;
     const toolType = req.body.toolType || 'chat';
     let conversationId = req.body.conversationId || req.session.currentConversationId || uuidv4();
     
-    const userMessage = message || (uploadedFile ? "Menganalisis file..." : "");
+    const hasFiles = uploadedFiles && uploadedFiles.length > 0;
+    const userMessage = message || (hasFiles ? `Menganalisis ${uploadedFiles.length} file...` : "");
     if (!userMessage) return res.json({ success: false, response: "Input kosong." });
     
     try {
+        // 1. Cek apakah conversation sudah ada, jika belum buat baru
+        const { data: convCheck } = await supabase.from('conversations').select('id').eq('id', conversationId).single();
+        if (!convCheck) {
+            let title = message.substring(0, 30) || "Percakapan Baru";
+            if (hasFiles) title = "Analisis File";
+            await supabase.from('conversations').insert({ id: conversationId, user_id: userId, title: title });
+        } else {
+            // Update timestamp
+            await supabase.from('conversations').update({ updated_at: new Date() }).eq('id', conversationId);
+        }
+
+        // 2. Simpan pesan User
+        let fileMetadata = null;
+        if (hasFiles) {
+            fileMetadata = uploadedFiles.map(f => ({ 
+                filename: f.originalname, 
+                size: f.size,
+                mimetype: f.mimetype 
+            }));
+        }
+
         await supabase.from('history_chat').insert({
             user_id: userId, conversation_id: conversationId, role: 'user', message: userMessage,
-            file_metadata: uploadedFile ? { filename: uploadedFile.originalname, size: uploadedFile.size } : null
+            file_metadata: fileMetadata
         });
         
-        const { data: historyData } = await supabase.from('history_chat').select('role, message').eq('conversation_id', conversationId).order('created_at', { ascending: true });
+        // 3. Ambil context history
+        const { data: historyData } = await supabase.from('history_chat')
+            .select('role, message')
+            .eq('conversation_id', conversationId)
+            .order('created_at', { ascending: true });
         
-        const botResponse = await handleChat(message, uploadedFile, historyData, toolType);
+        // 4. Kirim ke AI (Dukungan Multi File)
+        const botResponse = await handleChat(message, uploadedFiles, historyData, toolType);
         
         if (botResponse) {
             await supabase.from('history_chat').insert({ user_id: userId, conversation_id: conversationId, role: 'bot', message: botResponse });
@@ -327,6 +362,7 @@ router.post('/dardcorchat/ai/chat', checkUserAuth, uploadMiddleware, async (req,
             throw new Error("AI tidak memberikan respon."); 
         }
     } catch (error) { 
+        console.log(error);
         res.status(500).json({ success: false, response: "Terjadi gangguan sistem." }); 
     }
 });
