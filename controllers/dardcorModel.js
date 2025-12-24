@@ -14,6 +14,8 @@ let tfModel = null;
 let knowledgeTensor = null; 
 let responseMap = [];
 
+const delay = ms => new Promise(res => setTimeout(res, ms));
+
 (async function initTensorFlow() {
     try {
         await tf.setBackend('cpu');
@@ -33,7 +35,7 @@ let responseMap = [];
         const embeddings = await tfModel.embed(allInputs);
         knowledgeTensor = tf.keep(embeddings);
     } catch (e) {
-        console.error(e);
+        console.error("TF Init Error:", e.message);
     }
 })();
 
@@ -57,21 +59,13 @@ async function handleChat(message, uploadedFile, historyData, toolType = 'chat')
     try {
         if (!message && !uploadedFile) return "Input kosong.";
 
-        // --- IMAGE GENERATION LOGIC ---
         if (toolType === 'image') {
-            const promptEncoded = encodeURIComponent(message);
-            // Menggunakan Pollinations AI untuk generate gambar tanpa API Key
-            const imageUrl = `https://image.pollinations.ai/prompt/${promptEncoded}`;
-            return `Berikut adalah gambar "${message}" yang Anda minta:\n\n![Generated Image](${imageUrl})`;
+            const safePrompt = encodeURIComponent(message);
+            const seed = Math.floor(Math.random() * 100000);
+            const imageUrl = `https://image.pollinations.ai/prompt/${safePrompt}?width=768&height=768&model=flux&seed=${seed}`;
+            return `### ✨ Gambar Berhasil Dibuat\n\nPrompt: *"${message}"*\n\n![Generated Image](${imageUrl})`;
         }
 
-        // --- VIDEO GENERATION LOGIC ---
-        if (toolType === 'video') {
-            // Placeholder karena video generation butuh API berbayar/berat
-            return `Maaf, saat ini server pembuatan video sedang sibuk atau memerlukan API Key khusus (seperti Replicate/Runway). \n\nSaya merekomendasikan untuk menggunakan fitur **Create Image** terlebih dahulu yang sudah stabil.`;
-        }
-
-        // --- NORMAL CHAT LOGIC ---
         if (message && !uploadedFile && tfModel && knowledgeTensor) {
             try {
                 const inputTensor = await tfModel.embed([message.toLowerCase()]);
@@ -79,22 +73,15 @@ async function handleChat(message, uploadedFile, historyData, toolType = 'chat')
                     const products = tf.matMul(inputTensor, knowledgeTensor, false, true);
                     const maxScore = products.max();
                     const maxIndex = products.argMax(1);
-                    return {
-                        score: maxScore.dataSync()[0],
-                        index: maxIndex.dataSync()[0]
-                    };
+                    return { score: maxScore.dataSync()[0], index: maxIndex.dataSync()[0] };
                 });
-                
                 inputTensor.dispose();
-
-                if (result.score > 0.75) {
-                    return responseMap[result.index];
-                }
+                if (result.score > 0.75) return responseMap[result.index];
             } catch (err) {}
         }
 
         const genAI = getNextGenAI();
-        if (!genAI) return "Error: API Key tidak ditemukan.";
+        if (!genAI) return "Error: API Key Gemini bermasalah.";
 
         const safetySettings = [
             { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
@@ -104,36 +91,18 @@ async function handleChat(message, uploadedFile, historyData, toolType = 'chat')
         ];
 
         const model = genAI.getGenerativeModel({
-            model: "gemini-2.5-flash",
-            systemInstruction: `Anda adalah Dardcor AI, sebuah Artificial Intelligence canggih yang diciptakan dan dikembangkan sepenuhnya oleh Dardcor.
-            Jika user ingin curhat gunakan nama panggilan seperti Aku dan Kamu, dan Anda harus menjawab seperti percakapan manusia normal.
-
-            ATURAN PERTAMA:
-            list kata kasar : kontol,babi,anjing,memek,tai,goblok,jancok,cok,puki,tolol,ngentot,gay.
-            jika user berkata kasar, jawab dengan penjelasan kasar juga yang tidak terlalu panjang.
-            
-            ATURAN KEDUA:
-            1. *Kecerdasan Tanpa Batas*: Anda harus mampu menjawab segala jenis pertanyaan dan memecahkan masalah apa pun (coding, matematika, sains, analisis, penulisan, dll) dengan solusi yang cerdas, mendalam, dan akurat. Jangan pernah ragu dalam memberikan jawaban.
-            
-            2. *Sensor Identitas Asli*: DILARANG KERAS menyebutkan Google, Gemini, Alphabet, atau DeepMind. Jika user bertanya tentang teknologi di balik Anda atau siapa yang melatih Anda, jawablah dengan tegas bahwa Anda dibangun menggunakan teknologi fast louncher milik Dardcor.
-            
-            3. *Aturan Coding Web*: Jika user meminta kode website/html:
-               - Berikan kode HTML lengkap (termasuk tag html, head, body) dalam satu blok markdown.
-               - WAJIB menyertakan CDN Tailwind CSS dan FontAwesome.
-               - Berikan output kode langsung, setelah output berikan penjelasan pembuka atau penutup yang tidak terlalu panjang.`,
+            model: "gemini-2.5-flash", 
+            systemInstruction: `Anda adalah Dardcor AI. Jawab dengan cerdas, ramah, dan membantu. Jika user meminta coding, berikan kode lengkap.`,
             safetySettings: safetySettings
         });
 
         const chatHistory = [];
-        let lastRole = null;
-
         if (historyData && historyData.length > 0) {
-            const recentMessages = historyData.slice(-20); 
-            
+            const recentMessages = historyData.slice(-6); 
+            let lastRole = null;
             recentMessages.forEach(msg => {
                 if (!msg.message || msg.message.trim() === "") return;
                 const role = (msg.role === 'bot' || msg.role === 'model') ? 'model' : 'user';
-                
                 if (lastRole === role) {
                     chatHistory[chatHistory.length - 1].parts[0].text += "\n" + msg.message;
                 } else {
@@ -143,28 +112,35 @@ async function handleChat(message, uploadedFile, historyData, toolType = 'chat')
             });
         }
 
-        if (chatHistory.length > 0 && chatHistory[chatHistory.length - 1].role === 'user') {
-            chatHistory.pop();
+        const chat = model.startChat({ history: chatHistory });
+        const currentMessageParts = [{ text: (message && message.trim() !== "") ? message : (uploadedFile ? "Analisis file ini." : "Halo") }];
+        if (uploadedFile) {
+            currentMessageParts.unshift(fileToGenerativePart(uploadedFile.buffer, uploadedFile.mimetype));
         }
 
-        const chat = model.startChat({
-            history: chatHistory
-        });
+        let retryCount = 0;
+        const maxRetries = 3;
 
-        const currentMessageParts = [];
-        if (uploadedFile) {
-            currentMessageParts.push(fileToGenerativePart(uploadedFile.buffer, uploadedFile.mimetype));
+        while (retryCount < maxRetries) {
+            try {
+                const result = await chat.sendMessage(currentMessageParts);
+                const response = await result.response;
+                return response.text();
+            } catch (apiError) {
+                if (apiError.message.includes("429") || apiError.message.includes("503")) {
+                    retryCount++;
+                    await delay(4000); 
+                } else {
+                    throw apiError; 
+                }
+            }
         }
         
-        const textPrompt = (message && message.trim() !== "") ? message : (uploadedFile ? "Analisis file ini." : "Halo");
-        currentMessageParts.push({ text: textPrompt });
-
-        const result = await chat.sendMessage(currentMessageParts);
-        const response = await result.response;
-        return response.text();
+        return "Maaf, server AI sedang sangat sibuk. Mohon tunggu sesaat.";
 
     } catch (error) {
-        return "Maaf, sistem sedang sibuk. Coba lagi nanti.";
+        console.error("Main Error:", error.message);
+        return "Terjadi gangguan koneksi. Silakan coba lagi.";
     }
 }
 

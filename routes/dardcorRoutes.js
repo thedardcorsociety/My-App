@@ -44,17 +44,17 @@ const uploadMiddleware = (req, res, next) => {
 };
 
 router.get('/', (req, res) => {
-    if (req.session && req.session.userAccount) return res.redirect('/dardcorchat/dardcorai');
+    if (req.session && req.session.userAccount) return res.redirect('/dardcorchat/dardcor-ai');
     res.render('index', { user: null });
 });
 
 router.get('/dardcor', (req, res) => { 
-    if (req.session && req.session.userAccount) return res.redirect('/dardcorchat/dardcorai'); 
+    if (req.session && req.session.userAccount) return res.redirect('/dardcorchat/dardcor-ai'); 
     res.render('dardcor', { error: null }); 
 });
 
 router.get('/register', (req, res) => { 
-    if (req.session && req.session.userAccount) return res.redirect('/dardcorchat/dardcorai');
+    if (req.session && req.session.userAccount) return res.redirect('/dardcorchat/dardcor-ai');
     res.render('register', { error: null }); 
 });
 
@@ -83,7 +83,7 @@ router.post('/dardcor-login', authLimiter, async (req, res) => {
                 if (err) {
                     return res.status(500).json({ success: false, message: 'Gagal memproses login.' });
                 }
-                res.status(200).json({ success: true, redirectUrl: '/dardcorchat/dardcorai' });
+                res.status(200).json({ success: true, redirectUrl: '/dardcorchat/dardcor-ai' });
             });
         } else { 
             res.status(400).json({ success: false, message: 'Password salah.' }); 
@@ -143,7 +143,7 @@ router.post('/register', authLimiter, [
 });
 
 router.get('/verify-otp', (req, res) => {
-    if (req.session && req.session.userAccount) return res.redirect('/dardcorchat/dardcorai');
+    if (req.session && req.session.userAccount) return res.redirect('/dardcorchat/dardcor-ai');
     const email = req.query.email;
     if (!email) return res.redirect('/register');
     res.render('verify', { email: email });
@@ -178,7 +178,7 @@ router.post('/verify-otp', async (req, res) => {
              return res.status(200).json({ 
                 success: true, 
                 message: "Akun berhasil dibuat!",
-                redirectUrl: '/dardcorchat/dardcorai'
+                redirectUrl: '/dardcorchat/dardcor-ai'
             });
         });
 
@@ -223,10 +223,17 @@ router.post('/dardcor/profile/update', checkUserAuth, upload.single('profile_ima
     }
 });
 
-router.get('/dardcorchat/dardcorai', checkUserAuth, (req, res) => { loadChatHandler(req, res); });
+router.get('/dardcorchat/dardcorai', checkUserAuth, (req, res) => { 
+    res.redirect('/dardcorchat/dardcor-ai');
+});
+
+router.get('/dardcorchat/dardcor-ai', checkUserAuth, (req, res) => {
+    const newId = uuidv4();
+    res.redirect(`/dardcorchat/dardcor-ai/${newId}`);
+});
+
 router.get('/dardcorchat/dardcor-ai/:conversationId', checkUserAuth, loadChatHandler);
 
-// Route untuk Tools (Image/Video)
 router.get('/dardcorchat/tool/:toolType', checkUserAuth, (req, res) => {
     loadChatHandler(req, res);
 });
@@ -234,7 +241,7 @@ router.get('/dardcorchat/tool/:toolType', checkUserAuth, (req, res) => {
 async function loadChatHandler(req, res) {
     const userId = req.session.userAccount.id;
     const requestedId = req.params.conversationId;
-    const toolType = req.params.toolType || 'chat'; // Menangkap tipe tool
+    const toolType = req.params.toolType || 'chat';
     
     try {
         const { data: dbHistory } = await supabase.from('history_chat').select('*').eq('user_id', userId).order('created_at', { ascending: true });
@@ -263,7 +270,7 @@ async function loadChatHandler(req, res) {
             chatHistory: activeChatHistory,
             fullHistory: fullHistorySorted,
             activeConversationId: activeId,
-            toolType: toolType // Mengirim toolType ke frontend
+            toolType: toolType
         });
     } catch (err) {
         res.render('dardcorchat/dardcorai', { 
@@ -322,7 +329,7 @@ router.post('/dardcorchat/ai/chat', checkUserAuth, uploadMiddleware, async (req,
     const message = req.body.message ? req.body.message.trim() : "";
     const uploadedFile = req.file;
     const userId = req.session.userAccount.id;
-    const toolType = req.body.toolType || 'chat'; // Menangkap toolType dari request body
+    const toolType = req.body.toolType || 'chat';
     let conversationId = req.body.conversationId || req.session.currentConversationId || uuidv4();
     
     const userMessage = message || (uploadedFile ? "Menganalisis file..." : "");
@@ -336,7 +343,6 @@ router.post('/dardcorchat/ai/chat', checkUserAuth, uploadMiddleware, async (req,
         
         const { data: historyData } = await supabase.from('history_chat').select('role, message').eq('conversation_id', conversationId).order('created_at', { ascending: true });
         
-        // Kirim toolType ke handleChat
         const botResponse = await handleChat(message, uploadedFile, historyData, toolType);
         
         if (botResponse) {
