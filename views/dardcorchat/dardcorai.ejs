@@ -5,10 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#1a1a2e">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="Dardcor AI">
-    
     <title>Dardcor AI</title>
     <link rel="icon" href="/logo.png">
     <link rel="stylesheet" href="/css/tailwind.css">
@@ -238,7 +234,7 @@
             </div>
         </div>
 
-        <div class="shrink-0 w-full z-30 px-4 lg:px-6 pb-6 lg:pb-10 pt-2 safe-pb bg-[#0b0c15] box-border">
+        <div class="shrink-0 w-full z-30 px-4 lg:px-6 pb-8 lg:pb-12 pt-2 safe-pb bg-[#0b0c15] box-border transition-all duration-300">
             <div class="max-w-3xl mx-auto w-full">
                 <form id="chat-form" onsubmit="return false;" class="bg-[#13131f] border border-gray-700/50 rounded-2xl flex items-center shadow-2xl p-2 transition focus-within:border-purple-500 w-full relative z-10 max-w-full overflow-hidden">
                     <label for="file-upload" class="p-3 text-gray-400 hover:text-white cursor-pointer transition rounded-xl hover:bg-gray-800 shrink-0 flex items-center justify-center">
@@ -439,7 +435,6 @@
 
             appendUserMessage(currentMessage, currentFile ? currentFile.name : null, currentFile ? currentFile.size : 0);
             
-            // Set loading text based on tool
             if (currentToolType === 'image') {
                 loadingText.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Generating Image...';
             } else {
