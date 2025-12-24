@@ -43,6 +43,7 @@ const uploadMiddleware = (req, res, next) => {
     });
 };
 
+// --- PUBLIC ROUTES ---
 router.get('/', (req, res) => {
     if (req.session && req.session.userAccount) return res.redirect('/dardcorchat/dardcor-ai');
     res.render('index', { user: null });
@@ -58,31 +59,23 @@ router.get('/register', (req, res) => {
     res.render('register', { error: null }); 
 });
 
+// --- AUTH HANDLERS ---
 router.post('/dardcor-login', authLimiter, async (req, res) => {
     let { email, password } = req.body;
-    
-    if (!email || !password) {
-        return res.status(400).json({ success: false, message: "Email dan Password wajib diisi." });
-    }
+    if (!email || !password) return res.status(400).json({ success: false, message: "Email dan Password wajib diisi." });
 
     email = email.trim().toLowerCase();
     password = password.trim();
 
     try {
         const { data: user, error } = await supabase.from('dardcor_users').select('*').eq('email', email).single();
-        
-        if (error || !user) {
-            return res.status(400).json({ success: false, message: 'Email tidak terdaftar.' });
-        }
+        if (error || !user) return res.status(400).json({ success: false, message: 'Email tidak terdaftar.' });
         
         const match = await bcrypt.compare(password, user.password);
-
         if (match) { 
             req.session.userAccount = user;
             req.session.save((err) => {
-                if (err) {
-                    return res.status(500).json({ success: false, message: 'Gagal memproses login.' });
-                }
+                if (err) return res.status(500).json({ success: false, message: 'Gagal memproses login.' });
                 res.status(200).json({ success: true, redirectUrl: '/dardcorchat/dardcor-ai' });
             });
         } else { 
@@ -117,26 +110,22 @@ router.post('/register', authLimiter, [
         if (existingUser) return res.status(400).json({ success: false, message: 'Email sudah terdaftar.' });
 
         await supabase.from('verification_codes').delete().eq('email', email);
-
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         const hashedPassword = await bcrypt.hash(password, 12);
 
         const { error: saveError } = await supabase.from('verification_codes').insert([{
             username, email, password: hashedPassword, otp
         }]);
-
         if (saveError) throw saveError;
 
-        const mailOptions = {
+        await transporter.sendMail({
             from: '"Dardcor Security" <no-reply@dardcor.com>',
             to: email,
             subject: 'Kode Verifikasi Dardcor AI',
             html: `<div style="font-family: sans-serif; padding:20px;"><h2>OTP Anda:</h2><h1 style="color: #8b5cf6;">${otp}</h1></div>`
-        };
+        });
 
-        await transporter.sendMail(mailOptions);
         res.status(200).json({ success: true, email: email, redirectUrl: `/verify-otp?email=${encodeURIComponent(email)}` });
-
     } catch (err) {
         res.status(500).json({ success: false, message: 'Gagal memproses pendaftaran.' });
     }
@@ -151,7 +140,6 @@ router.get('/verify-otp', (req, res) => {
 
 router.post('/verify-otp', async (req, res) => {
     let { email, otp } = req.body;
-
     if (!email || !otp) return res.status(400).json({ success: false, message: "Data tidak lengkap." });
     
     email = email.trim().toLowerCase();
@@ -159,29 +147,19 @@ router.post('/verify-otp', async (req, res) => {
     
     try {
         const { data: record, error: otpError } = await supabase.from('verification_codes').select('*').eq('email', email).eq('otp', otp).single();
-
         if (otpError || !record) return res.status(400).json({ success: false, message: "Kode OTP Salah!" });
 
         const { data: newUser, error: insertError } = await supabase.from('dardcor_users').insert([{ 
-            username: record.username, 
-            email: record.email, 
-            password: record.password 
+            username: record.username, email: record.email, password: record.password 
         }]).select().single();
 
         if (insertError) throw new Error("Gagal menyimpan user.");
-
         await supabase.from('verification_codes').delete().eq('email', email);
         
         req.session.userAccount = newUser;
-        req.session.save((err) => {
-             if (err) return res.status(500).json({ success: false, message: "Gagal membuat sesi." });
-             return res.status(200).json({ 
-                success: true, 
-                message: "Akun berhasil dibuat!",
-                redirectUrl: '/dardcorchat/dardcor-ai'
-            });
+        req.session.save(() => {
+             res.status(200).json({ success: true, message: "Akun berhasil dibuat!", redirectUrl: '/dardcorchat/dardcor-ai' });
         });
-
     } catch (err) {
         res.status(500).json({ success: false, message: "Terjadi kesalahan server." });
     }
@@ -203,7 +181,6 @@ router.post('/dardcor/profile/update', checkUserAuth, upload.single('profile_ima
         if (req.file) {
             const fileName = `${userId}-${Date.now()}.${req.file.originalname.split('.').pop()}`;
             const { error: upErr } = await supabase.storage.from('avatars').upload(fileName, req.file.buffer, { contentType: req.file.mimetype, upsert: true });
-            
             if (!upErr) {
                 const { data: publicData } = supabase.storage.from('avatars').getPublicUrl(fileName);
                 updates.profile_image = publicData.publicUrl;
@@ -217,12 +194,12 @@ router.post('/dardcor/profile/update', checkUserAuth, upload.single('profile_ima
         req.session.save(() => {
             res.render('dardcorchat/profile', { user: data, success: "Profil diperbarui!", error: null });
         });
-        
     } catch (err) { 
         res.render('dardcorchat/profile', { user: req.session.userAccount, error: err.message, success: null }); 
     }
 });
 
+// --- CHAT ROUTES ---
 router.get('/dardcorchat/dardcorai', checkUserAuth, (req, res) => { 
     res.redirect('/dardcorchat/dardcor-ai');
 });
@@ -238,6 +215,7 @@ router.get('/dardcorchat/tool/:toolType', checkUserAuth, (req, res) => {
     loadChatHandler(req, res);
 });
 
+// --- MAIN HANDLER (UPDATED PATH) ---
 async function loadChatHandler(req, res) {
     const userId = req.session.userAccount.id;
     const requestedId = req.params.conversationId;
@@ -265,20 +243,24 @@ async function loadChatHandler(req, res) {
         }
         const fullHistorySorted = Array.from(historyMap.values()).sort((a, b) => new Date(b.last_activity) - new Date(a.last_activity));
         
-        res.render('dardcorchat/dardcorai', {
+        // FIX: Mengarah ke 'dardcorchat/layout'
+        res.render('dardcorchat/layout', {
             user: req.session.userAccount,
             chatHistory: activeChatHistory,
             fullHistory: fullHistorySorted,
             activeConversationId: activeId,
-            toolType: toolType
+            toolType: toolType,
+            contentPage: 'dardcorai' // Nama file partial (akan dicari di folder yang sama)
         });
     } catch (err) {
-        res.render('dardcorchat/dardcorai', { 
+        console.error(err);
+        res.render('dardcorchat/layout', { 
             user: req.session.userAccount, 
             chatHistory: [], 
             fullHistory: [], 
             activeConversationId: uuidv4(),
-            toolType: toolType
+            toolType: toolType,
+            contentPage: 'dardcorai'
         });
     }
 }
@@ -293,9 +275,7 @@ router.post('/dardcorchat/ai/new-chat', checkUserAuth, (req, res) => {
 router.post('/dardcorchat/ai/rename-chat', checkUserAuth, async (req, res) => {
     try {
         await supabase.from('history_chat').update({ message: req.body.newTitle })
-            .eq('conversation_id', req.body.conversationId)
-            .eq('user_id', req.session.userAccount.id)
-            .eq('role', 'user')
+            .eq('conversation_id', req.body.conversationId).eq('user_id', req.session.userAccount.id).eq('role', 'user')
             .order('created_at', { ascending: true }).limit(1);
         res.json({ success: true });
     } catch (error) { res.status(500).json({ success: false }); }
