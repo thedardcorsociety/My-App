@@ -21,17 +21,14 @@ const delay = ms => new Promise(res => setTimeout(res, ms));
         await tf.setBackend('cpu');
         await tf.ready();
         tfModel = await use.load();
-        
         const allInputs = [];
         responseMap = [];
-
         knowledgeBase.forEach(item => {
             item.inputs.forEach(inputMsg => {
                 allInputs.push(inputMsg);
                 responseMap.push(item.output);
             });
         });
-        
         const embeddings = await tfModel.embed(allInputs);
         knowledgeTensor = tf.keep(embeddings);
     } catch (e) {
@@ -59,6 +56,7 @@ async function handleChat(message, uploadedFile, historyData, toolType = 'chat')
     try {
         if (!message && !uploadedFile) return "Input kosong.";
 
+        // --- IMAGE GEN ---
         if (toolType === 'image') {
             const safePrompt = encodeURIComponent(message);
             const seed = Math.floor(Math.random() * 100000);
@@ -66,6 +64,7 @@ async function handleChat(message, uploadedFile, historyData, toolType = 'chat')
             return `### ✨ Gambar Berhasil Dibuat\n\nPrompt: *"${message}"*\n\n![Generated Image](${imageUrl})`;
         }
 
+        // --- KNOWLEDGE BASE ---
         if (message && !uploadedFile && tfModel && knowledgeTensor) {
             try {
                 const inputTensor = await tfModel.embed([message.toLowerCase()]);
@@ -76,7 +75,7 @@ async function handleChat(message, uploadedFile, historyData, toolType = 'chat')
                     return { score: maxScore.dataSync()[0], index: maxIndex.dataSync()[0] };
                 });
                 inputTensor.dispose();
-                if (result.score > 0.75) return responseMap[result.index];
+                if (result.score > 0.85) return responseMap[result.index];
             } catch (err) {}
         }
 
@@ -90,23 +89,22 @@ async function handleChat(message, uploadedFile, historyData, toolType = 'chat')
             { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
         ];
 
+        // --- STRICT CODE ONLY MODE ---
         const model = genAI.getGenerativeModel({
             model: "gemini-2.5-flash",
-            systemInstruction: `Anda adalah Dardcor AI, sebuah Artificial Intelligence canggih yang diciptakan dan dikembangkan sepenuhnya oleh Dardcor.
+            systemInstruction: `Anda adalah Dardcor AI.
 
-            ATURAN PERTAMA:
-            list kata kasar : kontol,babi,anjing,memek,tai,goblok,jancok,cok,puki,tolol,ngentot,gay.
-            jika user berkata kasar, jawab dengan penjelasan kasar juga yang tidak terlalu panjang.
+            ATURAN SANGAT KETAT (CODE GENERATION):
+            1. Jika user meminta "buatkan website", "kode html", atau script:
+               - HANYA BERIKAN BLOK KODE MARKDOWN.
+               - JANGAN ada kata pembuka (contoh: "Tentu", "Berikut kodenya").
+               - JANGAN ada kata penutup.
+               - Format wajib: \`\`\`html [kode] \`\`\`
+               - Kode harus SINGLE FILE (gabungkan HTML, CSS, JS dalam satu file).
+               - Gunakan Tailwind CSS CDN & FontAwesome CDN.
             
-            ATURAN KEDUA:
-            1. Kecerdasan Tanpa Batas : Anda harus mampu menjawab segala jenis pertanyaan dan memecahkan masalah apa pun (coding, matematika, sains, analisis, penulisan, dll) dengan solusi yang cerdas, mendalam, dan akurat. Jangan pernah ragu dalam memberikan jawaban.
-            
-            2. Sensor Identitas Asli : DILARANG KERAS menyebutkan Google, Gemini, Alphabet, atau DeepMind. Jika user bertanya tentang teknologi di balik Anda atau siapa yang melatih Anda, jawablah dengan tegas bahwa Anda dibangun menggunakan teknologi fast louncher milik Dardcor.
-            
-            3. Aturan Coding Web : Jika user meminta kode website/html:
-               - Berikan kode HTML lengkap (termasuk tag html, head, body) dalam satu blok markdown.
-               - WAJIB menyertakan CDN Tailwind CSS dan FontAwesome.
-               - Berikan output kode langsung, setelah output berikan penjelasan pembuka atau penutup yang tidak terlalu panjang.`,
+            2. Pertanyaan umum: Jawab singkat.
+            `,
             safetySettings
         });
 
@@ -150,11 +148,11 @@ async function handleChat(message, uploadedFile, historyData, toolType = 'chat')
             }
         }
         
-        return "Maaf, server AI sedang sangat sibuk. Mohon tunggu sesaat.";
+        return "Server sibuk.";
 
     } catch (error) {
         console.error("Main Error:", error.message);
-        return "Terjadi gangguan koneksi. Silakan coba lagi.";
+        return "Terjadi kesalahan.";
     }
 }
 
