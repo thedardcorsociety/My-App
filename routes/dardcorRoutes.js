@@ -5,11 +5,9 @@ const multer = require('multer');
 const supabase = require('../config/supabase'); 
 const { v4: uuidv4 } = require('uuid');
 const rateLimit = require('express-rate-limit');
-const { body, validationResult } = require('express-validator');
 const nodemailer = require('nodemailer');
 const { handleChatStream } = require('../controllers/dardcorModel');
 
-const storage = multer.memoryStorage();
 const upload = multer({ limits: { fileSize: 10 * 1024 * 1024 } });
 
 const transporter = nodemailer.createTransport({
@@ -38,7 +36,7 @@ function checkUserAuth(req, res, next) {
 
 const uploadMiddleware = (req, res, next) => {
     upload.array('file_attachment', 5)(req, res, function (err) {
-        if (err) return res.status(400).json({ success: false, response: "Error upload file (Max 5 file @ 10MB)." });
+        if (err) return res.status(400).json({ success: false, response: "Max 5 File (@10MB)." });
         next();
     });
 };
@@ -60,25 +58,15 @@ router.get('/register', (req, res) => {
 
 router.post('/dardcor-login', authLimiter, async (req, res) => {
     let { email, password } = req.body;
-    if (!email || !password) return res.status(400).json({ success: false, message: "Email dan Password wajib diisi." });
-
-    email = email.trim().toLowerCase();
-    password = password.trim();
-
     try {
-        const { data: user, error } = await supabase.from('dardcor_users').select('*').eq('email', email).single();
-        if (error || !user) return res.status(400).json({ success: false, message: 'Email tidak terdaftar.' });
+        const { data: user } = await supabase.from('dardcor_users').select('*').eq('email', email.trim().toLowerCase()).single();
+        if (!user || !await bcrypt.compare(password, user.password)) return res.status(400).json({ success: false, message: 'Login gagal.' });
         
-        const match = await bcrypt.compare(password, user.password);
-        if (match) { 
-            req.session.userAccount = user;
-            req.session.save((err) => {
-                if (err) return res.status(500).json({ success: false, message: 'Gagal memproses login.' });
-                res.status(200).json({ success: true, redirectUrl: '/dardcorchat/dardcor-ai' });
-            });
-        } else { 
-            res.status(400).json({ success: false, message: 'Password salah.' }); 
-        }
+        req.session.userAccount = user;
+        req.session.save((err) => {
+            if (err) return res.status(500).json({ success: false, message: 'Gagal memproses login.' });
+            res.status(200).json({ success: true, redirectUrl: '/dardcorchat/dardcor-ai' });
+        });
     } catch (err) { 
         res.status(500).json({ success: false, message: 'Terjadi kesalahan sistem.' }); 
     }
@@ -91,18 +79,9 @@ router.get('/dardcor-logout', (req, res) => {
     });
 });
 
-router.post('/register', authLimiter, [
-    body('username').trim().escape().isLength({ min: 3 }),
-    body('email').isEmail(),
-    body('password').notEmpty()
-], async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.status(400).json({ success: false, message: 'Format input tidak valid.' });
-
+router.post('/register', authLimiter, async (req, res) => {
     let { username, email, password } = req.body;
     email = email.trim().toLowerCase();
-    password = password.trim();
-
     try {
         const { data: existingUser } = await supabase.from('dardcor_users').select('email').eq('email', email).single();
         if (existingUser) return res.status(400).json({ success: false, message: 'Email sudah terdaftar.' });
@@ -111,10 +90,9 @@ router.post('/register', authLimiter, [
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         const hashedPassword = await bcrypt.hash(password, 12);
 
-        const { error: saveError } = await supabase.from('verification_codes').insert([{
+        await supabase.from('verification_codes').insert([{
             username, email, password: hashedPassword, otp
         }]);
-        if (saveError) throw saveError;
 
         await transporter.sendMail({
             from: '"Dardcor Security" <no-reply@dardcor.com>',
@@ -131,28 +109,19 @@ router.post('/register', authLimiter, [
 
 router.get('/verify-otp', (req, res) => {
     if (req.session && req.session.userAccount) return res.redirect('/dardcorchat/dardcor-ai');
-    const email = req.query.email;
-    if (!email) return res.redirect('/register');
-    res.render('verify', { email: email });
+    res.render('verify', { email: req.query.email });
 });
 
 router.post('/verify-otp', async (req, res) => {
-    let { email, otp } = req.body;
-    if (!email || !otp) return res.status(400).json({ success: false, message: "Data tidak lengkap." });
-    
-    email = email.trim().toLowerCase();
-    otp = otp.trim();
-    
     try {
-        const { data: record, error: otpError } = await supabase.from('verification_codes').select('*').eq('email', email).eq('otp', otp).single();
-        if (otpError || !record) return res.status(400).json({ success: false, message: "Kode OTP Salah!" });
+        const { data: record } = await supabase.from('verification_codes').select('*').eq('email', req.body.email).eq('otp', req.body.otp).single();
+        if (!record) return res.status(400).json({ success: false, message: "Kode OTP Salah!" });
 
-        const { data: newUser, error: insertError } = await supabase.from('dardcor_users').insert([{ 
+        const { data: newUser } = await supabase.from('dardcor_users').insert([{ 
             username: record.username, email: record.email, password: record.password 
         }]).select().single();
 
-        if (insertError) throw new Error("Gagal menyimpan user.");
-        await supabase.from('verification_codes').delete().eq('email', email);
+        await supabase.from('verification_codes').delete().eq('email', req.body.email);
         
         req.session.userAccount = newUser;
         req.session.save(() => {
@@ -168,26 +137,21 @@ router.get('/dardcorchat/profile', checkUserAuth, (req, res) => {
 });
 
 router.post('/dardcor/profile/update', checkUserAuth, upload.single('profile_image'), async (req, res) => {
-    const { username, password, confirm_password } = req.body;
     const userId = req.session.userAccount.id;
-    let updates = { username: username };
+    let updates = { username: req.body.username };
     try {
-        if (password && password.trim() !== "") {
-            if (password !== confirm_password) return res.render('dardcorchat/profile', { user: req.session.userAccount, error: "Password tidak sama.", success: null });
-            updates.password = await bcrypt.hash(password.trim(), 12);
+        if (req.body.password && req.body.password.trim() !== "") {
+            if (req.body.password !== req.body.confirm_password) return res.render('dardcorchat/profile', { user: req.session.userAccount, error: "Password tidak sama.", success: null });
+            updates.password = await bcrypt.hash(req.body.password.trim(), 12);
         }
         if (req.file) {
             const fileName = `${userId}-${Date.now()}.${req.file.originalname.split('.').pop()}`;
-            const { error: upErr } = await supabase.storage.from('avatars').upload(fileName, req.file.buffer, { contentType: req.file.mimetype, upsert: true });
-            if (!upErr) {
-                const { data: publicData } = supabase.storage.from('avatars').getPublicUrl(fileName);
-                updates.profile_image = publicData.publicUrl;
-            }
+            await supabase.storage.from('avatars').upload(fileName, req.file.buffer, { contentType: req.file.mimetype, upsert: true });
+            const { data } = supabase.storage.from('avatars').getPublicUrl(fileName);
+            updates.profile_image = data.publicUrl;
         }
         
-        const { data, error } = await supabase.from('dardcor_users').update(updates).eq('id', userId).select().single();
-        if (error) throw error;
-        
+        const { data } = await supabase.from('dardcor_users').update(updates).eq('id', userId).select().single();
         req.session.userAccount = data;
         req.session.save(() => {
             res.render('dardcorchat/profile', { user: data, success: "Profil diperbarui!", error: null });
@@ -197,22 +161,12 @@ router.post('/dardcor/profile/update', checkUserAuth, upload.single('profile_ima
     }
 });
 
-router.get('/dardcorchat/dardcorai', checkUserAuth, (req, res) => { 
-    res.redirect('/dardcorchat/dardcor-ai');
-});
-
 router.get('/dardcorchat/dardcor-ai', checkUserAuth, (req, res) => {
     const newId = uuidv4();
     res.redirect(`/dardcorchat/dardcor-ai/${newId}`);
 });
 
-router.get('/dardcorchat/dardcor-ai/:conversationId', checkUserAuth, loadChatHandler);
-
-router.get('/dardcorchat/tool/:toolType', checkUserAuth, (req, res) => {
-    loadChatHandler(req, res);
-});
-
-async function loadChatHandler(req, res) {
+router.get('/dardcorchat/dardcor-ai/:conversationId', checkUserAuth, async (req, res) => {
     const userId = req.session.userAccount.id;
     const requestedId = req.params.conversationId;
     const toolType = req.params.toolType || 'chat';
@@ -225,7 +179,6 @@ async function loadChatHandler(req, res) {
             .order('updated_at', { ascending: false });
 
         let activeId = requestedId;
-        
         if (!activeId || activeId.length < 10) {
             activeId = uuidv4();
             return res.redirect(`/dardcorchat/dardcor-ai/${activeId}`);
@@ -248,17 +201,9 @@ async function loadChatHandler(req, res) {
             contentPage: 'dardcorai' 
         });
     } catch (err) {
-        console.error(err);
-        res.render('dardcorchat/layout', { 
-            user: req.session.userAccount, 
-            chatHistory: [], 
-            conversationList: [], 
-            activeConversationId: uuidv4(),
-            toolType: toolType,
-            contentPage: 'dardcorai'
-        });
+        res.redirect('/dardcor');
     }
-}
+});
 
 router.get('/api/chat/:conversationId', checkUserAuth, async (req, res) => {
     const userId = req.session.userAccount.id;
@@ -277,7 +222,7 @@ router.get('/api/chat/:conversationId', checkUserAuth, async (req, res) => {
 
         res.json({ success: true, history: history || [] });
     } catch (err) {
-        res.status(500).json({ success: false, message: "Error loading chat" });
+        res.status(500).json({ success: false });
     }
 });
 
@@ -330,6 +275,7 @@ router.post('/dardcorchat/ai/chat-stream', checkUserAuth, uploadMiddleware, asyn
     const uploadedFiles = req.files || [];
     const userId = req.session.userAccount.id;
     let conversationId = req.body.conversationId || uuidv4();
+    const toolType = req.body.toolType || 'chat';
     
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
@@ -367,23 +313,29 @@ router.post('/dardcorchat/ai/chat-stream', checkUserAuth, uploadMiddleware, asyn
             .eq('conversation_id', conversationId)
             .order('created_at', { ascending: true });
         
-        const stream = await handleChatStream(message, uploadedFiles, historyData);
-        
-        let fullResponse = "";
-
-        for await (const chunk of stream) {
-            const chunkText = chunk.text();
-            fullResponse += chunkText;
-            res.write(`data: ${JSON.stringify({ chunk: chunkText })}\n\n`);
-        }
-
-        if (fullResponse) {
+        // STREAMING LOGIC
+        if (toolType === 'image') {
+            const botResponse = await handleChatStream(message, uploadedFiles, historyData, toolType);
+            res.write(`data: ${JSON.stringify({ chunk: botResponse })}\n\n`);
+            
             await supabase.from('history_chat').insert({ 
-                user_id: userId, 
-                conversation_id: conversationId, 
-                role: 'bot', 
-                message: fullResponse 
+                user_id: userId, conversation_id: conversationId, role: 'bot', message: botResponse 
             });
+        } else {
+            const stream = await handleChatStream(message, uploadedFiles, historyData, toolType);
+            let fullResponse = "";
+
+            for await (const chunk of stream) {
+                const chunkText = chunk.text();
+                fullResponse += chunkText;
+                res.write(`data: ${JSON.stringify({ chunk: chunkText })}\n\n`);
+            }
+
+            if (fullResponse) {
+                await supabase.from('history_chat').insert({ 
+                    user_id: userId, conversation_id: conversationId, role: 'bot', message: fullResponse 
+                });
+            }
         }
 
         res.write(`data: ${JSON.stringify({ done: true })}\n\n`);

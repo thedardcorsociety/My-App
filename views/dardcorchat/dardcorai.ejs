@@ -35,10 +35,12 @@
                                 </div>
                             <% }); %>
                         <% } %>
+                        
                         <textarea class="hidden raw-message-content"><%= msg.message %></textarea>
                         <div class="markdown-body"></div>
+                        
                         <% if (msg.role === 'user') { %>
-                            <button onclick="editMessage('<%= msg.message.replace(/'/g, "\\'") %>')" class="text-[10px] opacity-50 mt-2 hover:opacity-100 block w-full text-right"><i class="fas fa-pen"></i> Edit</button>
+                            <button onclick="editMessage(decodeURIComponent('<%= encodeURIComponent(msg.message) %>'))" class="text-[10px] opacity-50 mt-2 hover:opacity-100 block w-full text-right"><i class="fas fa-pen"></i> Edit</button>
                         <% } %>
                     </div>
                 </div>

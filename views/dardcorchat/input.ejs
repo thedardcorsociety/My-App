@@ -38,7 +38,10 @@
         document.body.addEventListener(eventName, preventDefaults, false);
     });
 
-    function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
 
     ['dragenter', 'dragover'].forEach(eventName => {
         document.body.addEventListener(eventName, () => {
@@ -62,7 +65,9 @@
         handleFiles(files);
     }
 
-    fileInput.addEventListener('change', function() { handleFiles(this.files); });
+    fileInput.addEventListener('change', function() {
+        handleFiles(this.files);
+    });
 
     function handleFiles(files) {
         if ([...selectedFiles, ...files].length > 5) {
@@ -86,11 +91,24 @@
         selectedFiles.forEach((file, index) => {
             const div = document.createElement('div');
             div.className = "flex items-center gap-2 text-xs text-purple-300 bg-purple-500/10 rounded px-2 py-1 border border-purple-500/20";
-            div.innerHTML = `<i class="fas fa-file text-xs"></i><span class="truncate max-w-[100px]">${file.name}</span><button type="button" onclick="removeFile(${index})" class="hover:text-red-400 ml-1"><i class="fas fa-times"></i></button>`;
+            div.innerHTML = `
+                <i class="fas fa-file text-xs"></i> 
+                <span class="truncate max-w-[100px]">${file.name}</span>
+                <button type="button" onclick="removeFile(${index})" class="hover:text-red-400 ml-1"><i class="fas fa-times"></i></button>
+            `;
             previewContainer.appendChild(div);
         });
     }
 
-    function removeFile(index) { selectedFiles.splice(index, 1); renderPreviews(); fileInput.value = ''; }
-    function clearFiles() { selectedFiles = []; renderPreviews(); fileInput.value = ''; }
+    function removeFile(index) {
+        selectedFiles.splice(index, 1);
+        renderPreviews();
+        fileInput.value = ''; 
+    }
+
+    function clearFiles() {
+        selectedFiles = [];
+        renderPreviews();
+        fileInput.value = '';
+    }
 </script>
