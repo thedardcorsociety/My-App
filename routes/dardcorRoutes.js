@@ -7,7 +7,7 @@ const { v4: uuidv4 } = require('uuid');
 const rateLimit = require('express-rate-limit');
 const { body, validationResult } = require('express-validator');
 const nodemailer = require('nodemailer');
-const { handleChat } = require('../controllers/dardcorModel');
+const { handleChatStream } = require('../controllers/dardcorModel');
 
 const storage = multer.memoryStorage();
 const upload = multer({ limits: { fileSize: 10 * 1024 * 1024 } });
@@ -218,7 +218,6 @@ async function loadChatHandler(req, res) {
     const toolType = req.params.toolType || 'chat';
     
     try {
-        // Ambil Daftar Percakapan untuk Sidebar
         const { data: conversationList } = await supabase
             .from('conversations')
             .select('*')
@@ -227,13 +226,11 @@ async function loadChatHandler(req, res) {
 
         let activeId = requestedId;
         
-        // Cek validitas ID, jika tidak valid buat baru
         if (!activeId || activeId.length < 10) {
             activeId = uuidv4();
             return res.redirect(`/dardcorchat/dardcor-ai/${activeId}`);
         }
 
-        // Ambil History Chat untuk ID yang aktif
         const { data: activeChatHistory } = await supabase
             .from('history_chat')
             .select('*')
@@ -263,6 +260,27 @@ async function loadChatHandler(req, res) {
     }
 }
 
+router.get('/api/chat/:conversationId', checkUserAuth, async (req, res) => {
+    const userId = req.session.userAccount.id;
+    const conversationId = req.params.conversationId;
+
+    try {
+        const { data: history } = await supabase
+            .from('history_chat')
+            .select('*')
+            .eq('conversation_id', conversationId)
+            .eq('user_id', userId)
+            .order('created_at', { ascending: true });
+            
+        req.session.currentConversationId = conversationId;
+        req.session.save();
+
+        res.json({ success: true, history: history || [] });
+    } catch (err) {
+        res.status(500).json({ success: false, message: "Error loading chat" });
+    }
+});
+
 router.post('/dardcorchat/ai/new-chat', checkUserAuth, (req, res) => {
     req.session.currentConversationId = null;
     req.session.save(() => {
@@ -282,7 +300,6 @@ router.post('/dardcorchat/ai/rename-chat', checkUserAuth, async (req, res) => {
 
 router.post('/dardcorchat/ai/delete-chat-history', checkUserAuth, async (req, res) => {
     try {
-        // Hapus dari tabel conversations (history_chat akan terhapus otomatis karena cascade)
         await supabase.from('conversations')
             .delete()
             .eq('id', req.body.conversationId)
@@ -308,30 +325,29 @@ router.get('/dardcorchat/dardcor-ai/preview/:id', checkUserAuth, async (req, res
     } catch (err) { res.status(500).send("Error"); }
 });
 
-router.post('/dardcorchat/ai/chat', checkUserAuth, uploadMiddleware, async (req, res) => {
+router.post('/dardcorchat/ai/chat-stream', checkUserAuth, uploadMiddleware, async (req, res) => {
     const message = req.body.message ? req.body.message.trim() : "";
-    const uploadedFiles = req.files; // Array of files
+    const uploadedFiles = req.files || [];
     const userId = req.session.userAccount.id;
-    const toolType = req.body.toolType || 'chat';
-    let conversationId = req.body.conversationId || req.session.currentConversationId || uuidv4();
+    let conversationId = req.body.conversationId || uuidv4();
     
-    const hasFiles = uploadedFiles && uploadedFiles.length > 0;
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
+    const hasFiles = uploadedFiles.length > 0;
     const userMessage = message || (hasFiles ? `Menganalisis ${uploadedFiles.length} file...` : "");
-    if (!userMessage) return res.json({ success: false, response: "Input kosong." });
-    
+
     try {
-        // 1. Cek apakah conversation sudah ada, jika belum buat baru
         const { data: convCheck } = await supabase.from('conversations').select('id').eq('id', conversationId).single();
         if (!convCheck) {
             let title = message.substring(0, 30) || "Percakapan Baru";
             if (hasFiles) title = "Analisis File";
             await supabase.from('conversations').insert({ id: conversationId, user_id: userId, title: title });
         } else {
-            // Update timestamp
             await supabase.from('conversations').update({ updated_at: new Date() }).eq('id', conversationId);
         }
 
-        // 2. Simpan pesan User
         let fileMetadata = null;
         if (hasFiles) {
             fileMetadata = uploadedFiles.map(f => ({ 
@@ -346,24 +362,37 @@ router.post('/dardcorchat/ai/chat', checkUserAuth, uploadMiddleware, async (req,
             file_metadata: fileMetadata
         });
         
-        // 3. Ambil context history
         const { data: historyData } = await supabase.from('history_chat')
             .select('role, message')
             .eq('conversation_id', conversationId)
             .order('created_at', { ascending: true });
         
-        // 4. Kirim ke AI (Dukungan Multi File)
-        const botResponse = await handleChat(message, uploadedFiles, historyData, toolType);
+        const stream = await handleChatStream(message, uploadedFiles, historyData);
         
-        if (botResponse) {
-            await supabase.from('history_chat').insert({ user_id: userId, conversation_id: conversationId, role: 'bot', message: botResponse });
-            res.json({ success: true, response: botResponse, conversationId });
-        } else { 
-            throw new Error("AI tidak memberikan respon."); 
+        let fullResponse = "";
+
+        for await (const chunk of stream) {
+            const chunkText = chunk.text();
+            fullResponse += chunkText;
+            res.write(`data: ${JSON.stringify({ chunk: chunkText })}\n\n`);
         }
-    } catch (error) { 
+
+        if (fullResponse) {
+            await supabase.from('history_chat').insert({ 
+                user_id: userId, 
+                conversation_id: conversationId, 
+                role: 'bot', 
+                message: fullResponse 
+            });
+        }
+
+        res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+        res.end();
+
+    } catch (error) {
         console.log(error);
-        res.status(500).json({ success: false, response: "Terjadi gangguan sistem." }); 
+        res.write(`data: ${JSON.stringify({ error: "Gagal memproses AI." })}\n\n`);
+        res.end();
     }
 });
 

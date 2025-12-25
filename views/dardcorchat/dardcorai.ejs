@@ -25,35 +25,31 @@
                     </div>
                     <div class="rounded-2xl p-4 shadow-lg text-sm leading-relaxed bg-[#13131f] text-gray-200 rounded-bl-none border border-gray-800 w-full overflow-hidden <%= msg.role === 'user' ? '!bg-violet-600 !text-white !rounded-br-none !rounded-bl-2xl !border-none' : '' %>">
                         <% if (msg.file_metadata) { %>
-                            <div class="mb-3 text-xs flex items-center gap-3 bg-black/20 p-2 rounded-lg border border-white/10">
-                                <i class="fas fa-file text-base"></i>
-                                <div class="flex flex-col overflow-hidden min-w-0">
-                                    <span class="truncate font-medium text-white text-xs-mobile"><%= msg.file_metadata.filename %></span>
-                                    <span class="opacity-70 text-[10px]"><%= Math.round(msg.file_metadata.size / 1024) %> KB</span>
+                            <% msg.file_metadata.forEach(f => { %>
+                                <div class="mb-3 text-xs flex items-center gap-3 bg-black/20 p-2 rounded-lg border border-white/10">
+                                    <i class="fas fa-file text-base"></i>
+                                    <div class="flex flex-col overflow-hidden min-w-0">
+                                        <span class="truncate font-medium text-white text-xs-mobile"><%= f.filename %></span>
+                                        <span class="opacity-70 text-[10px]"><%= Math.round(f.size / 1024) %> KB</span>
+                                    </div>
                                 </div>
-                            </div>
+                            <% }); %>
                         <% } %>
-                        
                         <textarea class="hidden raw-message-content"><%= msg.message %></textarea>
                         <div class="markdown-body"></div>
-                        
+                        <% if (msg.role === 'user') { %>
+                            <button onclick="editMessage('<%= msg.message.replace(/'/g, "\\'") %>')" class="text-[10px] opacity-50 mt-2 hover:opacity-100 block w-full text-right"><i class="fas fa-pen"></i> Edit</button>
+                        <% } %>
                     </div>
                 </div>
             </div>
         <% }) %>
     <% } %>
     
-    <div id="loading-indicator" class="hidden flex w-full justify-start">
-        <div class="flex flex-col items-start message-bubble">
-            <span class="text-[10px] uppercase tracking-wide text-gray-500 font-bold mb-1 px-1">Dardcor AI</span>
-            <div class="bg-[#13131f] px-4 py-3 rounded-2xl rounded-bl-none border border-gray-800 flex items-center gap-2 shadow-md">
-                <div class="flex space-x-1.5">
-                    <div class="w-2 h-2 bg-purple-500 rounded-full animate-bounce"></div>
-                    <div class="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style="animation-delay: 0.15s"></div>
-                    <div class="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style="animation-delay: 0.3s"></div>
-                </div>
-                <span id="loading-text" class="text-xs text-gray-500 ml-2">Sedang memproses...</span>
-            </div>
+    <div id="loading-indicator" class="hidden flex w-full justify-start mb-6">
+        <div class="flex items-center gap-3 bg-[#13131f] px-4 py-3 rounded-2xl rounded-bl-none border border-gray-800 shadow-md">
+            <div class="loader"></div>
+            <span class="text-xs text-gray-400 font-medium animate-pulse">Sedang berpikir...</span>
         </div>
     </div>
 </div>

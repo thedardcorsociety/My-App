@@ -1,5 +1,5 @@
 <div class="absolute bottom-0 left-0 right-0 w-full z-50 px-4 pb-4 pt-2 bg-[#0b0c15] border-t border-transparent safe-pb">
-    <div class="max-w-3xl mx-auto w-full">
+    <div class="max-w-3xl mx-auto w-full relative">
         <div id="drop-zone" class="hidden absolute inset-0 -top-24 bg-purple-900/80 backdrop-blur-sm rounded-2xl flex flex-col items-center justify-center border-2 border-dashed border-purple-400 z-50 transition-opacity">
             <i class="fas fa-cloud-upload-alt text-4xl text-white mb-2"></i>
             <span class="text-white font-bold">Lepaskan File Disini</span>
@@ -7,9 +7,8 @@
         </div>
 
         <form id="chat-form" onsubmit="return false;" class="bg-[#13131f] border border-gray-700/50 rounded-2xl flex flex-col shadow-2xl p-2 w-full relative z-10 transition-colors focus-within:border-purple-500/50">
-            
             <div id="file-preview-container" class="hidden flex flex-wrap gap-2 px-2 pb-2 border-b border-gray-800/50 mb-1">
-                </div>
+            </div>
 
             <div class="flex items-end w-full">
                 <label for="file-upload" class="p-3 text-gray-400 hover:text-white cursor-pointer hover:bg-gray-800 rounded-xl shrink-0 flex items-center justify-center transition-colors h-[44px]">
@@ -21,7 +20,7 @@
                     <textarea id="message-input" rows="1" class="w-full bg-transparent border-none outline-none text-white resize-none max-h-32 placeholder-gray-500 text-base scrollbar-hide flex items-center" 
                         placeholder="<%= (typeof toolType !== 'undefined' && toolType === 'image') ? 'Deskripsikan gambar...' : 'Kirim pesan...' %>"></textarea>
                 </div>
-                <button onclick="sendMessage()" id="send-btn" class="p-3 text-purple-500 hover:text-white hover:bg-purple-600 rounded-xl shrink-0 flex items-center justify-center transition-colors h-[44px]"><i class="fas fa-paper-plane text-lg"></i></button>
+                <button onclick="sendMessage()" id="send-btn" class="p-3 text-purple-500 hover:text-white hover:bg-purple-600 rounded-xl shrink-0 flex items-center justify-center transition-colors h-[44px]"><i id="send-icon" class="fas fa-paper-plane text-lg"></i></button>
             </div>
         </form>
         <p class="text-center text-[10px] text-gray-600 mt-2 select-none">Dardcor AI dapat membuat kesalahan. Cek info penting.</p>
@@ -29,24 +28,18 @@
 </div>
 
 <script>
-    // DRAG AND DROP & MULTI FILE LOGIC
     const dropZone = document.getElementById('drop-zone');
     const formContainer = document.getElementById('chat-form');
     const fileInput = document.getElementById('file-upload');
     const previewContainer = document.getElementById('file-preview-container');
-    let selectedFiles = []; // Store actual File objects
+    let selectedFiles = []; 
 
-    // Prevent default drag behaviors
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
         document.body.addEventListener(eventName, preventDefaults, false);
     });
 
-    function preventDefaults(e) {
-        e.preventDefault();
-        e.stopPropagation();
-    }
+    function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
 
-    // Highlight drop zone
     ['dragenter', 'dragover'].forEach(eventName => {
         document.body.addEventListener(eventName, () => {
             dropZone.classList.remove('hidden');
@@ -61,7 +54,6 @@
         }, false);
     });
 
-    // Handle Drop
     document.body.addEventListener('drop', handleDrop, false);
 
     function handleDrop(e) {
@@ -70,10 +62,7 @@
         handleFiles(files);
     }
 
-    // Handle Manual Select
-    fileInput.addEventListener('change', function() {
-        handleFiles(this.files);
-    });
+    fileInput.addEventListener('change', function() { handleFiles(this.files); });
 
     function handleFiles(files) {
         if ([...selectedFiles, ...files].length > 5) {
@@ -97,25 +86,11 @@
         selectedFiles.forEach((file, index) => {
             const div = document.createElement('div');
             div.className = "flex items-center gap-2 text-xs text-purple-300 bg-purple-500/10 rounded px-2 py-1 border border-purple-500/20";
-            div.innerHTML = `
-                <i class="fas fa-file text-xs"></i> 
-                <span class="truncate max-w-[100px]">${file.name}</span>
-                <button type="button" onclick="removeFile(${index})" class="hover:text-red-400 ml-1"><i class="fas fa-times"></i></button>
-            `;
+            div.innerHTML = `<i class="fas fa-file text-xs"></i><span class="truncate max-w-[100px]">${file.name}</span><button type="button" onclick="removeFile(${index})" class="hover:text-red-400 ml-1"><i class="fas fa-times"></i></button>`;
             previewContainer.appendChild(div);
         });
     }
 
-    function removeFile(index) {
-        selectedFiles.splice(index, 1);
-        renderPreviews();
-        // Reset input value so change event triggers again if needed
-        fileInput.value = ''; 
-    }
-
-    function clearFiles() {
-        selectedFiles = [];
-        renderPreviews();
-        fileInput.value = '';
-    }
+    function removeFile(index) { selectedFiles.splice(index, 1); renderPreviews(); fileInput.value = ''; }
+    function clearFiles() { selectedFiles = []; renderPreviews(); fileInput.value = ''; }
 </script>

@@ -9,9 +9,11 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
     <link rel="stylesheet" href="/css/tailwind.css">
     <link rel="stylesheet" href="/vendor/fontawesome/css/all.min.css">
     <link rel="stylesheet" href="/css/atom-one-dark.min.css">
@@ -31,7 +33,6 @@
         .safe-pl { padding-left: env(safe-area-inset-left); }
         .message-bubble { max-width: 95%; }
 
-        /* TERMINAL HITAM POLOS */
         .terminal-container { 
             margin: 12px 0;
             background-color: #000000; 
@@ -86,6 +87,21 @@
         }
         .markdown-body p { margin-bottom: 1em; }
         .markdown-body a { color: #a78bfa; text-decoration: underline; }
+
+        /* LOADER SPINNER */
+        .loader {
+            border: 3px solid rgba(139, 92, 246, 0.2); 
+            border-top: 3px solid #8b5cf6; /* Warna Ungu */
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body class="flex text-white font-sans">
@@ -109,7 +125,6 @@
             <div class="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2 px-2">Riwayat</div>
             
             <% 
-                // Cek apakah chat aktif ada di list riwayat
                 let isNewChat = true;
                 if (conversationList && conversationList.length > 0) {
                     isNewChat = !conversationList.some(c => c.id === activeConversationId);
@@ -126,11 +141,10 @@
             <% } %>
 
             <% if (conversationList) { conversationList.forEach(chat => { %>
-                <div id="chat-item-<%= chat.id %>" onclick="window.location.href='/dardcorchat/dardcor-ai/<%= chat.id %>'" class="group relative flex items-center px-3 h-[44px] rounded-lg hover:bg-[#202336] cursor-pointer w-full <%= chat.id === activeConversationId ? 'bg-[#202336] border-l-4 border-purple-500' : 'border-l-4 border-transparent' %>">
+                <div id="chat-item-<%= chat.id %>" onclick="loadChat('<%= chat.id %>')" class="group relative flex items-center px-3 h-[44px] rounded-lg hover:bg-[#202336] cursor-pointer w-full <%= chat.id === activeConversationId ? 'bg-[#202336] border-l-4 border-purple-500' : 'border-l-4 border-transparent' %>">
                     <div class="flex-1 min-w-0 pr-2 flex items-center h-full pointer-events-none">
                         <i class="fas fa-message text-gray-500 mr-3 text-xs flex-shrink-0"></i>
                         <span id="title-<%= chat.id %>" class="text-sm text-gray-300 truncate"><%= chat.title ? chat.title.substring(0, 22) : 'Percakapan' %>...</span>
-                        
                         <input type="hidden" id="raw-title-<%= chat.id %>" value="<%= chat.title %>">
                     </div>
                     <div class="relative flex items-center h-full">
@@ -154,12 +168,13 @@
 
     <main id="main-content" class="absolute inset-0 left-0 transition-all duration-300 flex flex-col bg-[#0b0c15]">
         <header class="h-16 shrink-0 flex items-center justify-between px-4 border-b border-purple-900/30 bg-[#0b0c15]/95 backdrop-blur-md z-50 safe-pt">
-            
             <div class="flex items-center">
                 <button onclick="toggleSidebar()" class="text-gray-400 p-2 rounded hover:bg-gray-800 transition-colors">
                     <i class="fas fa-bars text-lg"></i>
                 </button>
             </div>
+            
+            <div class="text-purple-500 font-bold tracking-wider ml-4 hidden md:block">Dardcor AI</div>
 
             <div class="relative ml-auto">
                 <button onclick="toggleToolsMenu()" class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-purple-500/30 bg-purple-500/10 text-purple-400 text-xs md:text-sm font-medium hover:bg-purple-500/20 hover:text-white transition-all">
@@ -203,11 +218,10 @@
     </div>
 
     <script>
-        const currentConversationId = "<%= activeConversationId || '' %>";
+        let currentConversationId = "<%= activeConversationId || '' %>";
         const currentToolType = "<%= typeof toolType !== 'undefined' ? toolType : 'chat' %>";
         const chatContainer = document.getElementById('chat-container');
         const messageInput = document.getElementById('message-input');
-        // File input logic now handled in input.ejs
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('mobile-overlay');
         const toolsMenu = document.getElementById('tools-menu');
@@ -215,6 +229,7 @@
         const loadingIndicator = document.getElementById('loading-indicator');
         let targetChatId = null;
         let isSending = false;
+        let abortController = null;
 
         const escapeHtml = (unsafe) => {
             return unsafe.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
@@ -222,86 +237,46 @@
 
         const renderer = new marked.Renderer();
         renderer.code = function(code, language) {
-            let validCode = "";
-            if (typeof code === 'string') { validCode = code; }
-            else if (code && code.text) { validCode = code.text; }
-            else { validCode = String(code); }
-
+            let validCode = typeof code === 'string' ? code : (code && code.text ? code.text : String(code));
             let highlighted = "";
             let lang = (language || '').toLowerCase().trim();
             
-            if (!lang && (validCode.includes('<!DOCTYPE') || validCode.includes('<html') || validCode.includes('<body'))) {
-                lang = 'html';
-            }
+            if (!lang && (validCode.includes('<!DOCTYPE') || validCode.includes('<html') || validCode.includes('<body'))) lang = 'html';
 
             if (lang && hljs.getLanguage(lang)) {
-                try {
-                    const result = hljs.highlight(validCode, { language: lang });
-                    highlighted = result.value; 
-                } catch (e) { highlighted = escapeHtml(validCode); }
-            } else { 
-                highlighted = escapeHtml(validCode); 
-            }
+                try { highlighted = hljs.highlight(validCode, { language: lang }).value; } 
+                catch (e) { highlighted = escapeHtml(validCode); }
+            } else { highlighted = escapeHtml(validCode); }
 
-            if (!highlighted || String(highlighted) === '[object Object]') { 
-                highlighted = escapeHtml(validCode); 
-            }
+            let previewButton = ['html', 'xml', 'ejs', 'php', 'javascript', 'css'].includes(lang) ? 
+                `<button onclick="previewCode(this)" class="cmd-btn btn-preview"><i class="fas fa-play text-[9px]"></i> Preview</button>` : '';
 
-            let previewButton = '';
-            if (['html', 'xml', 'ejs', 'php', 'javascript', 'css'].includes(lang) || lang === '') {
-                previewButton = `<button onclick="previewCode(this)" class="cmd-btn btn-preview"><i class="fas fa-play text-[9px]"></i> Preview</button>`;
-            }
-
-            return `
-            <div class="terminal-container code-block-wrapper">
+            return `<div class="terminal-container code-block-wrapper">
                 <div class="terminal-head">
                     <div class="terminal-label"><i class="fas fa-code mr-1"></i> ${lang ? lang.toUpperCase() : 'CODE'}</div>
-                    <div class="terminal-opts">
-                        ${previewButton}
-                        <button onclick="copyCode(this)" class="cmd-btn btn-cp"><i class="fas fa-copy"></i> Copy</button>
-                    </div>
+                    <div class="terminal-opts">${previewButton}<button onclick="copyCode(this)" class="cmd-btn btn-cp"><i class="fas fa-copy"></i> Copy</button></div>
                 </div>
-                <div class="terminal-code">
-                    <pre><code class="hljs ${lang}">${highlighted}</code></pre>
-                    <textarea class="raw-code hidden">${escapeHtml(validCode)}</textarea>
-                </div>
-            </div>`;
+                <div class="terminal-code"><pre><code class="hljs ${lang}">${highlighted}</code></pre><textarea class="raw-code hidden">${escapeHtml(validCode)}</textarea></div></div>`;
         };
         marked.setOptions({ renderer: renderer });
 
         async function previewCode(btn) {
-            const wrapper = btn.closest('.terminal-container');
-            const textArea = wrapper.querySelector('.raw-code');
-            const txt = document.createElement("textarea");
-            txt.innerHTML = textArea.value;
-            let rawCode = txt.value;
-
+            const rawCode = btn.closest('.terminal-container').querySelector('.raw-code').value;
             const originalHtml = btn.innerHTML;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
             btn.disabled = true;
             try {
                 const res = await fetch('/dardcorchat/ai/store-preview', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ code: rawCode })
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: rawCode })
                 });
                 const data = await res.json();
                 if (data.success) window.open(`/dardcorchat/dardcor-ai/preview/${data.previewId}`, '_blank');
-                else alert('Gagal memproses preview.');
             } catch(e) { alert('Error sistem preview.'); } 
-            finally { 
-                btn.innerHTML = originalHtml;
-                btn.disabled = false; 
-            }
+            finally { btn.innerHTML = originalHtml; btn.disabled = false; }
         }
 
         function copyCode(btn) {
-            const wrapper = btn.closest('.terminal-container');
-            const textArea = wrapper.querySelector('.raw-code');
-            const txt = document.createElement("textarea");
-            txt.innerHTML = textArea.value;
-            const code = txt.value;
-            
+            const code = btn.closest('.terminal-container').querySelector('.raw-code').value;
             navigator.clipboard.writeText(code).then(() => {
                 const originalHtml = btn.innerHTML;
                 btn.innerHTML = '<i class="fas fa-check"></i>';
@@ -309,21 +284,8 @@
             });
         }
 
-        function toggleSidebar() {
-            if (sidebar.classList.contains('-translate-x-full')) {
-                sidebar.classList.remove('-translate-x-full');
-                overlay.classList.remove('hidden');
-            } else {
-                sidebar.classList.add('-translate-x-full');
-                overlay.classList.add('hidden');
-            }
-        }
-        
-        window.addEventListener('resize', () => { 
-            if(window.innerWidth >= 1024) {
-                overlay.classList.add('hidden'); 
-            }
-        });
+        function toggleSidebar() { sidebar.classList.toggle('-translate-x-full'); overlay.classList.toggle('hidden'); }
+        window.addEventListener('resize', () => { if(window.innerWidth >= 1024) overlay.classList.add('hidden'); });
         function toggleToolsMenu() { toolsMenu.classList.toggle('hidden'); document.getElementById('tools-chevron')?.classList.toggle('rotate-180'); }
         document.addEventListener('click', (e) => { 
             if (!toolsMenu.contains(e.target) && !e.target.closest('button[onclick="toggleToolsMenu()"]')) {
@@ -333,27 +295,92 @@
         });
         function toggleMenu(e, id) { e.stopPropagation(); document.querySelectorAll('.dropdown-menu').forEach(e => e.classList.add('hidden')); document.getElementById(id).classList.toggle('hidden'); }
 
+        async function loadChat(id) {
+            try {
+                document.querySelectorAll('[id^="chat-item-"]').forEach(el => {
+                    el.classList.remove('bg-[#202336]', 'border-l-4', 'border-purple-500');
+                    el.classList.add('border-l-4', 'border-transparent');
+                });
+                const activeItem = document.getElementById(`chat-item-${id}`);
+                if (activeItem) {
+                    activeItem.classList.add('bg-[#202336]', 'border-l-4', 'border-purple-500');
+                    activeItem.classList.remove('border-transparent');
+                }
+
+                const res = await fetch(`/api/chat/${id}`);
+                const data = await res.json();
+                
+                if (data.success) {
+                    currentConversationId = id;
+                    messageList.innerHTML = ''; 
+                    
+                    data.history.forEach(msg => {
+                        let fileHtml = '';
+                        if (msg.file_metadata) {
+                            msg.file_metadata.forEach(f => {
+                                fileHtml += `<div class="mb-3 text-xs flex items-center gap-3 bg-black/20 p-2 rounded-lg border border-white/10"><i class="fas fa-file text-base"></i><div class="flex flex-col overflow-hidden min-w-0"><span class="truncate font-medium text-white text-xs-mobile">${f.filename}</span><span class="opacity-70 text-[10px]">${Math.round(f.size / 1024)} KB</span></div></div>`;
+                            });
+                        }
+                        
+                        const div = document.createElement('div');
+                        div.className = `flex w-full ${msg.role === 'user' ? 'justify-end' : 'justify-start'} message-bubble-container`;
+                        // STRUKTUR HTML DISAMAKAN PERSIS DENGAN DARDCORAI.EJS
+                        div.innerHTML = `
+                            <div class="flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} message-bubble w-full max-w-[95%]">
+                                <div class="flex items-center gap-2 mb-1 px-1">
+                                    <span class="text-[10px] uppercase tracking-wide text-gray-500 font-bold">${msg.role === 'user' ? 'You' : 'Dardcor AI'}</span>
+                                </div>
+                                <div class="rounded-2xl p-4 shadow-lg text-sm leading-relaxed bg-[#13131f] text-gray-200 rounded-bl-none border border-gray-800 w-full overflow-hidden ${msg.role === 'user' ? '!bg-violet-600 !text-white !rounded-br-none !rounded-bl-2xl !border-none' : ''}">
+                                    ${fileHtml}
+                                    <div class="markdown-body">${marked.parse(msg.message)}</div>
+                                    ${msg.role === 'user' ? `<button onclick="editMessage('${msg.message.replace(/'/g, "\\'")}')" class="text-[10px] opacity-50 mt-2 hover:opacity-100 block w-full text-right"><i class="fas fa-pen"></i> Edit</button>` : ''}
+                                </div>
+                            </div>
+                        `;
+                        messageList.appendChild(div);
+                    });
+                    
+                    messageList.appendChild(loadingIndicator);
+                    document.querySelectorAll('pre code').forEach((el) => { hljs.highlightElement(el); });
+                    scrollToBottom();
+                    window.history.pushState({id: id}, '', `/dardcorchat/dardcor-ai/${id}`);
+                }
+            } catch (error) { console.error("Failed to load chat", error); }
+        }
+
         async function sendMessage() {
-            if(isSending) return;
+            if(isSending) {
+                if (abortController) {
+                    abortController.abort();
+                    abortController = null;
+                    isSending = false;
+                    document.getElementById('send-icon').classList.remove('fa-stop');
+                    document.getElementById('send-icon').classList.add('fa-paper-plane');
+                    loadingIndicator.classList.add('hidden');
+                }
+                return;
+            }
+
             const msg = messageInput.value.trim();
-            // selectedFiles global variable comes from input.ejs
             if(!msg && selectedFiles.length === 0) return;
             
             isSending = true;
-            document.getElementById('send-btn').disabled = true;
+            abortController = new AbortController();
+            
+            document.getElementById('send-icon').classList.remove('fa-paper-plane');
+            document.getElementById('send-icon').classList.add('fa-stop');
+            
             messageInput.blur(); 
             messageInput.value = ''; messageInput.style.height = 'auto'; 
             
             const emptyState = document.getElementById('empty-state');
             if(emptyState) emptyState.style.display = 'none';
             
-            // Create preview string for user message
             let fileInfo = null;
-            if(selectedFiles.length > 0) {
-                fileInfo = `${selectedFiles.length} file`;
-            }
+            if(selectedFiles.length > 0) fileInfo = `${selectedFiles.length} file`;
             appendUserMessage(msg, fileInfo);
             
+            // PINDAHKAN LOADING INDICATOR KE BAWAH
             messageList.appendChild(loadingIndicator);
             loadingIndicator.classList.remove('hidden');
             scrollToBottom();
@@ -362,155 +389,102 @@
             fd.append('message', msg); 
             fd.append('conversationId', currentConversationId); 
             fd.append('toolType', currentToolType);
-            
-            // Append multiple files
-            selectedFiles.forEach(file => {
-                fd.append('file_attachment', file);
-            });
-
-            // Clear input visual immediately
+            selectedFiles.forEach(file => fd.append('file_attachment', file));
             clearFiles(); 
 
             try {
-                const res = await fetch('/dardcorchat/ai/chat', { method: 'POST', body: fd });
-                const data = await res.json();
+                const response = await fetch('/dardcorchat/ai/chat-stream', { method: 'POST', body: fd, signal: abortController.signal });
+                
                 loadingIndicator.classList.add('hidden');
-                if(data.success) typeBotMessage(data.response);
-                else appendError(data.response);
+                const botBubble = createBotBubble();
+                const botContent = botBubble.querySelector('.markdown-body');
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let fullText = "";
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    const chunk = decoder.decode(value);
+                    const lines = chunk.split('\n\n');
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const data = JSON.parse(line.replace('data: ', ''));
+                                if (data.chunk) {
+                                    fullText += data.chunk;
+                                    botContent.innerHTML = marked.parse(fullText);
+                                    botContent.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
+                                    scrollToBottom();
+                                }
+                            } catch (e) {}
+                        }
+                    }
+                }
             } catch(e) { 
                 loadingIndicator.classList.add('hidden');
-                appendError("Gagal terhubung ke Dardcor Server."); 
+                if (e.name !== 'AbortError') appendError("Gagal terhubung.");
             } finally {
                 isSending = false;
+                abortController = null;
                 document.getElementById('send-btn').disabled = false;
+                document.getElementById('send-icon').classList.remove('fa-stop');
+                document.getElementById('send-icon').classList.add('fa-paper-plane');
             }
         }
 
         function appendUserMessage(text, fname) {
             const div = document.createElement('div');
-            div.className = "flex w-full justify-end mb-6";
+            div.className = "flex w-full justify-end mb-6 message-bubble-container";
             let fhtml = fname ? `<div class="mb-2 text-xs flex gap-2 bg-black/20 p-2 rounded border border-white/10"><i class="fas fa-file"></i> <span>${fname}</span></div>` : '';
-            div.innerHTML = `<div class="flex flex-col items-end message-bubble"><div class="rounded-2xl p-4 shadow-lg text-sm bg-violet-600 text-white rounded-br-none w-full">${fhtml}<div class="whitespace-pre-wrap">${text.replace(/</g, "&lt;")}</div></div></div>`;
-            document.getElementById('message-list').appendChild(div);
+            // STRUKTUR SAMA PERSIS DENGAN DARDCORAI.EJS + TOMBOL EDIT
+            div.innerHTML = `<div class="flex flex-col items-end message-bubble w-full max-w-[95%]">
+                <div class="flex items-center gap-2 mb-1 px-1"><span class="text-[10px] uppercase tracking-wide text-gray-500 font-bold">You</span></div>
+                <div class="rounded-2xl p-4 shadow-lg text-sm bg-violet-600 text-white rounded-br-none rounded-bl-2xl w-full">
+                    ${fhtml}
+                    <div class="whitespace-pre-wrap">${text.replace(/</g, "&lt;")}</div>
+                    <button onclick="editMessage('${text.replace(/'/g, "\\'")}')" class="text-[10px] opacity-50 mt-2 hover:opacity-100 block w-full text-right"><i class="fas fa-pen"></i> Edit</button>
+                </div>
+            </div>`;
+            // Insert sebelum loading indicator
+            messageList.insertBefore(div, loadingIndicator);
         }
 
-        function typeBotMessage(raw) {
+        function createBotBubble() {
             const div = document.createElement('div');
-            div.className = "flex w-full justify-start mb-6";
-            div.innerHTML = `<div class="flex flex-col items-start message-bubble"><div class="flex items-center gap-2 mb-1 px-1"><span class="text-[10px] uppercase tracking-wide text-gray-500 font-bold">Dardcor AI</span></div><div class="rounded-2xl p-4 shadow-lg text-sm bg-[#13131f] text-gray-200 rounded-bl-none border border-gray-800 w-full overflow-hidden"><div class="markdown-body typing-target"></div></div></div>`;
-            document.getElementById('message-list').appendChild(div);
-            
-            const target = div.querySelector('.typing-target');
-            if(raw.includes('![Generated Image]')) {
-                target.innerHTML = marked.parse(raw);
-                scrollToBottom();
-                return;
-            }
-            
-            const fullHtml = marked.parse(raw);
-            let currentHtml = "";
-            let i = 0;
-            const step = 20; 
-            const interval = setInterval(() => {
-                if (i >= raw.length) {
-                    target.innerHTML = fullHtml; 
-                    clearInterval(interval);
-                    scrollToBottom();
-                    return;
-                }
-                target.innerHTML = marked.parse(raw.substring(0, i + step)); 
-                i += step;
-                scrollToBottom();
-            }, 5);
+            div.className = "flex w-full justify-start mb-6 message-bubble-container";
+            div.innerHTML = `<div class="flex flex-col items-start message-bubble w-full max-w-[95%]">
+                <div class="flex items-center gap-2 mb-1 px-1"><span class="text-[10px] uppercase tracking-wide text-gray-500 font-bold">Dardcor AI</span></div>
+                <div class="rounded-2xl p-4 shadow-lg text-sm bg-[#13131f] text-gray-200 rounded-bl-none border border-gray-800 w-full overflow-hidden"><div class="markdown-body"></div></div>
+            </div>`;
+            messageList.insertBefore(div, loadingIndicator);
+            return div;
         }
 
+        function editMessage(text) { messageInput.value = text; messageInput.focus(); }
         function appendError(txt) {
             const div = document.createElement('div');
             div.className = "flex w-full justify-center my-4";
             div.innerHTML = `<div class="bg-red-500/10 text-red-400 px-3 py-1 text-xs border border-red-500/20 rounded">${txt}</div>`;
-            document.getElementById('message-list').appendChild(div);
+            messageList.insertBefore(div, loadingIndicator);
             scrollToBottom();
         }
 
         function scrollToBottom() { if(chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight; }
         messageInput.addEventListener('keydown', (e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }});
         messageInput.addEventListener('input', function() { this.style.height='auto'; this.style.height=Math.min(this.scrollHeight,120)+'px'; });
-        
-        // --- MODAL & LOGIC ---
-        function closeModal(id) { 
-            document.getElementById(id).classList.add('hidden'); 
-            document.getElementById(id).classList.remove('flex'); 
-        }
-        
-        function openDeleteModal(id) { 
-            targetChatId = id; 
-            document.getElementById('delete-modal').classList.remove('hidden'); 
-            document.getElementById('delete-modal').classList.add('flex'); 
-        }
-
-        function openRenameModal(id) { 
-            targetChatId = id;
-            // AMBIL VALUE DARI HIDDEN INPUT (AMAN DARI ERROR SYNTAX)
-            const hiddenInput = document.getElementById('raw-title-' + id);
-            const currentTitle = hiddenInput ? hiddenInput.value : '';
-            
-            document.getElementById('rename-input').value = currentTitle;
-            document.getElementById('rename-modal').classList.remove('hidden'); 
-            document.getElementById('rename-modal').classList.add('flex');
-            document.getElementById('rename-input').blur(); 
-        }
-
-        async function createNewChat() { 
-            try { 
-                const res = await fetch('/dardcorchat/ai/new-chat', { method: 'POST' }); 
-                const data = await res.json(); 
-                if(data.success) window.location.href = data.redirectUrl; 
-            } catch(e) {} 
-        }
-        
-        async function submitDelete() { 
-            closeModal('delete-modal');
-            await fetch('/dardcorchat/ai/delete-chat-history', { 
-                method: 'POST', 
-                headers:{'Content-Type':'application/json'}, 
-                body: JSON.stringify({conversationId:targetChatId})
-            }); 
-            
-            if(targetChatId === currentConversationId) {
-                window.location.href = '/dardcorchat/dardcor-ai';
-            } else {
-                const elem = document.getElementById(`chat-item-${targetChatId}`);
-                if(elem) elem.remove();
-            }
-        }
-
-        async function submitRename() {
-            const newName = document.getElementById('rename-input').value;
-            closeModal('rename-modal');
-            if(!newName.trim()) return;
-
-            const res = await fetch('/dardcorchat/ai/rename-chat', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ conversationId: targetChatId, newTitle: newName })
-            });
-            
-            if(res.ok) {
-                const titleElem = document.getElementById(`title-${targetChatId}`);
-                if(titleElem) titleElem.innerText = newName.substring(0, 22) + (newName.length > 22 ? '...' : '');
-                // Update hidden value juga
-                const hiddenElem = document.getElementById(`raw-title-${targetChatId}`);
-                if(hiddenElem) hiddenElem.value = newName;
-            }
-        }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); }
+        function openDeleteModal(id) { targetChatId = id; document.getElementById('delete-modal').classList.remove('hidden'); document.getElementById('delete-modal').classList.add('flex'); }
+        function openRenameModal(id) { targetChatId = id; const hiddenInput = document.getElementById('raw-title-' + id); const currentTitle = hiddenInput ? hiddenInput.value : ''; document.getElementById('rename-input').value = currentTitle; document.getElementById('rename-modal').classList.remove('hidden'); document.getElementById('rename-modal').classList.add('flex'); document.getElementById('rename-input').blur(); }
+        async function createNewChat() { try { const res = await fetch('/dardcorchat/ai/new-chat', { method: 'POST' }); const data = await res.json(); if(data.success) window.location.href = data.redirectUrl; } catch(e) {} }
+        async function submitDelete() { closeModal('delete-modal'); await fetch('/dardcorchat/ai/delete-chat-history', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({conversationId:targetChatId})}); if(targetChatId === currentConversationId) window.location.href = '/dardcorchat/dardcor-ai'; else { const elem = document.getElementById(`chat-item-${targetChatId}`); if(elem) elem.remove(); } }
+        async function submitRename() { const newName = document.getElementById('rename-input').value; closeModal('rename-modal'); if(!newName.trim()) return; const res = await fetch('/dardcorchat/ai/rename-chat', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ conversationId: targetChatId, newTitle: newName }) }); if(res.ok) { document.getElementById(`title-${targetChatId}`).innerText = newName.substring(0, 22) + (newName.length > 22 ? '...' : ''); document.getElementById(`raw-title-${targetChatId}`).value = newName; } }
 
         document.addEventListener("DOMContentLoaded", () => {
             document.querySelectorAll('.message-bubble-container').forEach(container => {
                 const rawEl = container.querySelector('.raw-message-content');
                 const targetEl = container.querySelector('.markdown-body');
-                if (rawEl && targetEl) {
-                    targetEl.innerHTML = marked.parse(rawEl.value);
-                }
+                if (rawEl && targetEl) targetEl.innerHTML = marked.parse(rawEl.value);
             });
             scrollToBottom();
             if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
