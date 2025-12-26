@@ -1,10 +1,14 @@
 {
   "name": "Dardcor AI",
-  "short_name": "Dardcor AI",
-  "start_url": "/dardcorchat/dardcor-ai",
+  "short_name": "Dardcor",
+  "description": "Dardcor AI Assistant",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#0b0c15",
   "theme_color": "#0b0c15",
+  "orientation": "portrait",
   "icons": [
     {
       "src": "/logo.png",
