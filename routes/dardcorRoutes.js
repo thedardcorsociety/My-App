@@ -24,10 +24,52 @@ const authLimiter = rateLimit({
     message: "Terlalu banyak percobaan. Silakan coba lagi nanti."
 });
 
-function checkUserAuth(req, res, next) {
+// --- HELPER: Baca Cookie Manual (Untuk backup jika cookie-parser belum ada) ---
+function getCookie(req, name) {
+    if (req.cookies && req.cookies[name]) return req.cookies[name];
+    if (!req.headers.cookie) return null;
+    const value = `; ${req.headers.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return null;
+}
+
+// --- MIDDLEWARE: Cek Auth dengan Auto-Restore Sesi ---
+async function checkUserAuth(req, res, next) {
+    // 1. Cek apakah sesi masih hidup di memori server
     if (req.session && req.session.userAccount) {
         return next();
     }
+
+    // 2. Jika sesi mati (karena close app/server restart), Cek Cookie Backup 'dardcor_uid'
+    const userId = getCookie(req, 'dardcor_uid');
+    
+    if (userId) {
+        try {
+            // Restore data user dari Supabase secara diam-diam
+            const { data: user } = await supabase
+                .from('dardcor_users')
+                .select('*')
+                .eq('id', userId)
+                .single();
+            
+            if (user) {
+                // Hidupkan kembali sesi server
+                req.session.userAccount = user;
+                
+                // Perbarui durasi sesi jadi 10 tahun lagi
+                const tenYears = 1000 * 60 * 60 * 24 * 365 * 10;
+                req.session.cookie.expires = new Date(Date.now() + tenYears);
+                req.session.cookie.maxAge = tenYears;
+
+                return req.session.save(() => next());
+            }
+        } catch (e) {
+            // Jika gagal restore, biarkan lanjut ke redirect login
+        }
+    }
+
+    // 3. Jika tidak ada sesi DAN tidak ada cookie backup -> Redirect Login
     if (req.xhr || req.headers.accept.indexOf('json') > -1) {
         return res.status(401).json({ success: false, redirectUrl: '/dardcor' });
     }
@@ -41,20 +83,31 @@ const uploadMiddleware = (req, res, next) => {
     });
 };
 
+// --- ROUTES HALAMAN UTAMA ---
+
 router.get('/', (req, res) => {
-    if (req.session && req.session.userAccount) return res.redirect('/dardcorchat/dardcor-ai');
+    // Cek cookie manual di sini juga agar tidak redirect ke login jika punya cookie
+    if ((req.session && req.session.userAccount) || getCookie(req, 'dardcor_uid')) {
+        return res.redirect('/dardcorchat/dardcor-ai');
+    }
     res.render('index', { user: null });
 });
 
 router.get('/dardcor', (req, res) => { 
-    if (req.session && req.session.userAccount) return res.redirect('/dardcorchat/dardcor-ai'); 
+    if ((req.session && req.session.userAccount) || getCookie(req, 'dardcor_uid')) {
+        return res.redirect('/dardcorchat/dardcor-ai'); 
+    }
     res.render('dardcor', { error: null }); 
 });
 
 router.get('/register', (req, res) => { 
-    if (req.session && req.session.userAccount) return res.redirect('/dardcorchat/dardcor-ai');
+    if ((req.session && req.session.userAccount) || getCookie(req, 'dardcor_uid')) {
+        return res.redirect('/dardcorchat/dardcor-ai');
+    }
     res.render('register', { error: null }); 
 });
+
+// --- LOGIN PROCESS ---
 
 router.post('/dardcor-login', authLimiter, async (req, res) => {
     let { email, password } = req.body;
@@ -64,9 +117,19 @@ router.post('/dardcor-login', authLimiter, async (req, res) => {
         
         req.session.userAccount = user;
         
+        // 1. Setting Sesi Server (10 Tahun)
         const tenYears = 1000 * 60 * 60 * 24 * 365 * 10;
         req.session.cookie.expires = new Date(Date.now() + tenYears);
         req.session.cookie.maxAge = tenYears;
+
+        // 2. Setting Cookie Browser Permanen (BACKUP UTAMA)
+        // Ini akan tetap ada di HP user walaupun aplikasi ditutup total
+        res.cookie('dardcor_uid', user.id, { 
+            maxAge: tenYears, 
+            httpOnly: true, 
+            secure: true, // Pastikan true jika di Vercel/HTTPS
+            sameSite: 'lax'
+        });
 
         req.session.save((err) => {
             if (err) return res.status(500).json({ success: false, message: 'Gagal memproses login.' });
@@ -77,12 +140,19 @@ router.post('/dardcor-login', authLimiter, async (req, res) => {
     }
 });
 
+// --- LOGOUT PROCESS ---
+
 router.get('/dardcor-logout', (req, res) => { 
+    // Hapus Cookie Backup agar user benar-benar terlogout
+    res.clearCookie('dardcor_uid');
+    
     req.session.destroy((err) => {
         res.clearCookie('connect.sid');
         res.redirect('/dardcor'); 
     });
 });
+
+// --- REGISTER & OTP ---
 
 router.post('/register', authLimiter, async (req, res) => {
     let { username, email, password } = req.body;
@@ -100,7 +170,7 @@ router.post('/register', authLimiter, async (req, res) => {
         }]);
 
         await transporter.sendMail({
-            from: '"Dardcor AI" <no-reply@dardcor.com>',
+            from: '"Dardcor Security" <no-reply@dardcor.com>',
             to: email,
             subject: 'Kode Verifikasi Dardcor AI',
             html: `<div style="font-family: sans-serif; padding:20px;"><h2>OTP Anda:</h2><h1 style="color: #8b5cf6;">${otp}</h1></div>`
@@ -113,7 +183,9 @@ router.post('/register', authLimiter, async (req, res) => {
 });
 
 router.get('/verify-otp', (req, res) => {
-    if (req.session && req.session.userAccount) return res.redirect('/dardcorchat/dardcor-ai');
+    if ((req.session && req.session.userAccount) || getCookie(req, 'dardcor_uid')) {
+        return res.redirect('/dardcorchat/dardcor-ai');
+    }
     res.render('verify', { email: req.query.email });
 });
 
@@ -130,9 +202,17 @@ router.post('/verify-otp', async (req, res) => {
         
         req.session.userAccount = newUser;
 
+        // Setting Sesi & Cookie Backup (Sama seperti Login)
         const tenYears = 1000 * 60 * 60 * 24 * 365 * 10;
         req.session.cookie.expires = new Date(Date.now() + tenYears);
         req.session.cookie.maxAge = tenYears;
+
+        res.cookie('dardcor_uid', newUser.id, { 
+            maxAge: tenYears, 
+            httpOnly: true, 
+            secure: true,
+            sameSite: 'lax'
+        });
 
         req.session.save(() => {
              res.status(200).json({ success: true, message: "Akun berhasil dibuat!", redirectUrl: '/dardcorchat/dardcor-ai' });
@@ -141,6 +221,8 @@ router.post('/verify-otp', async (req, res) => {
         res.status(500).json({ success: false, message: "Terjadi kesalahan server." });
     }
 });
+
+// --- DASHBOARD & FITUR ---
 
 router.get('/dardcorchat/profile', checkUserAuth, (req, res) => {
     res.render('dardcorchat/profile', { user: req.session.userAccount, success: null, error: null });
@@ -162,7 +244,8 @@ router.post('/dardcor/profile/update', checkUserAuth, upload.single('profile_ima
         }
         
         const { data } = await supabase.from('dardcor_users').update(updates).eq('id', userId).select().single();
-        req.session.userAccount = data;
+        req.session.userAccount = data; // Update sesi dengan data baru
+        
         req.session.save(() => {
             res.render('dardcorchat/profile', { user: data, success: "Profil diperbarui!", error: null });
         });
@@ -214,6 +297,8 @@ router.get('/dardcorchat/dardcor-ai/:conversationId', checkUserAuth, async (req,
         res.redirect('/dardcor');
     }
 });
+
+// --- API & CHAT STREAMING ---
 
 router.get('/api/chat/:conversationId', checkUserAuth, async (req, res) => {
     const userId = req.session.userAccount.id;
