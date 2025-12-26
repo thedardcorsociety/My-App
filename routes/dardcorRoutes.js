@@ -63,6 +63,11 @@ router.post('/dardcor-login', authLimiter, async (req, res) => {
         if (!user || !await bcrypt.compare(password, user.password)) return res.status(400).json({ success: false, message: 'Login gagal.' });
         
         req.session.userAccount = user;
+        
+        const tenYears = 1000 * 60 * 60 * 24 * 365 * 10;
+        req.session.cookie.expires = new Date(Date.now() + tenYears);
+        req.session.cookie.maxAge = tenYears;
+
         req.session.save((err) => {
             if (err) return res.status(500).json({ success: false, message: 'Gagal memproses login.' });
             res.status(200).json({ success: true, redirectUrl: '/dardcorchat/dardcor-ai' });
@@ -95,7 +100,7 @@ router.post('/register', authLimiter, async (req, res) => {
         }]);
 
         await transporter.sendMail({
-            from: '"Dardcor Security" <no-reply@dardcor.com>',
+            from: '"Dardcor AI" <no-reply@dardcor.com>',
             to: email,
             subject: 'Kode Verifikasi Dardcor AI',
             html: `<div style="font-family: sans-serif; padding:20px;"><h2>OTP Anda:</h2><h1 style="color: #8b5cf6;">${otp}</h1></div>`
@@ -124,6 +129,11 @@ router.post('/verify-otp', async (req, res) => {
         await supabase.from('verification_codes').delete().eq('email', req.body.email);
         
         req.session.userAccount = newUser;
+
+        const tenYears = 1000 * 60 * 60 * 24 * 365 * 10;
+        req.session.cookie.expires = new Date(Date.now() + tenYears);
+        req.session.cookie.maxAge = tenYears;
+
         req.session.save(() => {
              res.status(200).json({ success: true, message: "Akun berhasil dibuat!", redirectUrl: '/dardcorchat/dardcor-ai' });
         });
