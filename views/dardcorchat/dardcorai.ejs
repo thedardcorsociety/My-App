@@ -2,19 +2,9 @@
     <% if (!chatHistory || chatHistory.length === 0) { %>
         <div id="empty-state" class="flex flex-col items-center justify-center text-gray-500 opacity-60 min-h-[50vh]">
             <div class="w-24 h-24 bg-gray-800/50 rounded-full flex items-center justify-center mb-6 overflow-hidden border border-gray-700 shadow-xl bg-black">
-                <% if (typeof toolType !== 'undefined' && toolType === 'image') { %>
-                    <i class="fas fa-image text-4xl text-purple-500"></i>
-                <% } else { %>
-                    <img src="/logo.png" alt="Dardcor Logo" class="w-full h-full object-cover">
-                <% } %>
+                <img src="/logo.png" alt="Dardcor Logo" class="w-full h-full object-cover">
             </div>
-            <p class="text-lg font-medium text-gray-400 text-center">
-                <% if (typeof toolType !== 'undefined' && toolType === 'image') { %>
-                    Mulai buat gambar AI.
-                <% } else { %>
-                    Apa yang bisa saya bantu?
-                <% } %>
-            </p>
+            <p class="text-lg font-medium text-gray-400 text-center">Apa yang bisa saya bantu?</p>
         </div>
     <% } else { %>
         <% chatHistory.forEach(msg => { %>
@@ -25,25 +15,28 @@
                     </div>
                     
                     <% if (msg.role === 'user') { %>
-                        <div class="rounded-2xl p-4 shadow-lg text-sm leading-relaxed bg-violet-600 text-white rounded-br-none rounded-bl-2xl border-none w-fit">
+                        <div class="rounded-2xl p-4 shadow-lg text-sm bg-violet-600 text-white rounded-br-none rounded-bl-2xl border-none w-fit">
                             <% if (msg.file_metadata) { %>
                                 <% msg.file_metadata.forEach(f => { %>
-                                    <div class="mb-3 text-xs flex items-center gap-3 bg-black/20 p-2 rounded-lg border border-white/10">
-                                        <i class="fas fa-file text-base"></i>
-                                        <div class="flex flex-col overflow-hidden min-w-0">
-                                            <span class="truncate font-medium text-white text-xs-mobile"><%= f.filename %></span>
-                                            <span class="opacity-70 text-[10px]"><%= Math.round(f.size / 1024) %> KB</span>
-                                        </div>
+                                    <div class="mb-2 text-xs flex gap-2 bg-black/20 p-2 rounded border border-white/10">
+                                        <i class="fas fa-file"></i> <span><%= f.filename %></span>
                                     </div>
                                 <% }); %>
                             <% } %>
                             <div class="whitespace-pre-wrap user-text-content"><%= msg.message %></div>
                         </div>
-                        <button onclick="editMessage(decodeURIComponent('<%= encodeURIComponent(msg.message) %>'))" class="text-[10px] opacity-50 mt-1 hover:opacity-100 text-gray-400 hover:text-white transition-colors self-end pr-1"><i class="fas fa-pen"></i> Edit</button>
+                        <div class="flex gap-3 mt-1 self-end pr-1 opacity-60 hover:opacity-100 transition-opacity">
+                            <button onclick="copyUserText(this, decodeURIComponent('<%= encodeURIComponent(msg.message) %>'))" class="text-[10px] text-gray-400 hover:text-white transition-colors flex items-center gap-1"><i class="fas fa-copy"></i> Salin</button>
+                            <button onclick="editMessage(decodeURIComponent('<%= encodeURIComponent(msg.message) %>'))" class="text-[10px] text-gray-400 hover:text-white transition-colors flex items-center gap-1"><i class="fas fa-pen"></i> Edit</button>
+                        </div>
                     <% } else { %>
-                        <div class="rounded-2xl p-4 shadow-lg text-sm leading-relaxed bg-[#13131f] text-gray-200 rounded-bl-none border border-gray-800 w-full overflow-hidden">
+                        <div class="rounded-2xl p-4 shadow-lg text-sm bg-[#13131f] text-gray-200 rounded-bl-none border border-gray-800 w-full overflow-hidden">
                             <textarea class="hidden raw-message-content"><%= msg.message %></textarea>
                             <div class="markdown-body"></div>
+                            <div class="mt-2 flex items-center gap-3 pt-2 border-t border-gray-800/50">
+                                <button onclick="speakText(this)" class="text-gray-500 hover:text-purple-400 transition-colors" title="Baca Suara"><i class="fas fa-volume-up text-xs"></i></button>
+                                <button onclick="copyMessageText(this)" class="text-gray-500 hover:text-purple-400 transition-colors" title="Salin Pesan"><i class="fas fa-copy text-xs"></i></button>
+                            </div>
                         </div>
                     <% } %>
                 </div>

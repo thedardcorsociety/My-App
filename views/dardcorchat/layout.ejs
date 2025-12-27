@@ -3,12 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#0b0c15">
-
     <title>Dardcor AI</title>
     <link rel="icon" href="/logo.png">
     <link rel="manifest" href="/manifest.json">
@@ -16,7 +14,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
-    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
@@ -27,230 +24,67 @@
     <script src="/js/marked.min.js"></script>
 
     <style>
-        html, body { 
-            height: 100dvh; 
-            width: 100%;
-            margin: 0; 
-            padding: 0; 
-            overflow: hidden;
-            background-color: #0b0c15; 
-            position: fixed; 
-            inset: 0;
-            color: white;
-        }
-
-        .scrollbar-hide::-webkit-scrollbar { 
-            display: none;
-        }
-        
-        .scrollbar-hide { 
-            -ms-overflow-style: none; 
-            scrollbar-width: none;
-        }
-
-        pre { 
-            margin: 0; 
-            padding: 0; 
-            background: transparent;
-        }
-
+        html, body { height: 100dvh; width: 100%; margin: 0; padding: 0; overflow: hidden; background-color: #0b0c15; position: fixed; inset: 0; color: white; font-family: sans-serif; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        pre { margin: 0; padding: 0; background: transparent; }
         .safe-pt { padding-top: env(safe-area-inset-top); }
         .safe-pb { padding-bottom: env(safe-area-inset-bottom); }
         .safe-pl { padding-left: env(safe-area-inset-left); }
-
-        .message-bubble { 
-            max-width: 95%;
-        }
-
-        .terminal-container { 
-            margin: 12px 0;
-            background-color: #000000; 
-            border: 1px solid #333; 
-            border-radius: 6px; 
-            overflow: hidden; 
-            font-family: 'Consolas', 'Monaco', monospace; 
-            width: 100%;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        }
-
-        .terminal-head { 
-            display: flex;
-            justify-content: space-between; 
-            align-items: center; 
-            background-color: #111; 
-            padding: 6px 12px; 
-            border-bottom: 1px solid #333; 
-            height: 40px;
-        }
-
-        .terminal-label { 
-            color: #ccc;
-            font-size: 11px; 
-            font-weight: 700; 
-            text-transform: uppercase; 
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .terminal-opts { 
-            display: flex; 
-            gap: 8px;
-            align-items: center; 
-        }
+        .message-bubble { max-width: 95%; }
         
-        .cmd-btn { 
-            display: flex;
-            align-items: center; 
-            gap: 5px; 
-            padding: 4px 10px; 
-            border-radius: 4px; 
-            font-size: 11px; 
-            font-weight: 600; 
-            cursor: pointer; 
-            border: none; 
-            transition: all 0.2s;
-        }
-
-        .btn-preview { 
-            background-color: #0e639c; 
-            color: white;
-        }
+        .terminal-container { margin: 12px 0; background-color: #000000; border: 1px solid #333; border-radius: 6px; overflow: hidden; font-family: 'Consolas', monospace; width: 100%; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .terminal-head { display: flex; justify-content: space-between; align-items: center; background-color: #111; padding: 6px 12px; border-bottom: 1px solid #333; height: 40px; }
+        .terminal-label { color: #ccc; font-size: 11px; font-weight: 700; text-transform: uppercase; display: flex; align-items: center; gap: 6px; }
+        .terminal-opts { display: flex; gap: 8px; align-items: center; }
+        .cmd-btn { display: flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; }
+        .btn-preview { background-color: #0e639c; color: white; }
+        .btn-preview:hover { background-color: #1177bb; }
+        .btn-cp { background-color: #333; color: #e5e5e5; }
+        .btn-cp:hover { background-color: #444; }
+        .terminal-code { padding: 0; overflow-x: auto; background-color: #000000; color: #f8f8f2; }
+        .terminal-code pre { margin: 0; }
+        .terminal-code code { font-family: 'Consolas', monospace; font-size: 13px; line-height: 1.5; background: transparent !important; padding: 16px !important; display: block; }
         
-        .btn-preview:hover { 
-            background-color: #1177bb;
-        }
+        .markdown-body { line-height: 1.6; font-size: 0.95rem; }
+        .markdown-body p { margin-bottom: 1em; }
+        .markdown-body h1, .markdown-body h2, .markdown-body h3 { margin-top: 1.5em; margin-bottom: 0.5em; font-weight: bold; color: #e2e8f0; }
+        .markdown-body ul { list-style-type: disc; margin-bottom: 1em; padding-left: 1.5em; }
+        .markdown-body ol { list-style-type: decimal; margin-bottom: 1em; padding-left: 1.5em; }
+        .markdown-body a { color: #a78bfa; text-decoration: underline; }
+        .markdown-body blockquote { border-left: 4px solid #4b5563; padding-left: 1em; color: #9ca3af; font-style: italic; }
 
-        .btn-cp { 
-            background-color: #333; 
-            color: #e5e5e5;
-        }
-        
-        .btn-cp:hover { 
-            background-color: #444;
-        }
-        
-        .terminal-code { 
-            padding: 0;
-            overflow-x: auto; 
-            background-color: #000000; 
-            color: #f8f8f2; 
-        }
-
-        .terminal-code pre { 
-            margin: 0;
-        }
-
-        .terminal-code code { 
-            font-family: 'Consolas', monospace;
-            font-size: 13px; 
-            line-height: 1.5; 
-            background: transparent !important; 
-            padding: 16px !important;
-            display: block;
-        }
-
-        .markdown-body {
-            line-height: 1.6;
-            font-size: 0.95rem;
-        }
-
-        .markdown-body p { 
-            margin-bottom: 1em;
-        }
-
-        .markdown-body h1, .markdown-body h2, .markdown-body h3 {
-            margin-top: 1.5em;
-            margin-bottom: 0.5em;
-            font-weight: bold;
-            color: #e2e8f0;
-        }
-
-        .markdown-body ul, .markdown-body ol {
-            margin-bottom: 1em;
-            padding-left: 1.5em;
-        }
-
-        .markdown-body ul { list-style-type: disc; }
-        .markdown-body ol { list-style-type: decimal; }
-
-        .markdown-body a { 
-            color: #a78bfa; 
-            text-decoration: underline;
-        }
-
-        .markdown-body blockquote {
-            border-left: 4px solid #4b5563;
-            padding-left: 1em;
-            color: #9ca3af;
-            font-style: italic;
-        }
-
-        .loader {
-            border: 3px solid rgba(139, 92, 246, 0.2);
-            border-top: 3px solid #8b5cf6;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .typing-indicator span {
-            display: inline-block;
-            width: 4px;
-            height: 4px;
-            background-color: #9ca3af;
-            border-radius: 50%;
-            animation: typing 1.4s infinite ease-in-out both;
-            margin: 0 1px;
-        }
-
-        .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
-        .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
-
-        @keyframes typing {
-            0%, 80%, 100% { transform: scale(0); }
-            40% { transform: scale(1); }
-        }
+        .loader { border: 3px solid rgba(139, 92, 246, 0.2); border-top: 3px solid #8b5cf6; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="flex text-white font-sans">
 
-    <div id="mobile-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 z-40 hidden backdrop-blur-sm transition-opacity"></div>
+    <div id="mobile-overlay" class="fixed inset-0 bg-black/60 z-40 hidden backdrop-blur-sm transition-opacity"></div>
 
     <aside id="sidebar" class="fixed inset-y-0 left-0 w-72 bg-[#13131f] border-r border-purple-900/30 flex flex-col transform -translate-x-full z-[60] shadow-2xl safe-pl transition-transform duration-300">
         <div class="h-16 shrink-0 flex items-center justify-between px-4 border-b border-purple-900/30 safe-pt">
             <span class="font-bold text-lg tracking-wider text-purple-500 flex items-center gap-2">
                 <img src="/logo.png" class="w-6 h-6 rounded-full"> Dardcor <span class="text-white">AI</span>
             </span>
-            <button onclick="toggleSidebar()" class="text-gray-400 hover:text-white p-2 rounded hover:bg-white/10 transition-colors">
+            <button id="close-sidebar-btn" class="text-gray-400 hover:text-white p-2 rounded hover:bg-white/10 transition-colors">
                 <i class="fas fa-times text-lg"></i>
             </button>
         </div>
         
         <div class="flex-1 overflow-y-auto p-3 space-y-1.5 scrollbar-hide relative z-40">
-            <button onclick="createNewChat()" class="w-full flex items-center gap-3 p-3 rounded-lg border border-purple-900/30 hover:bg-purple-900/20 text-left transition text-sm text-gray-300 mb-4 h-[44px]">
+            <button id="new-chat-btn" class="w-full flex items-center gap-3 p-3 rounded-lg border border-purple-900/30 hover:bg-purple-900/20 text-left transition text-sm text-gray-300 mb-4 h-[44px]">
                 <div class="w-6 h-6 bg-purple-500/20 rounded flex items-center justify-center text-purple-400"><i class="fas fa-plus text-xs"></i></div><span>New Chat</span>
             </button>
             <div class="text-gray-500 text-center text-xs font-semibold uppercase tracking-wider mb-2 px-2">Riwayat</div>
             
-            <% 
-                let isNewChat = true;
-                if (conversationList && conversationList.length > 0) {
-                    isNewChat = !conversationList.some(c => c.id === activeConversationId);
-                }
-            %>
+            <% let isNewChat = true; if (conversationList && conversationList.length > 0) { isNewChat = !conversationList.some(c => c.id === activeConversationId); } %>
 
             <% if (isNewChat) { %>
-                <div id="current-new-chat-item" onclick="createNewChat()" class="group relative flex items-center px-3 h-[44px] rounded-lg bg-[#202336] border-l-4 border-purple-500 cursor-pointer w-full mb-1">
+                <div id="current-new-chat-item" class="group relative flex items-center px-3 h-[44px] rounded-lg bg-[#202336] border-l-4 border-purple-500 cursor-pointer w-full mb-1">
                     <div class="flex-1 min-w-0 pr-2 flex items-center h-full pointer-events-none">
-                        <i class="fas fa-message text-purple-500 mr-3 text-xs flex-shrink-0"></i>
-                        <span class="text-sm text-white font-medium truncate">Percakapan Baru</span>
+                        <i class="fas fa-message text-gray-500 mr-3 text-xs flex-shrink-0"></i>
+                        <span class="text-sm text-white truncate">Percakapan Baru</span>
                     </div>
                 </div>
             <% } %>
@@ -284,18 +118,24 @@
     <main id="main-content" class="absolute inset-0 left-0 transition-all duration-300 flex flex-col bg-[#0b0c15]">
         <header class="h-16 shrink-0 flex items-center justify-between px-4 border-b border-purple-900/30 bg-[#0b0c15]/95 backdrop-blur-md z-50 safe-pt">
             <div class="flex items-center">
-                <button onclick="toggleSidebar()" class="text-gray-400 p-2 rounded hover:bg-gray-800 transition-colors">
+                <button id="sidebar-toggle-btn" class="text-gray-400 p-2 rounded hover:bg-gray-800 transition-colors">
                     <i class="fas fa-bars text-lg"></i>
                 </button>
             </div>
 
-            <div class="relative ml-auto">
-                <button onclick="toggleToolsMenu()" class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-purple-500/30 bg-purple-500/10 text-purple-400 text-xs md:text-sm font-medium hover:bg-purple-500/20 hover:text-white transition-all">
-                    <span id="tool-label">Dardcor Model</span> <i class="fas fa-chevron-down text-[10px] ml-1 transition-transform" id="tools-chevron"></i>
+            <div class="flex items-center gap-2 ml-auto">
+                <button id="refresh-chat-btn" class="flex items-center justify-center w-[34px] h-[34px] rounded-lg border border-purple-500/30 bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 hover:text-white transition-all">
+                    <i id="refresh-icon" class="fas fa-redo-alt text-xs"></i>
                 </button>
-                <div id="tools-menu" class="hidden absolute right-0 top-full mt-2 w-48 bg-[#1f2937] border border-gray-700 rounded-xl shadow-xl z-[80] overflow-hidden">
-                    <button onclick="setModel('basic')" class="w-full text-left px-4 py-3 text-sm hover:bg-purple-600 hover:text-white transition-colors border-b border-gray-700/50">Basic Model</button>
-                    <button onclick="setModel('dark')" class="w-full text-left px-4 py-3 text-sm hover:bg-purple-600 hover:text-white transition-colors">Dark Model</button>
+
+                <div class="relative">
+                    <button id="model-dropdown-btn" class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-purple-500/30 bg-purple-500/10 text-purple-400 text-xs md:text-sm font-medium hover:bg-purple-500/20 hover:text-white transition-all h-[34px]">
+                        <span id="tool-label">Dardcor Model</span> <i class="fas fa-chevron-down text-[10px] ml-1 transition-transform" id="tools-chevron"></i>
+                    </button>
+                    <div id="tools-menu" class="hidden absolute right-0 top-full mt-2 w-max bg-[#0b0c15] border border-purple-500/30 rounded-lg shadow-xl shadow-purple-900/20 z-[80] overflow-hidden">
+                        <button data-model="basic" class="model-select-btn w-full text-left px-3 py-2 text-xs md:text-sm font-medium text-purple-400 hover:bg-purple-500/20 hover:text-white transition-all border-b border-purple-500/30 whitespace-nowrap">Basic Model</button>
+                        <button data-model="dark" class="model-select-btn w-full text-left px-3 py-2 text-xs md:text-sm font-medium text-purple-400 hover:bg-purple-500/20 hover:text-white transition-all whitespace-nowrap">Dark Model</button>
+                    </div>
                 </div>
             </div>
         </header>
@@ -330,546 +170,11 @@
     </div>
 
     <script>
-        let currentConversationId = "<%= activeConversationId || '' %>";
-        let currentToolType = 'basic';
-        const chatContainer = document.getElementById('chat-container');
-        const messageInput = document.getElementById('message-input');
-        const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('mobile-overlay');
-        const toolsMenu = document.getElementById('tools-menu');
-        const messageList = document.getElementById('message-list');
-        const loadingIndicator = document.getElementById('loading-indicator');
-        let targetChatId = null;
-        let isSending = false;
-        let abortController = null;
-        let isChatLoading = false;
-
-        function setModel(type) {
-            currentToolType = type;
-            document.getElementById('tools-menu').classList.add('hidden');
-            document.getElementById('tools-chevron').classList.remove('rotate-180');
-            const input = document.getElementById('message-input');
-            const label = document.getElementById('tool-label');
-            
-            if(type === 'dark') {
-                input.placeholder = "Tanyakan Apa Saja...";
-                label.innerText = "Dark Model";
-            } else {
-                input.placeholder = "Tanyakan Apa Saja...";
-                label.innerText = "Basic Model";
-            }
-        }
-
-        let recognition;
-        if ('webkitSpeechRecognition' in window) {
-            recognition = new webkitSpeechRecognition();
-            recognition.lang = 'id-ID';
-            recognition.interimResults = false;
-            recognition.onresult = (e) => {
-                document.getElementById('message-input').value += e.results[0][0].transcript;
-            };
-            recognition.onstart = () => document.getElementById('mic-btn').classList.add('text-red-500');
-            recognition.onend = () => document.getElementById('mic-btn').classList.remove('text-red-500');
-        }
-        function toggleVoice() { if(recognition) recognition.start(); else alert("Browser tidak support voice."); }
-
-        function speakText(btn) {
-            const container = btn.closest('.message-bubble');
-            const markdownBody = container.querySelector('.markdown-body');
-            const textToSpeak = markdownBody.innerText;
-
-            if ('speechSynthesis' in window) {
-                if (window.speechSynthesis.speaking) {
-                    window.speechSynthesis.cancel();
-                } else {
-                    const utterance = new SpeechSynthesisUtterance(textToSpeak);
-                    utterance.lang = 'id-ID';
-                    utterance.rate = 1.0; 
-                    utterance.pitch = 1.0;
-                    window.speechSynthesis.speak(utterance);
-                }
-            } else {
-                alert("Browser Anda tidak mendukung Text-to-Speech.");
-            }
-        }
-
-        function copyMessageText(btn) {
-            const container = btn.closest('.message-bubble');
-            const markdownBody = container.querySelector('.markdown-body');
-            const textToCopy = markdownBody.innerText;
-
-            navigator.clipboard.writeText(textToCopy).then(() => {
-                const icon = btn.querySelector('i');
-                const originalClass = icon.className;
-                icon.className = 'fas fa-check text-xs text-green-400';
-                setTimeout(() => { icon.className = originalClass; }, 2000);
-            }).catch(err => { console.error('Failed to copy text: ', err); });
-        }
-
-        function copyUserText(btn, text) {
-            navigator.clipboard.writeText(text).then(() => {
-                const originalContent = btn.innerHTML;
-                btn.innerHTML = '<i class="fas fa-check"></i> Disalin';
-                btn.classList.add('text-green-400');
-                setTimeout(() => { 
-                    btn.innerHTML = originalContent; 
-                    btn.classList.remove('text-green-400');
-                }, 2000);
-            });
-        }
-
-        const escapeHtml = (unsafe) => {
-            return unsafe.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        window.SERVER_DATA = {
+            currentConversationId: "<%= activeConversationId || '' %>",
+            toolType: "<%= typeof toolType !== 'undefined' ? toolType : 'basic' %>"
         };
-
-        const renderer = new marked.Renderer();
-        renderer.code = function(code, language) {
-            let validCode = typeof code === 'string' ? code : (code && code.text ? code.text : String(code));
-            let highlighted = "";
-            let lang = (language || '').toLowerCase().trim();
-            
-            if (!lang && (validCode.includes('<!DOCTYPE') || validCode.includes('<html') || validCode.includes('<body'))) lang = 'html';
-
-            if (lang && hljs.getLanguage(lang)) {
-                try { highlighted = hljs.highlight(validCode, { language: lang }).value; } 
-                catch (e) { highlighted = escapeHtml(validCode); }
-            } else { highlighted = escapeHtml(validCode); }
-
-            let previewButton = ['html', 'xml', 'ejs', 'php', 'javascript', 'css'].includes(lang) ?
-                `<button onclick="previewCode(this)" class="cmd-btn btn-preview"><i class="fas fa-play text-[9px]"></i> Preview</button>` : '';
-            
-            return `<div class="terminal-container code-block-wrapper">
-                <div class="terminal-head">
-                    <div class="terminal-label"><i class="fas fa-code mr-1"></i> ${lang ? lang.toUpperCase() : 'CODE'}</div>
-                    <div class="terminal-opts">${previewButton}<button onclick="copyCode(this)" class="cmd-btn btn-cp"><i class="fas fa-copy"></i> Copy</button></div>
-                </div>
-                <div class="terminal-code"><pre><code class="hljs ${lang}">${highlighted}</code></pre><textarea class="raw-code hidden">${escapeHtml(validCode)}</textarea></div></div>`;
-        };
-        marked.setOptions({ renderer: renderer });
-
-        async function previewCode(btn) {
-            const rawCode = btn.closest('.terminal-container').querySelector('.raw-code').value;
-            const originalHtml = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-            btn.disabled = true;
-            try {
-                const res = await fetch('/dardcorchat/ai/store-preview', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: rawCode })
-                });
-                const data = await res.json();
-                if (data.success) window.open(`/dardcorchat/dardcor-ai/preview/${data.previewId}`, '_blank');
-            } catch(e) { alert('Error sistem preview.'); } 
-            finally { btn.innerHTML = originalHtml; btn.disabled = false; }
-        }
-
-        function copyCode(btn) {
-            const code = btn.closest('.terminal-container').querySelector('.raw-code').value;
-            navigator.clipboard.writeText(code).then(() => {
-                const originalHtml = btn.innerHTML;
-                btn.innerHTML = '<i class="fas fa-check"></i>';
-                setTimeout(() => { btn.innerHTML = originalHtml; }, 2000);
-            });
-        }
-
-        function toggleSidebar() { sidebar.classList.toggle('-translate-x-full'); overlay.classList.toggle('hidden'); }
-        window.addEventListener('resize', () => { if(window.innerWidth >= 1024) overlay.classList.add('hidden'); });
-        
-        function toggleToolsMenu() { 
-            toolsMenu.classList.toggle('hidden'); 
-            document.getElementById('tools-chevron')?.classList.toggle('rotate-180'); 
-        }
-        
-        document.addEventListener('click', (e) => { 
-            if (!toolsMenu.contains(e.target) && !e.target.closest('button[onclick="toggleToolsMenu()"]')) {
-                toolsMenu.classList.add('hidden'); 
-                document.getElementById('tools-chevron')?.classList.remove('rotate-180');
-            }
-            document.querySelectorAll('.dropdown-menu').forEach(e => e.classList.add('hidden')); 
-        });
-
-        function toggleMenu(e, id) { 
-            e.stopPropagation(); 
-            document.querySelectorAll('.dropdown-menu').forEach(e => e.classList.add('hidden')); 
-            document.getElementById(id).classList.toggle('hidden'); 
-        }
-
-        async function loadChat(id) {
-            if(isChatLoading) return;
-            isChatLoading = true;
-
-            try {
-                document.querySelectorAll('[id^="chat-item-"]').forEach(el => {
-                    el.classList.remove('bg-[#202336]', 'border-l-4', 'border-purple-500');
-                    el.classList.add('border-l-4', 'border-transparent');
-                });
-                
-                const newChatIndicator = document.getElementById('current-new-chat-item');
-                if(newChatIndicator) {
-                    newChatIndicator.classList.remove('bg-[#202336]', 'border-l-4', 'border-purple-500');
-                    newChatIndicator.classList.add('border-transparent');
-                }
-
-                const activeItem = document.getElementById(`chat-item-${id}`);
-                if (activeItem) {
-                    activeItem.classList.add('bg-[#202336]', 'border-l-4', 'border-purple-500');
-                    activeItem.classList.remove('border-transparent');
-                } else if (newChatIndicator && id.length > 20) {
-                    newChatIndicator.classList.add('bg-[#202336]', 'border-l-4', 'border-purple-500');
-                    newChatIndicator.classList.remove('border-transparent');
-                }
-
-                const res = await fetch(`/api/chat/${id}`);
-                const data = await res.json();
-                
-                if (data.success) {
-                    currentConversationId = id;
-                    messageList.innerHTML = ''; 
-                    
-                    if (data.history.length === 0) {
-                        messageList.innerHTML = `
-                        <div id="empty-state" class="flex flex-col items-center justify-center text-gray-500 opacity-60 min-h-[50vh]">
-                            <div class="w-24 h-24 bg-gray-800/50 rounded-full flex items-center justify-center mb-6 overflow-hidden border border-gray-700 shadow-xl bg-black">
-                                <img src="/logo.png" alt="Dardcor Logo" class="w-full h-full object-cover">
-                            </div>
-                            <p class="text-lg font-medium text-gray-400 text-center">Apa yang bisa saya bantu?</p>
-                        </div>`;
-                    } else {
-                        data.history.forEach(msg => {
-                            let fileHtml = '';
-                            if (msg.file_metadata) {
-                                msg.file_metadata.forEach(f => {
-                                    fileHtml += `<div class="mb-3 text-xs flex items-center gap-3 bg-black/20 p-2 rounded-lg border border-white/10"><i class="fas fa-file text-base"></i><div class="flex flex-col overflow-hidden min-w-0"><span class="truncate font-medium text-white text-xs-mobile">${f.filename}</span><span class="opacity-70 text-[10px]">${Math.round(f.size / 1024)} KB</span></div></div>`;
-                                });
-                            }
-                            
-                            const div = document.createElement('div');
-                            div.className = `flex w-full ${msg.role === 'user' ? 'justify-end' : 'justify-start'} message-bubble-container`;
-                            
-                            if (msg.role === 'user') {
-                                const innerWrapper = document.createElement('div');
-                                innerWrapper.className = "flex flex-col items-end message-bubble w-full max-w-[95%]";
-                                
-                                const header = document.createElement('div');
-                                header.className = "flex items-center gap-2 mb-1 px-1";
-                                header.innerHTML = '<span class="text-[10px] uppercase tracking-wide text-gray-500 font-bold">You</span>';
-                                innerWrapper.appendChild(header);
-
-                                const bubble = document.createElement('div');
-                                bubble.className = "rounded-2xl p-4 shadow-lg text-sm bg-violet-600 text-white rounded-br-none rounded-bl-2xl border-none w-fit";
-                                if(fileHtml) bubble.innerHTML = fileHtml;
-
-                                const textDiv = document.createElement('div');
-                                textDiv.className = "whitespace-pre-wrap";
-                                textDiv.textContent = msg.message;
-                                bubble.appendChild(textDiv);
-                                
-                                innerWrapper.appendChild(bubble);
-
-                                const actionsDiv = document.createElement('div');
-                                actionsDiv.className = "flex gap-3 mt-1 self-end pr-1 opacity-60 hover:opacity-100 transition-opacity";
-
-                                const copyBtn = document.createElement('button');
-                                copyBtn.className = "text-[10px] text-gray-400 hover:text-white transition-colors flex items-center gap-1";
-                                copyBtn.innerHTML = '<i class="fas fa-copy"></i> Salin';
-                                copyBtn.onclick = function() { copyUserText(this, msg.message); };
-                                actionsDiv.appendChild(copyBtn);
-
-                                const editBtn = document.createElement('button');
-                                editBtn.className = "text-[10px] text-gray-400 hover:text-white transition-colors flex items-center gap-1";
-                                editBtn.innerHTML = '<i class="fas fa-pen"></i> Edit';
-                                editBtn.onclick = function() { editMessage(msg.message); };
-                                actionsDiv.appendChild(editBtn);
-
-                                innerWrapper.appendChild(actionsDiv);
-                                div.appendChild(innerWrapper);
-
-                            } else {
-                                div.innerHTML = `
-                                    <div class="flex flex-col items-start message-bubble w-full max-w-[95%]">
-                                        <div class="flex items-center gap-2 mb-1 px-1">
-                                            <span class="text-[10px] uppercase tracking-wide text-gray-500 font-bold">Dardcor AI</span>
-                                        </div>
-                                        <div class="rounded-2xl p-4 shadow-lg text-sm bg-[#13131f] text-gray-200 rounded-bl-none border border-gray-800 w-full overflow-hidden">
-                                            ${fileHtml}
-                                            <div class="markdown-body">${marked.parse(msg.message)}</div>
-                                            <div class="mt-2 flex items-center gap-3 pt-2 border-t border-gray-800/50">
-                                                <button onclick="speakText(this)" class="text-gray-500 hover:text-purple-400 transition-colors" title="Baca Suara"><i class="fas fa-volume-up text-xs"></i></button>
-                                                <button onclick="copyMessageText(this)" class="text-gray-500 hover:text-purple-400 transition-colors" title="Salin Pesan"><i class="fas fa-copy text-xs"></i></button>
-                                            </div>
-                                        </div>
-                                    </div>`;
-                            }
-                            messageList.appendChild(div);
-                        });
-                    }
-                    
-                    messageList.appendChild(loadingIndicator);
-                    document.querySelectorAll('pre code').forEach((el) => { hljs.highlightElement(el); });
-                    scrollToBottom();
-                    window.history.pushState({id: id}, '', `/dardcorchat/dardcor-ai/${id}`);
-                }
-            } catch (error) { 
-                console.error("Failed to load chat", error); 
-            } finally {
-                isChatLoading = false;
-            }
-        }
-
-        async function sendMessage() {
-            if(isSending) {
-                if (abortController) {
-                    abortController.abort();
-                    abortController = null;
-                    isSending = false;
-                    document.getElementById('send-icon').classList.remove('fa-stop');
-                    document.getElementById('send-icon').classList.add('fa-paper-plane');
-                    loadingIndicator.classList.add('hidden');
-                }
-                return;
-            }
-
-            const msg = messageInput.value.trim();
-            if(!msg && selectedFiles.length === 0) return;
-            
-            isSending = true;
-            abortController = new AbortController();
-            
-            document.getElementById('send-icon').classList.remove('fa-paper-plane');
-            document.getElementById('send-icon').classList.add('fa-stop');
-            
-            messageInput.blur(); 
-            messageInput.value = '';
-            messageInput.style.height = 'auto'; 
-            
-            const emptyState = document.getElementById('empty-state');
-            if(emptyState) emptyState.remove();
-            
-            let fileInfo = null;
-            if(selectedFiles.length > 0) fileInfo = `${selectedFiles.length} file`;
-            appendUserMessage(msg, fileInfo);
-            
-            messageList.appendChild(loadingIndicator);
-            loadingIndicator.classList.remove('hidden');
-            scrollToBottom();
-
-            const fd = new FormData();
-            fd.append('message', msg);
-            fd.append('conversationId', currentConversationId); 
-            fd.append('toolType', currentToolType);
-            selectedFiles.forEach(file => fd.append('file_attachment', file));
-            clearFiles(); 
-
-            try {
-                const response = await fetch('/dardcorchat/ai/chat-stream', { method: 'POST', body: fd, signal: abortController.signal });
-                loadingIndicator.classList.add('hidden');
-                const botBubble = createBotBubble();
-                const botContent = botBubble.querySelector('.markdown-body');
-                const reader = response.body.getReader();
-                const decoder = new TextDecoder();
-                let fullText = "";
-                let isStreaming = true;
-
-                const renderStream = () => {
-                    if (!isStreaming) return;
-                    botContent.innerHTML = marked.parse(fullText);
-                    scrollToBottom();
-                    requestAnimationFrame(renderStream);
-                };
-                requestAnimationFrame(renderStream);
-
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-                    const chunk = decoder.decode(value);
-                    const lines = chunk.split('\n\n');
-                    for (const line of lines) {
-                        if (line.startsWith('data: ')) {
-                            try {
-                                const data = JSON.parse(line.replace('data: ', ''));
-                                if (data.chunk) {
-                                    fullText += data.chunk;
-                                }
-                            } catch (e) {}
-                        }
-                    }
-                }
-                
-                isStreaming = false;
-                botContent.innerHTML = marked.parse(fullText);
-                botContent.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
-                scrollToBottom();
-
-            } catch(e) { 
-                loadingIndicator.classList.add('hidden');
-                if (e.name !== 'AbortError') appendError("Gagal terhubung.");
-            } finally {
-                isSending = false;
-                abortController = null;
-                document.getElementById('send-btn').disabled = false;
-                document.getElementById('send-icon').classList.remove('fa-stop');
-                document.getElementById('send-icon').classList.add('fa-paper-plane');
-            }
-        }
-
-        function appendUserMessage(text, fname) {
-            const div = document.createElement('div');
-            div.className = "flex w-full justify-end mb-6 message-bubble-container";
-            
-            const innerWrapper = document.createElement('div');
-            innerWrapper.className = "flex flex-col items-end message-bubble w-full max-w-[95%]";
-            
-            const header = document.createElement('div');
-            header.className = "flex items-center gap-2 mb-1 px-1";
-            header.innerHTML = '<span class="text-[10px] uppercase tracking-wide text-gray-500 font-bold">You</span>';
-            innerWrapper.appendChild(header);
-
-            const bubble = document.createElement('div');
-            bubble.className = "rounded-2xl p-4 shadow-lg text-sm bg-violet-600 text-white rounded-br-none rounded-bl-2xl border-none w-fit";
-            
-            if (fname) {
-                const fileDiv = document.createElement('div');
-                fileDiv.className = "mb-2 text-xs flex gap-2 bg-black/20 p-2 rounded border border-white/10";
-                fileDiv.innerHTML = `<i class="fas fa-file"></i> <span>${fname}</span>`;
-                bubble.appendChild(fileDiv);
-            }
-
-            const textDiv = document.createElement('div');
-            textDiv.className = "whitespace-pre-wrap";
-            textDiv.textContent = text; 
-            bubble.appendChild(textDiv);
-            
-            innerWrapper.appendChild(bubble);
-
-            const actionsDiv = document.createElement('div');
-            actionsDiv.className = "flex gap-3 mt-1 self-end pr-1 opacity-60 hover:opacity-100 transition-opacity";
-
-            const copyBtn = document.createElement('button');
-            copyBtn.className = "text-[10px] text-gray-400 hover:text-white transition-colors flex items-center gap-1";
-            copyBtn.innerHTML = '<i class="fas fa-copy"></i> Salin';
-            copyBtn.onclick = function() { copyUserText(this, text); };
-            actionsDiv.appendChild(copyBtn);
-
-            const editBtn = document.createElement('button');
-            editBtn.className = "text-[10px] text-gray-400 hover:text-white transition-colors flex items-center gap-1";
-            editBtn.innerHTML = '<i class="fas fa-pen"></i> Edit';
-            editBtn.onclick = function() { editMessage(text); };
-            actionsDiv.appendChild(editBtn);
-
-            innerWrapper.appendChild(actionsDiv);
-            div.appendChild(innerWrapper);
-            messageList.insertBefore(div, loadingIndicator);
-        }
-
-        function createBotBubble() {
-            const div = document.createElement('div');
-            div.className = "flex w-full justify-start mb-6 message-bubble-container";
-            div.innerHTML = `<div class="flex flex-col items-start message-bubble w-full max-w-[95%]">
-                <div class="flex items-center gap-2 mb-1 px-1"><span class="text-[10px] uppercase tracking-wide text-gray-500 font-bold">Dardcor AI</span></div>
-                <div class="rounded-2xl p-4 shadow-lg text-sm bg-[#13131f] text-gray-200 rounded-bl-none border border-gray-800 w-full overflow-hidden">
-                    <div class="markdown-body"></div>
-                    <div class="mt-2 flex items-center gap-3 pt-2 border-t border-gray-800/50">
-                        <button onclick="speakText(this)" class="text-gray-500 hover:text-purple-400 transition-colors" title="Baca Suara"><i class="fas fa-volume-up text-xs"></i></button>
-                        <button onclick="copyMessageText(this)" class="text-gray-500 hover:text-purple-400 transition-colors" title="Salin Pesan"><i class="fas fa-copy text-xs"></i></button>
-                    </div>
-                </div>
-            </div>`;
-            messageList.insertBefore(div, loadingIndicator);
-            return div;
-        }
-
-        function editMessage(text) { 
-            messageInput.value = text; 
-            messageInput.focus();
-        }
-
-        function appendError(txt) {
-            const div = document.createElement('div');
-            div.className = "flex w-full justify-center my-4";
-            div.innerHTML = `<div class="bg-red-500/10 text-red-400 px-3 py-1 text-xs border border-red-500/20 rounded">${txt}</div>`;
-            messageList.insertBefore(div, loadingIndicator);
-            scrollToBottom();
-        }
-
-        function scrollToBottom() { 
-            if(chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
-        }
-
-        messageInput.addEventListener('keydown', (e) => { 
-            if(e.key === 'Enter' && !e.shiftKey) { 
-                e.preventDefault(); 
-                sendMessage(); 
-            }
-        });
-
-        messageInput.addEventListener('input', function() { 
-            this.style.height='auto'; 
-            this.style.height=Math.min(this.scrollHeight,120)+'px'; 
-        });
-
-        function closeModal(id) { 
-            document.getElementById(id).classList.add('hidden');
-        }
-
-        function openDeleteModal(id) { 
-            targetChatId = id; 
-            document.getElementById('delete-modal').classList.remove('hidden'); 
-            document.getElementById('delete-modal').classList.add('flex');
-        }
-
-        function openRenameModal(id) { 
-            targetChatId = id; 
-            const hiddenInput = document.getElementById('raw-title-' + id);
-            const currentTitle = hiddenInput ? hiddenInput.value : ''; 
-            document.getElementById('rename-input').value = currentTitle; 
-            document.getElementById('rename-modal').classList.remove('hidden'); 
-            document.getElementById('rename-modal').classList.add('flex'); 
-            document.getElementById('rename-input').focus();
-        }
-
-        async function createNewChat() { 
-            try { 
-                const res = await fetch('/dardcorchat/ai/new-chat', { method: 'POST' });
-                const data = await res.json(); 
-                if(data.success) {
-                    const newId = data.redirectUrl.split('/').pop();
-                    window.history.pushState({id: newId}, '', `/dardcorchat/dardcor-ai/${newId}`);
-                    loadChat(newId);
-                }
-            } catch(e) {} 
-        }
-
-        async function submitDelete() { 
-            closeModal('delete-modal');
-            await fetch('/dardcorchat/ai/delete-chat-history', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({conversationId:targetChatId})}); 
-            
-            const elem = document.getElementById(`chat-item-${targetChatId}`);
-            if(elem) elem.remove();
-
-            if(targetChatId === currentConversationId) {
-                createNewChat();
-            }
-        }
-
-        async function submitRename() { 
-            const newName = document.getElementById('rename-input').value; 
-            closeModal('rename-modal');
-            if(!newName.trim()) return; 
-            const res = await fetch('/dardcorchat/ai/rename-chat', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ conversationId: targetChatId, newTitle: newName }) });
-            if(res.ok) { 
-                document.getElementById(`title-${targetChatId}`).innerText = newName.substring(0, 22) + (newName.length > 22 ? '...' : ''); 
-                document.getElementById(`raw-title-${targetChatId}`).value = newName;
-            } 
-        }
-
-        document.addEventListener("DOMContentLoaded", () => {
-            document.querySelectorAll('.message-bubble-container').forEach(container => {
-                const rawEl = container.querySelector('.raw-message-content');
-                const targetEl = container.querySelector('.markdown-body');
-                if (rawEl && targetEl) targetEl.innerHTML = marked.parse(rawEl.value);
-            });
-            scrollToBottom();
-            if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
-        });
     </script>
+    <script src="/js/dardcorai.js"></script>
 </body>
 </html>
