@@ -8,7 +8,6 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#0b0c15">
-
     <title>Dardcor AI</title>
     <link rel="icon" href="/logo.png">
     <link rel="manifest" href="/manifest.json">
@@ -246,7 +245,7 @@
             %>
 
             <% if (isNewChat) { %>
-                <div class="group relative flex items-center px-3 h-[44px] rounded-lg bg-[#202336] border-l-4 border-purple-500 cursor-default w-full mb-1">
+                <div id="current-new-chat-item" onclick="createNewChat()" class="group relative flex items-center px-3 h-[44px] rounded-lg bg-[#202336] border-l-4 border-purple-500 cursor-pointer w-full mb-1">
                     <div class="flex-1 min-w-0 pr-2 flex items-center h-full pointer-events-none">
                         <i class="fas fa-message text-purple-500 mr-3 text-xs flex-shrink-0"></i>
                         <span class="text-sm text-white font-medium truncate">Percakapan Baru</span>
@@ -341,6 +340,7 @@
         let targetChatId = null;
         let isSending = false;
         let abortController = null;
+        let isChatLoading = false;
 
         function setTool(type) {
             currentToolType = type;
@@ -402,14 +402,20 @@
             navigator.clipboard.writeText(textToCopy).then(() => {
                 const icon = btn.querySelector('i');
                 const originalClass = icon.className;
-                
                 icon.className = 'fas fa-check text-xs text-green-400';
-                
-                setTimeout(() => {
-                    icon.className = originalClass;
+                setTimeout(() => { icon.className = originalClass; }, 2000);
+            }).catch(err => { console.error('Failed to copy text: ', err); });
+        }
+
+        function copyUserText(btn, text) {
+            navigator.clipboard.writeText(text).then(() => {
+                const originalContent = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-check"></i> Disalin';
+                btn.classList.add('text-green-400');
+                setTimeout(() => { 
+                    btn.innerHTML = originalContent; 
+                    btn.classList.remove('text-green-400');
                 }, 2000);
-            }).catch(err => {
-                console.error('Failed to copy text: ', err);
             });
         }
 
@@ -489,15 +495,28 @@
         }
 
         async function loadChat(id) {
+            if(isChatLoading) return;
+            isChatLoading = true;
+
             try {
                 document.querySelectorAll('[id^="chat-item-"]').forEach(el => {
                     el.classList.remove('bg-[#202336]', 'border-l-4', 'border-purple-500');
                     el.classList.add('border-l-4', 'border-transparent');
                 });
+                
+                const newChatIndicator = document.getElementById('current-new-chat-item');
+                if(newChatIndicator) {
+                    newChatIndicator.classList.remove('bg-[#202336]', 'border-l-4', 'border-purple-500');
+                    newChatIndicator.classList.add('border-transparent');
+                }
+
                 const activeItem = document.getElementById(`chat-item-${id}`);
                 if (activeItem) {
                     activeItem.classList.add('bg-[#202336]', 'border-l-4', 'border-purple-500');
                     activeItem.classList.remove('border-transparent');
+                } else if (newChatIndicator && id.length > 20) {
+                    newChatIndicator.classList.add('bg-[#202336]', 'border-l-4', 'border-purple-500');
+                    newChatIndicator.classList.remove('border-transparent');
                 }
 
                 const res = await fetch(`/api/chat/${id}`);
@@ -507,50 +526,94 @@
                     currentConversationId = id;
                     messageList.innerHTML = ''; 
                     
-                    data.history.forEach(msg => {
-                        let fileHtml = '';
-                        if (msg.file_metadata) {
-                            msg.file_metadata.forEach(f => {
-                                fileHtml += `<div class="mb-3 text-xs flex items-center gap-3 bg-black/20 p-2 rounded-lg border border-white/10"><i class="fas fa-file text-base"></i><div class="flex flex-col overflow-hidden min-w-0"><span class="truncate font-medium text-white text-xs-mobile">${f.filename}</span><span class="opacity-70 text-[10px]">${Math.round(f.size / 1024)} KB</span></div></div>`;
-                            });
-                        }
-                        
-                        let actionButtons = '';
-                        if (msg.role !== 'user') {
-                            actionButtons = `
-                            <div class="mt-2 flex items-center gap-3 pt-2 border-t border-gray-800/50">
-                                <button onclick="speakText(this)" class="text-gray-500 hover:text-purple-400 transition-colors" title="Baca Suara">
-                                    <i class="fas fa-volume-up text-xs"></i>
-                                </button>
-                                <button onclick="copyMessageText(this)" class="text-gray-500 hover:text-purple-400 transition-colors" title="Salin Pesan">
-                                    <i class="fas fa-copy text-xs"></i>
-                                </button>
-                            </div>`;
-                        }
+                    if (data.history.length === 0) {
+                        messageList.innerHTML = `
+                        <div id="empty-state" class="flex flex-col items-center justify-center text-gray-500 opacity-60 min-h-[50vh]">
+                            <div class="w-24 h-24 bg-gray-800/50 rounded-full flex items-center justify-center mb-6 overflow-hidden border border-gray-700 shadow-xl bg-black">
+                                <img src="/logo.png" alt="Dardcor Logo" class="w-full h-full object-cover">
+                            </div>
+                            <p class="text-lg font-medium text-gray-400 text-center">Apa yang bisa saya bantu?</p>
+                        </div>`;
+                    } else {
+                        data.history.forEach(msg => {
+                            let fileHtml = '';
+                            if (msg.file_metadata) {
+                                msg.file_metadata.forEach(f => {
+                                    fileHtml += `<div class="mb-3 text-xs flex items-center gap-3 bg-black/20 p-2 rounded-lg border border-white/10"><i class="fas fa-file text-base"></i><div class="flex flex-col overflow-hidden min-w-0"><span class="truncate font-medium text-white text-xs-mobile">${f.filename}</span><span class="opacity-70 text-[10px]">${Math.round(f.size / 1024)} KB</span></div></div>`;
+                                });
+                            }
+                            
+                            const div = document.createElement('div');
+                            div.className = `flex w-full ${msg.role === 'user' ? 'justify-end' : 'justify-start'} message-bubble-container`;
+                            
+                            if (msg.role === 'user') {
+                                const innerWrapper = document.createElement('div');
+                                innerWrapper.className = "flex flex-col items-end message-bubble w-full max-w-[95%]";
+                                
+                                const header = document.createElement('div');
+                                header.className = "flex items-center gap-2 mb-1 px-1";
+                                header.innerHTML = '<span class="text-[10px] uppercase tracking-wide text-gray-500 font-bold">You</span>';
+                                innerWrapper.appendChild(header);
 
-                        const div = document.createElement('div');
-                        div.className = `flex w-full ${msg.role === 'user' ? 'justify-end' : 'justify-start'} message-bubble-container`;
-                        div.innerHTML = `
-                            <div class="flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} message-bubble w-full max-w-[95%]">
-                                <div class="flex items-center gap-2 mb-1 px-1">
-                                    <span class="text-[10px] uppercase tracking-wide text-gray-500 font-bold">${msg.role === 'user' ? 'You' : 'Dardcor AI'}</span>
-                                </div>
-                                <div class="rounded-2xl p-4 shadow-lg text-sm leading-relaxed bg-[#13131f] text-gray-200 rounded-bl-none border border-gray-800 w-full overflow-hidden ${msg.role === 'user' ? '!bg-violet-600 !text-white !rounded-br-none !rounded-bl-2xl !border-none' : ''}">
-                                    ${fileHtml}
-                                    <div class="markdown-body">${marked.parse(msg.message)}</div>
-                                    ${msg.role === 'user' ? `<button onclick="editMessage('${msg.message.replace(/'/g, "\\'")}')" class="text-[10px] opacity-50 mt-2 hover:opacity-100 block w-full text-right"><i class="fas fa-pen"></i> Edit</button>` : ''}
-                                    ${actionButtons}
-                                </div>
-                            </div>`;
-                        messageList.appendChild(div);
-                    });
+                                const bubble = document.createElement('div');
+                                bubble.className = "rounded-2xl p-4 shadow-lg text-sm bg-violet-600 text-white rounded-br-none rounded-bl-2xl border-none w-fit";
+                                if(fileHtml) bubble.innerHTML = fileHtml;
+
+                                const textDiv = document.createElement('div');
+                                textDiv.className = "whitespace-pre-wrap";
+                                textDiv.textContent = msg.message;
+                                bubble.appendChild(textDiv);
+                                
+                                innerWrapper.appendChild(bubble);
+
+                                const actionsDiv = document.createElement('div');
+                                actionsDiv.className = "flex gap-3 mt-1 self-end pr-1 opacity-60 hover:opacity-100 transition-opacity";
+
+                                const copyBtn = document.createElement('button');
+                                copyBtn.className = "text-[10px] text-gray-400 hover:text-white transition-colors flex items-center gap-1";
+                                copyBtn.innerHTML = '<i class="fas fa-copy"></i> Salin';
+                                copyBtn.onclick = function() { copyUserText(this, msg.message); };
+                                actionsDiv.appendChild(copyBtn);
+
+                                const editBtn = document.createElement('button');
+                                editBtn.className = "text-[10px] text-gray-400 hover:text-white transition-colors flex items-center gap-1";
+                                editBtn.innerHTML = '<i class="fas fa-pen"></i> Edit';
+                                editBtn.onclick = function() { editMessage(msg.message); };
+                                actionsDiv.appendChild(editBtn);
+
+                                innerWrapper.appendChild(actionsDiv);
+                                div.appendChild(innerWrapper);
+
+                            } else {
+                                div.innerHTML = `
+                                    <div class="flex flex-col items-start message-bubble w-full max-w-[95%]">
+                                        <div class="flex items-center gap-2 mb-1 px-1">
+                                            <span class="text-[10px] uppercase tracking-wide text-gray-500 font-bold">Dardcor AI</span>
+                                        </div>
+                                        <div class="rounded-2xl p-4 shadow-lg text-sm bg-[#13131f] text-gray-200 rounded-bl-none border border-gray-800 w-full overflow-hidden">
+                                            ${fileHtml}
+                                            <div class="markdown-body">${marked.parse(msg.message)}</div>
+                                            <div class="mt-2 flex items-center gap-3 pt-2 border-t border-gray-800/50">
+                                                <button onclick="speakText(this)" class="text-gray-500 hover:text-purple-400 transition-colors" title="Baca Suara"><i class="fas fa-volume-up text-xs"></i></button>
+                                                <button onclick="copyMessageText(this)" class="text-gray-500 hover:text-purple-400 transition-colors" title="Salin Pesan"><i class="fas fa-copy text-xs"></i></button>
+                                            </div>
+                                        </div>
+                                    </div>`;
+                            }
+                            messageList.appendChild(div);
+                        });
+                    }
                     
                     messageList.appendChild(loadingIndicator);
                     document.querySelectorAll('pre code').forEach((el) => { hljs.highlightElement(el); });
                     scrollToBottom();
                     window.history.pushState({id: id}, '', `/dardcorchat/dardcor-ai/${id}`);
                 }
-            } catch (error) { console.error("Failed to load chat", error); }
+            } catch (error) { 
+                console.error("Failed to load chat", error); 
+            } finally {
+                isChatLoading = false;
+            }
         }
 
         async function sendMessage() {
@@ -580,7 +643,7 @@
             messageInput.style.height = 'auto'; 
             
             const emptyState = document.getElementById('empty-state');
-            if(emptyState) emptyState.style.display = 'none';
+            if(emptyState) emptyState.remove();
             
             let fileInfo = null;
             if(selectedFiles.length > 0) fileInfo = `${selectedFiles.length} file`;
@@ -640,15 +703,49 @@
         function appendUserMessage(text, fname) {
             const div = document.createElement('div');
             div.className = "flex w-full justify-end mb-6 message-bubble-container";
-            let fhtml = fname ? `<div class="mb-2 text-xs flex gap-2 bg-black/20 p-2 rounded border border-white/10"><i class="fas fa-file"></i> <span>${fname}</span></div>` : '';
-            div.innerHTML = `<div class="flex flex-col items-end message-bubble w-full max-w-[95%]">
-                <div class="flex items-center gap-2 mb-1 px-1"><span class="text-[10px] uppercase tracking-wide text-gray-500 font-bold">You</span></div>
-                <div class="rounded-2xl p-4 shadow-lg text-sm bg-violet-600 text-white rounded-br-none rounded-bl-2xl w-full">
-                    ${fhtml}
-                    <div class="whitespace-pre-wrap">${text.replace(/</g, "&lt;")}</div>
-                    <button onclick="editMessage('${text.replace(/'/g, "\\'")}')" class="text-[10px] opacity-50 mt-2 hover:opacity-100 block w-full text-right"><i class="fas fa-pen"></i> Edit</button>
-                </div>
-            </div>`;
+            
+            const innerWrapper = document.createElement('div');
+            innerWrapper.className = "flex flex-col items-end message-bubble w-full max-w-[95%]";
+            
+            const header = document.createElement('div');
+            header.className = "flex items-center gap-2 mb-1 px-1";
+            header.innerHTML = '<span class="text-[10px] uppercase tracking-wide text-gray-500 font-bold">You</span>';
+            innerWrapper.appendChild(header);
+
+            const bubble = document.createElement('div');
+            bubble.className = "rounded-2xl p-4 shadow-lg text-sm bg-violet-600 text-white rounded-br-none rounded-bl-2xl border-none w-fit";
+            
+            if (fname) {
+                const fileDiv = document.createElement('div');
+                fileDiv.className = "mb-2 text-xs flex gap-2 bg-black/20 p-2 rounded border border-white/10";
+                fileDiv.innerHTML = `<i class="fas fa-file"></i> <span>${fname}</span>`;
+                bubble.appendChild(fileDiv);
+            }
+
+            const textDiv = document.createElement('div');
+            textDiv.className = "whitespace-pre-wrap";
+            textDiv.textContent = text; 
+            bubble.appendChild(textDiv);
+            
+            innerWrapper.appendChild(bubble);
+
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = "flex gap-3 mt-1 self-end pr-1 opacity-60 hover:opacity-100 transition-opacity";
+
+            const copyBtn = document.createElement('button');
+            copyBtn.className = "text-[10px] text-gray-400 hover:text-white transition-colors flex items-center gap-1";
+            copyBtn.innerHTML = '<i class="fas fa-copy"></i> Salin';
+            copyBtn.onclick = function() { copyUserText(this, text); };
+            actionsDiv.appendChild(copyBtn);
+
+            const editBtn = document.createElement('button');
+            editBtn.className = "text-[10px] text-gray-400 hover:text-white transition-colors flex items-center gap-1";
+            editBtn.innerHTML = '<i class="fas fa-pen"></i> Edit';
+            editBtn.onclick = function() { editMessage(text); };
+            actionsDiv.appendChild(editBtn);
+
+            innerWrapper.appendChild(actionsDiv);
+            div.appendChild(innerWrapper);
             messageList.insertBefore(div, loadingIndicator);
         }
 
@@ -660,12 +757,8 @@
                 <div class="rounded-2xl p-4 shadow-lg text-sm bg-[#13131f] text-gray-200 rounded-bl-none border border-gray-800 w-full overflow-hidden">
                     <div class="markdown-body"></div>
                     <div class="mt-2 flex items-center gap-3 pt-2 border-t border-gray-800/50">
-                        <button onclick="speakText(this)" class="text-gray-500 hover:text-purple-400 transition-colors" title="Baca Suara">
-                            <i class="fas fa-volume-up text-xs"></i>
-                        </button>
-                        <button onclick="copyMessageText(this)" class="text-gray-500 hover:text-purple-400 transition-colors" title="Salin Pesan">
-                            <i class="fas fa-copy text-xs"></i>
-                        </button>
+                        <button onclick="speakText(this)" class="text-gray-500 hover:text-purple-400 transition-colors" title="Baca Suara"><i class="fas fa-volume-up text-xs"></i></button>
+                        <button onclick="copyMessageText(this)" class="text-gray-500 hover:text-purple-400 transition-colors" title="Salin Pesan"><i class="fas fa-copy text-xs"></i></button>
                     </div>
                 </div>
             </div>`;
@@ -723,21 +816,28 @@
         }
 
         async function createNewChat() { 
+            if(isChatLoading) return;
             try { 
                 const res = await fetch('/dardcorchat/ai/new-chat', { method: 'POST' });
                 const data = await res.json(); 
-                if(data.success) window.location.href = data.redirectUrl; 
+                if(data.success) {
+                    const newId = data.redirectUrl.split('/').pop();
+                    window.history.pushState({id: newId}, '', `/dardcorchat/dardcor-ai/${newId}`);
+                    loadChat(newId);
+                }
             } catch(e) {} 
         }
 
         async function submitDelete() { 
             closeModal('delete-modal');
             await fetch('/dardcorchat/ai/delete-chat-history', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({conversationId:targetChatId})}); 
-            if(targetChatId === currentConversationId) window.location.href = '/dardcorchat/dardcor-ai'; 
-            else { 
-                const elem = document.getElementById(`chat-item-${targetChatId}`);
-                if(elem) elem.remove(); 
-            } 
+            
+            const elem = document.getElementById(`chat-item-${targetChatId}`);
+            if(elem) elem.remove();
+
+            if(targetChatId === currentConversationId) {
+                createNewChat();
+            }
         }
 
         async function submitRename() { 
