@@ -1,3 +1,5 @@
+/* global marked, hljs, mermaid, SERVER_DATA */
+
 document.addEventListener('DOMContentLoaded', () => {
 
     let currentConversationId = window.SERVER_DATA.currentConversationId;
@@ -8,22 +10,26 @@ document.addEventListener('DOMContentLoaded', () => {
     let isChatLoading = false;
     let selectedFiles = [];
 
+    // --- DOM Elements ---
     const chatContainer = document.getElementById('chat-container');
     const messageInput = document.getElementById('message-input');
     const messageList = document.getElementById('message-list');
     const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('main-content');
     const overlay = document.getElementById('mobile-overlay');
     const toolsMenu = document.getElementById('tools-menu');
     const toolsChevron = document.getElementById('tools-chevron');
     const loadingIndicator = document.getElementById('loading-indicator');
     const fileInput = document.getElementById('file-upload');
-    const camInput = document.getElementById('vision-camera');
     const dropZone = document.getElementById('drop-zone');
     const previewContainer = document.getElementById('file-preview-container');
     const sendBtn = document.getElementById('send-btn');
     const sendIcon = document.getElementById('send-icon');
 
-    mermaid.initialize({ startOnLoad: false, theme: 'dark' });
+    // --- Initial Setup ---
+    if (typeof mermaid !== 'undefined') {
+        mermaid.initialize({ startOnLoad: false, theme: 'dark' });
+    }
 
     function initHighlight() {
         document.querySelectorAll('.message-bubble-container pre code').forEach(el => hljs.highlightElement(el));
@@ -38,6 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderMermaid() {
+        if (typeof mermaid === 'undefined') return;
         document.querySelectorAll('.mermaid').forEach((el, index) => {
             if(!el.getAttribute('data-processed')) {
                 el.setAttribute('data-processed', 'true');
@@ -52,33 +59,49 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // --- Initialize ---
     initHighlight();
     scrollToBottom();
 
-    document.getElementById('sidebar-toggle-btn').addEventListener('click', toggleSidebar);
-    document.getElementById('close-sidebar-btn').addEventListener('click', toggleSidebar);
-    document.getElementById('mobile-overlay').addEventListener('click', toggleSidebar);
+    // --- Event Listeners ---
+    if(document.getElementById('sidebar-toggle-btn')) {
+        document.getElementById('sidebar-toggle-btn').addEventListener('click', toggleSidebar);
+    }
+    if(document.getElementById('close-sidebar-btn')) {
+        document.getElementById('close-sidebar-btn').addEventListener('click', toggleSidebar);
+    }
+    if(document.getElementById('mobile-overlay')) {
+        document.getElementById('mobile-overlay').addEventListener('click', toggleSidebar);
+    }
 
-    document.getElementById('model-dropdown-btn').addEventListener('click', (e) => {
-        e.stopPropagation();
-        toolsMenu.classList.toggle('hidden');
-        toolsChevron.classList.toggle('rotate-180');
-    });
+    if(document.getElementById('model-dropdown-btn')) {
+        document.getElementById('model-dropdown-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            if(toolsMenu) toolsMenu.classList.toggle('hidden');
+            if(toolsChevron) toolsChevron.classList.toggle('rotate-180');
+        });
+    }
 
     document.querySelectorAll('.model-select-btn').forEach(btn => {
         btn.addEventListener('click', () => setModel(btn.dataset.model));
     });
 
-    document.getElementById('refresh-chat-btn').addEventListener('click', refreshChat);
+    if(document.getElementById('refresh-chat-btn')) {
+        document.getElementById('refresh-chat-btn').addEventListener('click', refreshChat);
+    }
 
-    document.getElementById('new-chat-btn').addEventListener('click', createNewChat);
+    if(document.getElementById('new-chat-btn')) {
+        document.getElementById('new-chat-btn').addEventListener('click', createNewChat);
+    }
+    
     const newChatIndicator = document.getElementById('current-new-chat-item');
     if(newChatIndicator) newChatIndicator.addEventListener('click', createNewChat);
 
     document.addEventListener('click', (e) => {
-        if (!toolsMenu.contains(e.target) && !document.getElementById('model-dropdown-btn').contains(e.target)) {
+        const btn = document.getElementById('model-dropdown-btn');
+        if (toolsMenu && btn && !toolsMenu.contains(e.target) && !btn.contains(e.target)) {
             toolsMenu.classList.add('hidden');
-            toolsChevron.classList.remove('rotate-180');
+            if(toolsChevron) toolsChevron.classList.remove('rotate-180');
         }
         document.querySelectorAll('.dropdown-menu').forEach(el => el.classList.add('hidden'));
     });
@@ -95,30 +118,49 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if(sendBtn) sendBtn.addEventListener('click', sendMessage);
 
+    if(fileInput) fileInput.addEventListener('change', function() { handleFiles(this.files); });
+    
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        document.body.addEventListener(eventName, (e) => { e.preventDefault(); e.stopPropagation(); }, false);
+    });
+
+    if(dropZone) {
+        ['dragenter', 'dragover'].forEach(evt => document.body.addEventListener(evt, () => { dropZone.classList.remove('hidden'); dropZone.classList.add('flex'); }));
+        ['dragleave', 'drop'].forEach(evt => dropZone.addEventListener(evt, () => { dropZone.classList.add('hidden'); dropZone.classList.remove('flex'); }));
+        document.body.addEventListener('drop', (e) => handleFiles(e.dataTransfer.files));
+    }
+
+    // --- Functions ---
+
     function toggleSidebar() {
-        sidebar.classList.toggle('-translate-x-full');
-        overlay.classList.toggle('hidden');
+        if(sidebar) sidebar.classList.toggle('-translate-x-full');
+        
+        // Mobile behavior: Toggle Overlay
+        if (window.innerWidth < 1024) {
+            if(overlay) overlay.classList.toggle('hidden');
+        } 
+        // Desktop behavior: Push Main Content
+        else {
+            if(mainContent) mainContent.classList.toggle('left-72');
+        }
     }
 
     function setModel(type) {
         currentToolType = type;
-        toolsMenu.classList.add('hidden');
-        toolsChevron.classList.remove('rotate-180');
-        const label = document.getElementById('tool-label');
+        if(toolsMenu) toolsMenu.classList.add('hidden');
+        if(toolsChevron) toolsChevron.classList.remove('rotate-180');
         
         if(type === 'dark') {
             if(messageInput) messageInput.placeholder = "Mode Tanpa Batas...";
-            label.innerText = "Dark Model";
         } else {
             if(messageInput) messageInput.placeholder = "Ketik pesan, paste link, atau upload file...";
-            label.innerText = "Basic Model";
         }
     }
 
     async function refreshChat() {
         if(isChatLoading) return;
         const icon = document.getElementById('refresh-icon');
-        icon.classList.add('animate-spin');
+        if(icon) icon.classList.add('animate-spin');
         
         if(currentConversationId && currentConversationId.length > 20) {
             await loadChat(currentConversationId);
@@ -126,7 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
             window.location.reload();
         }
         
-        setTimeout(() => { icon.classList.remove('animate-spin'); }, 800);
+        if(icon) setTimeout(() => { icon.classList.remove('animate-spin'); }, 800);
     }
 
     window.loadChat = async function(id) {
@@ -134,23 +176,26 @@ document.addEventListener('DOMContentLoaded', () => {
         isChatLoading = true;
         
         try {
+            // Reset ALL chat items to inactive state (transparent border)
             document.querySelectorAll('[id^="chat-item-"]').forEach(el => {
-                el.classList.remove('bg-[#202336]', 'border-l-4', 'border-purple-500');
-                el.classList.add('border-l-4', 'border-transparent');
+                el.classList.remove('bg-[#202336]', 'border-purple-500');
+                el.classList.add('border-transparent');
             });
             
-            if(newChatIndicator) {
-                newChatIndicator.classList.remove('bg-[#202336]', 'border-l-4', 'border-purple-500');
-                newChatIndicator.classList.add('border-transparent');
+            const newItem = document.getElementById('current-new-chat-item');
+            if(newItem) {
+                newItem.classList.remove('bg-[#202336]', 'border-purple-500');
+                newItem.classList.add('border-transparent');
             }
 
+            // Set ACTIVE item
             const activeItem = document.getElementById(`chat-item-${id}`);
             if (activeItem) {
-                activeItem.classList.add('bg-[#202336]', 'border-l-4', 'border-purple-500');
+                activeItem.classList.add('bg-[#202336]', 'border-purple-500');
                 activeItem.classList.remove('border-transparent');
-            } else if (newChatIndicator && id.length > 20) {
-                newChatIndicator.classList.add('bg-[#202336]', 'border-l-4', 'border-purple-500');
-                newChatIndicator.classList.remove('border-transparent');
+            } else if (newItem && id.length > 20) {
+                newItem.classList.add('bg-[#202336]', 'border-purple-500');
+                newItem.classList.remove('border-transparent');
             }
 
             const res = await fetch(`/api/chat/${id}`);
@@ -200,7 +245,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function sendMessage() {
         if(isSending) {
-            if(abortController) { abortController.abort(); abortController = null; isSending = false; sendIcon.classList.replace('fa-stop', 'fa-paper-plane'); document.getElementById('loading-indicator').classList.add('hidden'); }
+            if(abortController) { abortController.abort(); abortController = null; isSending = false; if(sendIcon) sendIcon.classList.replace('fa-stop', 'fa-paper-plane'); if(loadingIndicator) loadingIndicator.classList.add('hidden'); }
             return;
         }
 
@@ -209,9 +254,10 @@ document.addEventListener('DOMContentLoaded', () => {
         
         isSending = true;
         abortController = new AbortController();
-        sendIcon.classList.replace('fa-paper-plane', 'fa-stop');
+        if(sendIcon) sendIcon.classList.replace('fa-paper-plane', 'fa-stop');
         messageInput.blur(); messageInput.value = ''; messageInput.style.height = 'auto';
-        document.getElementById('empty-state')?.remove();
+        const emptyState = document.getElementById('empty-state');
+        if(emptyState) emptyState.remove();
         
         const userDiv = document.createElement('div');
         userDiv.className = "flex w-full justify-end mb-6 message-bubble-container";
@@ -220,9 +266,10 @@ document.addEventListener('DOMContentLoaded', () => {
         
         userDiv.innerHTML = `<div class="flex flex-col items-end message-bubble w-full max-w-[95%]"><div class="flex items-center gap-2 mb-1 px-1"><span class="text-[10px] uppercase tracking-wide text-gray-500 font-bold">You</span></div><div class="rounded-2xl p-4 shadow-lg text-sm bg-violet-600 text-white rounded-br-none rounded-bl-2xl border-none w-fit">${fileHtml}<div class="whitespace-pre-wrap">${escapeHtml(msg)}</div></div><div class="flex gap-3 mt-1 self-end pr-1 opacity-60 hover:opacity-100 transition-opacity"><button onclick="copyUserText(this, decodeURIComponent('${encodeURIComponent(msg)}'))" class="text-[10px] text-gray-400 hover:text-white transition-colors flex items-center gap-1"><i class="fas fa-copy"></i> Salin</button><button onclick="editMessage(decodeURIComponent('${encodeURIComponent(msg)}'))" class="text-[10px] text-gray-400 hover:text-white transition-colors flex items-center gap-1"><i class="fas fa-pen"></i> Edit</button></div></div>`;
         
-        const loader = document.getElementById('loading-indicator');
-        messageList.insertBefore(userDiv, loader);
-        loader.classList.remove('hidden');
+        if(loadingIndicator) {
+            messageList.insertBefore(userDiv, loadingIndicator);
+            loadingIndicator.classList.remove('hidden');
+        }
         scrollToBottom();
 
         const fd = new FormData();
@@ -237,8 +284,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const botDiv = document.createElement('div');
             botDiv.className = "flex w-full justify-start mb-6 message-bubble-container";
             botDiv.innerHTML = `<div class="flex flex-col items-start message-bubble w-full max-w-[95%]"><div class="flex items-center gap-2 mb-1 px-1"><span class="text-[10px] uppercase tracking-wide text-gray-500 font-bold">Dardcor AI</span></div><div class="rounded-2xl p-4 shadow-lg text-sm bg-[#13131f] text-gray-200 rounded-bl-none border border-gray-800 w-full overflow-hidden"><div class="markdown-body"></div></div></div>`;
-            messageList.insertBefore(botDiv, loader);
-            loader.classList.add('hidden');
+            if(loadingIndicator) {
+                messageList.insertBefore(botDiv, loadingIndicator);
+                loadingIndicator.classList.add('hidden');
+            } else {
+                messageList.appendChild(botDiv);
+            }
 
             const botContent = botDiv.querySelector('.markdown-body');
             const reader = response.body.getReader();
@@ -271,26 +322,13 @@ document.addEventListener('DOMContentLoaded', () => {
             scrollToBottom();
 
         } catch(e) {
-            loader.classList.add('hidden');
+            if(loadingIndicator) loadingIndicator.classList.add('hidden');
             if (e.name !== 'AbortError') alert("Gagal terhubung.");
         } finally {
             isSending = false;
             abortController = null;
-            sendIcon.classList.replace('fa-stop', 'fa-paper-plane');
+            if(sendIcon) sendIcon.classList.replace('fa-stop', 'fa-paper-plane');
         }
-    }
-
-    if(fileInput) fileInput.addEventListener('change', function() { handleFiles(this.files); });
-    if(camInput) camInput.addEventListener('change', function() { handleFiles(this.files); });
-    
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-        document.body.addEventListener(eventName, (e) => { e.preventDefault(); e.stopPropagation(); }, false);
-    });
-
-    if(dropZone) {
-        ['dragenter', 'dragover'].forEach(evt => document.body.addEventListener(evt, () => { dropZone.classList.remove('hidden'); dropZone.classList.add('flex'); }));
-        ['dragleave', 'drop'].forEach(evt => dropZone.addEventListener(evt, () => { dropZone.classList.add('hidden'); dropZone.classList.remove('flex'); }));
-        document.body.addEventListener('drop', (e) => handleFiles(e.dataTransfer.files));
     }
 
     function handleFiles(files) {
@@ -317,49 +355,54 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function removeFile(index) { selectedFiles.splice(index, 1); renderPreviews(); if(fileInput) fileInput.value = ''; if(camInput) camInput.value = ''; }
-    function clearFiles() { selectedFiles = []; renderPreviews(); if(fileInput) fileInput.value = ''; if(camInput) camInput.value = ''; }
+    function removeFile(index) { selectedFiles.splice(index, 1); renderPreviews(); if(fileInput) fileInput.value = ''; }
+    function clearFiles() { selectedFiles = []; renderPreviews(); if(fileInput) fileInput.value = ''; }
 
-    window.toggleMenu = function(e, id) { e.stopPropagation(); document.querySelectorAll('.dropdown-menu').forEach(el => el.classList.add('hidden')); document.getElementById(id).classList.toggle('hidden'); }
-    window.openDeleteModal = function(id) { targetChatId = id; document.getElementById('delete-modal').classList.remove('hidden'); document.getElementById('delete-modal').classList.add('flex'); }
-    window.closeModal = function(id) { document.getElementById(id).classList.add('hidden'); }
+    // --- Helpers (Global Scope) ---
+    window.toggleMenu = function(e, id) { e.stopPropagation(); document.querySelectorAll('.dropdown-menu').forEach(el => el.classList.add('hidden')); document.getElementById(id).classList.toggle('hidden'); };
+    window.openDeleteModal = function(id) { targetChatId = id; document.getElementById('delete-modal').classList.remove('hidden'); document.getElementById('delete-modal').classList.add('flex'); };
+    window.closeModal = function(id) { document.getElementById(id).classList.add('hidden'); };
+    
     window.submitDelete = async function() { 
         closeModal('delete-modal');
         await fetch('/dardcorchat/ai/delete-chat-history', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({conversationId:targetChatId})});
         const elem = document.getElementById(`chat-item-${targetChatId}`);
         if(elem) elem.remove();
         if(targetChatId === currentConversationId) createNewChat();
-    }
+    };
+
     window.openRenameModal = function(id) { 
         targetChatId = id; 
         document.getElementById('rename-input').value = document.getElementById(`raw-title-${id}`).value;
         document.getElementById('rename-modal').classList.remove('hidden'); 
         document.getElementById('rename-modal').classList.add('flex'); 
-    }
+    };
+
     window.submitRename = async function() { 
         const newName = document.getElementById('rename-input').value; closeModal('rename-modal'); if(!newName.trim()) return;
         const res = await fetch('/dardcorchat/ai/rename-chat', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ conversationId: targetChatId, newTitle: newName }) });
         if(res.ok) { document.getElementById(`title-${targetChatId}`).innerText = newName.substring(0, 22) + '...'; document.getElementById(`raw-title-${targetChatId}`).value = newName; }
-    }
-    window.editMessage = function(text) { if(messageInput){ messageInput.value = text; messageInput.focus(); } }
-    window.copyUserText = function(btn, text) { navigator.clipboard.writeText(text).then(() => { const orig = btn.innerHTML; btn.innerHTML = '<i class="fas fa-check"></i> Disalin'; setTimeout(() => btn.innerHTML = orig, 2000); }); }
-    window.copyMessageText = function(btn) { const txt = btn.closest('.message-bubble').querySelector('.markdown-body').innerText; navigator.clipboard.writeText(txt).then(() => { const icon = btn.querySelector('i'); icon.className = 'fas fa-check text-xs text-green-400'; setTimeout(() => icon.className = 'fas fa-copy text-xs', 2000); }); }
+    };
+
+    window.editMessage = function(text) { if(messageInput){ messageInput.value = text; messageInput.focus(); } };
+    window.copyUserText = function(btn, text) { navigator.clipboard.writeText(text).then(() => { const orig = btn.innerHTML; btn.innerHTML = '<i class="fas fa-check"></i> Disalin'; setTimeout(() => btn.innerHTML = orig, 2000); }); };
+    window.copyMessageText = function(btn) { const txt = btn.closest('.message-bubble').querySelector('.markdown-body').innerText; navigator.clipboard.writeText(txt).then(() => { const icon = btn.querySelector('i'); icon.className = 'fas fa-check text-xs text-green-400'; setTimeout(() => icon.className = 'fas fa-copy text-xs', 2000); }); };
     window.speakText = function(btn) { 
         const txt = btn.closest('.message-bubble').querySelector('.markdown-body').innerText;
         if ('speechSynthesis' in window) {
             if (window.speechSynthesis.speaking) window.speechSynthesis.cancel();
             else { const u = new SpeechSynthesisUtterance(txt); u.lang = 'id-ID'; window.speechSynthesis.speak(u); }
         } else alert("TTS Error"); 
-    }
+    };
     window.previewCode = async function(btn) {
         const rawCode = btn.closest('.terminal-container').querySelector('.raw-code').value.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
         const original = btn.innerHTML; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; btn.disabled = true;
         try { const res = await fetch('/dardcorchat/ai/store-preview', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: rawCode }) }); const data = await res.json(); if(data.success) window.open(`/dardcorchat/dardcor-ai/preview/${data.previewId}`, '_blank'); } catch(e) { alert('Preview Error'); } finally { btn.innerHTML = original; btn.disabled = false; }
-    }
+    };
     window.copyCode = function(btn) {
         const code = btn.closest('.terminal-container').querySelector('.raw-code').value.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
         navigator.clipboard.writeText(code).then(() => { const origin = btn.innerHTML; btn.innerHTML = '<i class="fas fa-check"></i>'; setTimeout(() => btn.innerHTML = origin, 2000); });
-    }
+    };
 
     async function createNewChat() {
         try { const res = await fetch('/dardcorchat/ai/new-chat', { method: 'POST' }); const data = await res.json(); if(data.success) { const newId = data.redirectUrl.split('/').pop(); loadChat(newId); } } catch(e) {}

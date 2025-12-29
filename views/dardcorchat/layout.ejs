@@ -78,9 +78,15 @@
         </div>
         
         <div class="flex-1 overflow-y-auto p-3 space-y-1.5 scrollbar-hide relative z-40">
-            <button id="new-chat-btn" class="w-full flex items-center gap-3 p-3 rounded-lg border border-purple-900/30 hover:bg-purple-900/20 text-left transition text-sm text-gray-300 mb-4 h-[44px]">
-                <div class="w-6 h-6 bg-purple-500/20 rounded flex items-center justify-center text-purple-400"><i class="fas fa-plus text-xs"></i></div><span>New Chat</span>
+            <button id="new-chat-btn" class="group relative flex items-center pl-[15px] pr-3 h-[44px] rounded-lg border border-gray-600/30 hover:bg-[#202336] text-left transition-all w-full mb-4">
+                <div class="flex-1 min-w-0 flex items-center h-full pointer-events-none">
+                    <div class="w-5 flex justify-center text-gray-500 group-hover:text-white mr-3 flex-shrink-0 transition-colors">
+                        <i class="fas fa-plus text-xs"></i>
+                    </div>
+                    <span class="text-sm text-gray-300 group-hover:text-white font-medium truncate transition-colors">New Chat</span>
+                </div>
             </button>
+
             <div class="text-gray-500 text-center text-xs font-semibold uppercase tracking-wider mb-2 px-2">Riwayat</div>
             
             <% let isNewChat = true; if (conversationList && conversationList.length > 0) { isNewChat = !conversationList.some(c => c.id === activeConversationId); } %>
@@ -88,16 +94,20 @@
             <% if (isNewChat) { %>
                 <div id="current-new-chat-item" class="group relative flex items-center px-3 h-[44px] rounded-lg bg-[#202336] border-l-4 border-purple-500 cursor-pointer w-full mb-1">
                     <div class="flex-1 min-w-0 pr-2 flex items-center h-full pointer-events-none">
-                        <i class="fas fa-message text-gray-500 mr-3 text-xs flex-shrink-0"></i>
+                        <div class="w-5 flex justify-center text-gray-500 mr-3 flex-shrink-0">
+                            <i class="fas fa-message text-xs"></i>
+                        </div>
                         <span class="text-sm text-white truncate">Percakapan Baru</span>
                     </div>
                 </div>
             <% } %>
 
             <% if (conversationList) { conversationList.forEach(chat => { %>
-                <div id="chat-item-<%= chat.id %>" onclick="loadChat('<%= chat.id %>')" class="group relative flex items-center px-3 h-[44px] rounded-lg hover:bg-[#202336] cursor-pointer w-full <%= chat.id === activeConversationId ? 'bg-[#202336] border-l-4 border-purple-500' : 'border-l-4 border-transparent' %>">
+                <div id="chat-item-<%= chat.id %>" onclick="loadChat('<%= chat.id %>')" class="group relative flex items-center px-3 h-[44px] rounded-lg hover:bg-[#202336] cursor-pointer w-full border-l-4 <%= chat.id === activeConversationId ? 'bg-[#202336] border-purple-500' : 'border-transparent' %>">
                     <div class="flex-1 min-w-0 pr-2 flex items-center h-full pointer-events-none">
-                        <i class="fas fa-message text-gray-500 mr-3 text-xs flex-shrink-0"></i>
+                        <div class="w-5 flex justify-center text-gray-500 mr-3 flex-shrink-0">
+                            <i class="fas fa-message text-xs"></i>
+                        </div>
                         <span id="title-<%= chat.id %>" class="text-sm text-gray-300 truncate"><%= chat.title ? chat.title.substring(0, 22) : 'Percakapan' %>...</span>
                         <input type="hidden" id="raw-title-<%= chat.id %>" value="<%= chat.title %>">
                     </div>
@@ -120,7 +130,7 @@
         </div>
     </aside>
 
-    <main id="main-content" class="absolute inset-0 left-0 transition-all duration-300 flex flex-col bg-[#0b0c15]">
+    <main id="main-content" class="absolute inset-0 left-0 right-0 transition-all duration-300 flex flex-col bg-[#0b0c15]">
         <header class="h-16 shrink-0 flex items-center justify-between px-4 border-b border-purple-900/30 bg-[#0b0c15]/95 backdrop-blur-md z-50 safe-pt">
             <div class="flex items-center">
                 <button id="sidebar-toggle-btn" class="text-gray-400 p-2 rounded hover:bg-gray-800 transition-colors">
@@ -137,7 +147,7 @@
                     <button id="model-dropdown-btn" class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-purple-500/30 bg-purple-500/10 text-purple-400 text-xs md:text-sm font-medium hover:bg-purple-500/20 hover:text-white transition-all h-[34px]">
                         <span id="tool-label">Dardcor Model</span> <i class="fas fa-chevron-down text-[10px] ml-1 transition-transform" id="tools-chevron"></i>
                     </button>
-                    <div id="tools-menu" class="hidden absolute right-0 top-full mt-2 w-max bg-[#0b0c15] border border-purple-500/30 rounded-lg shadow-xl shadow-purple-900/20 z-[80] overflow-hidden">
+                    <div id="tools-menu" class="hidden absolute right-0 top-full mt-2 w-fit bg-[#0b0c15] border border-purple-500/30 rounded-lg shadow-xl shadow-purple-900/20 z-[100] overflow-hidden">
                         <button data-model="basic" class="model-select-btn w-full text-left px-3 py-2 text-xs md:text-sm font-medium text-purple-400 hover:bg-purple-500/20 hover:text-white transition-all border-b border-purple-500/30 whitespace-nowrap">Basic Model</button>
                         <button data-model="dark" class="model-select-btn w-full text-left px-3 py-2 text-xs md:text-sm font-medium text-purple-400 hover:bg-purple-500/20 hover:text-white transition-all whitespace-nowrap">Dark Model</button>
                     </div>
