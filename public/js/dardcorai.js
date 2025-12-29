@@ -17,10 +17,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const toolsChevron = document.getElementById('tools-chevron');
     const loadingIndicator = document.getElementById('loading-indicator');
     const fileInput = document.getElementById('file-upload');
+    const camInput = document.getElementById('vision-camera');
     const dropZone = document.getElementById('drop-zone');
     const previewContainer = document.getElementById('file-preview-container');
     const sendBtn = document.getElementById('send-btn');
     const sendIcon = document.getElementById('send-icon');
+
+    // Initialize Mermaid
+    mermaid.initialize({ startOnLoad: false, theme: 'dark' });
 
     function initHighlight() {
         document.querySelectorAll('.message-bubble-container pre code').forEach(el => hljs.highlightElement(el));
@@ -31,7 +35,24 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
         document.querySelectorAll('.message-bubble-container pre code').forEach(el => hljs.highlightElement(el));
+        renderMermaid();
     }
+
+    function renderMermaid() {
+        document.querySelectorAll('.mermaid').forEach((el, index) => {
+            if(!el.getAttribute('data-processed')) {
+                el.setAttribute('data-processed', 'true');
+                const id = 'mermaid-' + index + '-' + Date.now();
+                const code = el.textContent;
+                try {
+                    mermaid.render(id, code).then(result => {
+                        el.innerHTML = result.svg;
+                    });
+                } catch(e) { el.innerHTML = code; }
+            }
+        });
+    }
+
     initHighlight();
     scrollToBottom();
 
@@ -90,7 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if(messageInput) messageInput.placeholder = "Mode Tanpa Batas...";
             label.innerText = "Dark Model";
         } else {
-            if(messageInput) messageInput.placeholder = "Ketik pesan...";
+            if(messageInput) messageInput.placeholder = "Ketik pesan, paste link, atau upload file...";
             label.innerText = "Basic Model";
         }
     }
@@ -114,7 +135,6 @@ document.addEventListener('DOMContentLoaded', () => {
         isChatLoading = true;
         
         try {
-            // Update UI Active State
             document.querySelectorAll('[id^="chat-item-"]').forEach(el => {
                 el.classList.remove('bg-[#202336]', 'border-l-4', 'border-purple-500');
                 el.classList.add('border-l-4', 'border-transparent');
@@ -163,9 +183,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                     
                     messageList.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
+                    renderMermaid();
                 }
                 
-                // Add loading indicator
                 const loader = document.createElement('div');
                 loader.id = 'loading-indicator';
                 loader.className = 'hidden flex w-full justify-start mb-6';
@@ -194,7 +214,6 @@ document.addEventListener('DOMContentLoaded', () => {
         messageInput.blur(); messageInput.value = ''; messageInput.style.height = 'auto';
         document.getElementById('empty-state')?.remove();
         
-        // Append User Message
         const userDiv = document.createElement('div');
         userDiv.className = "flex w-full justify-end mb-6 message-bubble-container";
         let fileHtml = '';
@@ -244,6 +263,7 @@ document.addEventListener('DOMContentLoaded', () => {
             isStreaming = false;
             botContent.innerHTML = marked.parse(fullText);
             botContent.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
+            renderMermaid();
             
             const btnDiv = document.createElement('div');
             btnDiv.className = "mt-2 flex items-center gap-3 pt-2 border-t border-gray-800/50";
@@ -262,6 +282,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if(fileInput) fileInput.addEventListener('change', function() { handleFiles(this.files); });
+    if(camInput) camInput.addEventListener('change', function() { handleFiles(this.files); });
     
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
         document.body.addEventListener(eventName, (e) => { e.preventDefault(); e.stopPropagation(); }, false);
@@ -274,7 +295,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleFiles(files) {
-        if ([...selectedFiles, ...files].length > 5) { alert("Maksimal 5 file sekaligus."); return; }
+        if ([...selectedFiles, ...files].length > 10) { alert("Maksimal 10 file sekaligus."); return; }
         selectedFiles = [...selectedFiles, ...files];
         renderPreviews();
     }
@@ -297,8 +318,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function removeFile(index) { selectedFiles.splice(index, 1); renderPreviews(); if(fileInput) fileInput.value = ''; }
-    function clearFiles() { selectedFiles = []; renderPreviews(); if(fileInput) fileInput.value = ''; }
+    function removeFile(index) { selectedFiles.splice(index, 1); renderPreviews(); if(fileInput) fileInput.value = ''; if(camInput) camInput.value = ''; }
+    function clearFiles() { selectedFiles = []; renderPreviews(); if(fileInput) fileInput.value = ''; if(camInput) camInput.value = ''; }
 
     window.toggleMenu = function(e, id) { e.stopPropagation(); document.querySelectorAll('.dropdown-menu').forEach(el => el.classList.add('hidden')); document.getElementById(id).classList.toggle('hidden'); }
     window.openDeleteModal = function(id) { targetChatId = id; document.getElementById('delete-modal').classList.remove('hidden'); document.getElementById('delete-modal').classList.add('flex'); }
@@ -348,11 +369,13 @@ document.addEventListener('DOMContentLoaded', () => {
     function scrollToBottom() { if(chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight; }
     function escapeHtml(unsafe) { return unsafe.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); }
 
-    // --- MARKED RENDERER ---
     const markedRenderer = new marked.Renderer();
     markedRenderer.code = function(code, language) {
-        let valid = (typeof code === 'string' ? code : code.text);
         let lang = (language || '').toLowerCase();
+        if (lang === 'mermaid') {
+            return `<div class="mermaid">${code}</div>`;
+        }
+        let valid = (typeof code === 'string' ? code : code.text);
         if (!lang && (valid.includes('<!DOCTYPE') || valid.includes('<html'))) lang = 'html';
         let highlighted = valid;
         if (lang && hljs.getLanguage(lang)) { try { highlighted = hljs.highlight(valid, { language: lang }).value; } catch (e) {} }

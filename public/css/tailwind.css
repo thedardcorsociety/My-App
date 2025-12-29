@@ -554,40 +554,6 @@ video {
   display: none;
 }
 
-.container {
-  width: 100%;
-}
-
-@media (min-width: 640px) {
-  .container {
-    max-width: 640px;
-  }
-}
-
-@media (min-width: 768px) {
-  .container {
-    max-width: 768px;
-  }
-}
-
-@media (min-width: 1024px) {
-  .container {
-    max-width: 1024px;
-  }
-}
-
-@media (min-width: 1280px) {
-  .container {
-    max-width: 1280px;
-  }
-}
-
-@media (min-width: 1536px) {
-  .container {
-    max-width: 1536px;
-  }
-}
-
 .pointer-events-none {
   pointer-events: none;
 }
@@ -974,10 +940,6 @@ video {
   max-width: 72rem;
 }
 
-.max-w-\[100px\] {
-  max-width: 100px;
-}
-
 .max-w-\[95\%\] {
   max-width: 95%;
 }
@@ -1018,11 +980,6 @@ video {
 
 .-translate-y-1\/2 {
   --tw-translate-y: -50%;
-  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
-}
-
-.rotate-180 {
-  --tw-rotate: 180deg;
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 
@@ -1298,10 +1255,6 @@ video {
 .border-purple-500 {
   --tw-border-opacity: 1;
   border-color: rgb(168 85 247 / var(--tw-border-opacity, 1));
-}
-
-.border-purple-500\/20 {
-  border-color: rgb(168 85 247 / 0.2);
 }
 
 .border-purple-500\/30 {
@@ -1740,10 +1693,6 @@ video {
   font-size: 11px;
 }
 
-.text-\[9px\] {
-  font-size: 9px;
-}
-
 .text-base {
   font-size: 1rem;
   line-height: 1.5rem;
@@ -1869,11 +1818,6 @@ video {
 .text-red-400 {
   --tw-text-opacity: 1;
   color: rgb(248 113 113 / var(--tw-text-opacity, 1));
-}
-
-.text-red-500 {
-  --tw-text-opacity: 1;
-  color: rgb(239 68 68 / var(--tw-text-opacity, 1));
 }
 
 .text-slate-300 {
@@ -2099,10 +2043,6 @@ video {
 
 .duration-500 {
   transition-duration: 500ms;
-}
-
-.ease-in-out {
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .selection\:bg-purple-500\/30 *::-moz-selection {

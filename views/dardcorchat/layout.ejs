@@ -3,10 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#0b0c15">
+
     <title>Dardcor AI</title>
     <link rel="icon" href="/logo.png">
     <link rel="manifest" href="/manifest.json">
@@ -14,8 +16,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
 
     <link rel="stylesheet" href="/css/tailwind.css">
     <link rel="stylesheet" href="/vendor/fontawesome/css/all.min.css">
@@ -56,6 +60,7 @@
 
         .loader { border: 3px solid rgba(139, 92, 246, 0.2); border-top: 3px solid #8b5cf6; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .mermaid { background: white; padding: 10px; border-radius: 8px; margin: 10px 0; display: flex; justify-content: center; }
     </style>
 </head>
 <body class="flex text-white font-sans">
@@ -76,15 +81,15 @@
             <button id="new-chat-btn" class="w-full flex items-center gap-3 p-3 rounded-lg border border-purple-900/30 hover:bg-purple-900/20 text-left transition text-sm text-gray-300 mb-4 h-[44px]">
                 <div class="w-6 h-6 bg-purple-500/20 rounded flex items-center justify-center text-purple-400"><i class="fas fa-plus text-xs"></i></div><span>New Chat</span>
             </button>
-            <div class="text-gray-500 text-center text-xs font-semibold uppercase tracking-wider mb-2 px-2">Riwayat</div>
+            <div class="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2 px-2">Riwayat</div>
             
             <% let isNewChat = true; if (conversationList && conversationList.length > 0) { isNewChat = !conversationList.some(c => c.id === activeConversationId); } %>
 
             <% if (isNewChat) { %>
                 <div id="current-new-chat-item" class="group relative flex items-center px-3 h-[44px] rounded-lg bg-[#202336] border-l-4 border-purple-500 cursor-pointer w-full mb-1">
                     <div class="flex-1 min-w-0 pr-2 flex items-center h-full pointer-events-none">
-                        <i class="fas fa-message text-gray-500 mr-3 text-xs flex-shrink-0"></i>
-                        <span class="text-sm text-white truncate">Percakapan Baru</span>
+                        <i class="fas fa-message text-purple-500 mr-3 text-xs flex-shrink-0"></i>
+                        <span class="text-sm text-white font-medium truncate">Percakapan Baru</span>
                     </div>
                 </div>
             <% } %>
