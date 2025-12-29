@@ -10,8 +10,11 @@ const { handleChatStream } = require('../controllers/dardcorModel');
 const { YoutubeTranscript } = require('youtube-transcript');
 const cheerio = require('cheerio');
 const axios = require('axios');
+const PDFParser = require("pdf2json"); // LIBRARY BARU (STABIL)
+const mammoth = require('mammoth');
+const xlsx = require('xlsx');
 
-const upload = multer({ limits: { fileSize: 10 * 1024 * 1024 } });
+const upload = multer({ limits: { fileSize: 20 * 1024 * 1024 } }); // Limit 20MB per file
 
 const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -54,10 +57,9 @@ async function checkUserAuth(req, res, next) {
     res.redirect('/dardcor');
 }
 
-// UPDATE: LIMIT 10 FILE
 const uploadMiddleware = (req, res, next) => {
     upload.array('file_attachment', 10)(req, res, function (err) {
-        if (err) return res.status(400).json({ success: false, response: "Max 10 File (@10MB)." });
+        if (err) return res.status(400).json({ success: false, response: "Max 10 File." });
         next();
     });
 };
@@ -74,7 +76,7 @@ async function getYouTubeData(url) {
 
     try {
         const pageRes = await axios.get(`https://www.youtube.com/watch?v=${videoId}`, {
-            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36' }
+            headers: { 'User-Agent': 'Mozilla/5.0' }
         });
         const $ = cheerio.load(pageRes.data);
         data.title = $('meta[name="title"]').attr('content') || $('title').text();
@@ -82,18 +84,14 @@ async function getYouTubeData(url) {
     } catch (e) {}
 
     try {
-        const transcriptObj = await YoutubeTranscript.fetchTranscript(videoId, { lang: 'id' }).catch(() => {
-            return YoutubeTranscript.fetchTranscript(videoId, { lang: 'en' });
-        }).catch(() => {
-            return YoutubeTranscript.fetchTranscript(videoId); 
-        });
+        const transcriptObj = await YoutubeTranscript.fetchTranscript(videoId, { lang: 'id' })
+            .catch(() => YoutubeTranscript.fetchTranscript(videoId, { lang: 'en' }))
+            .catch(() => YoutubeTranscript.fetchTranscript(videoId));
 
         if (transcriptObj && transcriptObj.length > 0) {
             data.transcript = transcriptObj.map(t => t.text).join(' ');
         }
-    } catch (e) {
-        console.log("Transcript Fetch Error:", e.message);
-    }
+    } catch (e) {}
 
     return { success: true, ...data };
 }
@@ -101,15 +99,13 @@ async function getYouTubeData(url) {
 async function getWebsiteContent(url) {
     try {
         const response = await axios.get(url, { 
-            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36' },
+            headers: { 'User-Agent': 'Mozilla/5.0' },
             timeout: 10000 
         });
         const $ = cheerio.load(response.data);
         $('script, style, nav, footer, header, svg, img, iframe, noscript').remove();
         return $('body').text().replace(/\s+/g, ' ').trim(); 
-    } catch (e) {
-        return null;
-    }
+    } catch (e) { return null; }
 }
 
 router.get('/', (req, res) => {
@@ -297,14 +293,12 @@ router.post('/dardcorchat/ai/chat-stream', checkUserAuth, uploadMiddleware, asyn
                 if (url.includes('youtube.com') || url.includes('youtu.be')) {
                     const ytData = await getYouTubeData(url);
                     if (ytData.success) {
-                        systemContext += `\n[SYSTEM INFO - VIDEO SOURCE]:\nURL: ${url}\nJUDUL VIDEO: "${ytData.title}"\nDESKRIPSI VIDEO: "${ytData.description.substring(0, 2000)}..."\n`;
+                        systemContext += `\n[SYSTEM INFO - VIDEO SOURCE]:\nURL: ${url}\nJUDUL VIDEO: "${ytData.title}"\nDESKRIPSI VIDEO: "${ytData.description}"\n`;
                         if (ytData.transcript && ytData.transcript.length > 50) {
                             systemContext += `ISI TRANSKRIP LENGKAP: "${ytData.transcript}"\n`;
                         } else {
                             systemContext += `(Transkrip tidak tersedia. Analisislah berdasarkan Judul dan Deskripsi diatas seakurat mungkin).\n`;
                         }
-                    } else {
-                        systemContext += `\n[SYSTEM INFO]: Gagal mengakses metadata YouTube untuk ${url}.\n`;
                     }
                 } else {
                     const pageContent = await getWebsiteContent(url);
@@ -313,16 +307,64 @@ router.post('/dardcorchat/ai/chat-stream', checkUserAuth, uploadMiddleware, asyn
                     }
                 }
             }
-            if (systemContext) {
-                message = `${systemContext}\n\nPERTANYAAN USER: ${message}`;
+            if (systemContext) message = `${systemContext}\n\nPERTANYAAN USER: ${message}`;
+        }
+    } catch (err) {}
+
+    const geminiFiles = [];
+    let fileTextContext = "";
+
+    if (uploadedFiles.length > 0) {
+        for (const file of uploadedFiles) {
+            const mime = file.mimetype;
+            
+            // 1. Gambar/Video/Audio -> Kirim ke Gemini (Native Vision)
+            if (mime.startsWith('image/') || mime.startsWith('video/') || mime.startsWith('audio/')) {
+                geminiFiles.push(file);
+            } 
+            // 2. PDF -> Kirim ke Gemini (Native) + Ekstrak Teks (Backup/Detail)
+            else if (mime === 'application/pdf') {
+                geminiFiles.push(file); // Gemini 1.5 support PDF native
+                
+                // Tambahan: Ekstrak teks manual dengan pdf2json (lebih aman)
+                try {
+                    const pdfParser = new PDFParser(this, 1);
+                    const parsedText = await new Promise((resolve, reject) => {
+                        pdfParser.on("pdfParser_dataError", errData => resolve(""));
+                        pdfParser.on("pdfParser_dataReady", pdfData => resolve(pdfParser.getRawTextContent()));
+                        pdfParser.parseBuffer(file.buffer);
+                    });
+                    if (parsedText) {
+                        fileTextContext += `\n[ISI FILE PDF (${file.originalname})]:\n${parsedText.substring(0, 50000)}\n`;
+                    }
+                } catch (e) {}
+            }
+            // 3. Word (DOCX)
+            else if (mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+                try {
+                    const result = await mammoth.extractRawText({ buffer: file.buffer });
+                    fileTextContext += `\n[ISI FILE WORD (${file.originalname})]:\n${result.value}\n`;
+                } catch (e) {}
+            }
+            // 4. Excel (XLSX)
+            else if (mime.includes('spreadsheet') || mime.includes('excel')) {
+                try {
+                    const workbook = xlsx.read(file.buffer, { type: 'buffer' });
+                    const sheetName = workbook.SheetNames[0];
+                    const csv = xlsx.utils.sheet_to_csv(workbook.Sheets[sheetName]);
+                    fileTextContext += `\n[ISI FILE EXCEL (${file.originalname})]:\n${csv}\n`;
+                } catch (e) {}
+            }
+            // 5. Coding & Text
+            else {
+                fileTextContext += `\n[ISI FILE TEXT/CODE (${file.originalname})]:\n${file.buffer.toString('utf-8')}\n`;
             }
         }
-    } catch (err) {
-        console.log("Crawler Error:", err.message);
     }
 
-    const hasFiles = uploadedFiles.length > 0;
-    const userMessageDisplay = req.body.message || (hasFiles ? `Menganalisis ${uploadedFiles.length} file...` : "");
+    if (fileTextContext) message += `\n\n${fileTextContext}`;
+
+    const userMessageDisplay = req.body.message || (uploadedFiles.length > 0 ? `Menganalisis ${uploadedFiles.length} file...` : "");
 
     try {
         const { data: convCheck } = await supabase.from('conversations').select('id').eq('id', conversationId).single();
@@ -332,10 +374,7 @@ router.post('/dardcorchat/ai/chat-stream', checkUserAuth, uploadMiddleware, asyn
             await supabase.from('conversations').update({ updated_at: new Date() }).eq('id', conversationId);
         }
 
-        let fileMetadata = null;
-        if (hasFiles) {
-            fileMetadata = uploadedFiles.map(f => ({ filename: f.originalname, size: f.size, mimetype: f.mimetype }));
-        }
+        let fileMetadata = uploadedFiles.map(f => ({ filename: f.originalname, size: f.size, mimetype: f.mimetype }));
 
         await supabase.from('history_chat').insert({
             user_id: userId, conversation_id: conversationId, role: 'user', message: userMessageDisplay, file_metadata: fileMetadata
@@ -343,7 +382,7 @@ router.post('/dardcorchat/ai/chat-stream', checkUserAuth, uploadMiddleware, asyn
         
         const { data: historyData } = await supabase.from('history_chat').select('role, message').eq('conversation_id', conversationId).order('created_at', { ascending: true });
         
-        const stream = await handleChatStream(message, uploadedFiles, historyData, toolType);
+        const stream = await handleChatStream(message, geminiFiles, historyData, toolType);
         let fullResponse = "";
 
         for await (const chunk of stream) {

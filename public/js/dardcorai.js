@@ -23,7 +23,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const sendBtn = document.getElementById('send-btn');
     const sendIcon = document.getElementById('send-icon');
 
-    // Initialize Mermaid
     mermaid.initialize({ startOnLoad: false, theme: 'dark' });
 
     function initHighlight() {
@@ -371,12 +370,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const markedRenderer = new marked.Renderer();
     markedRenderer.code = function(code, language) {
-        let lang = (language || '').toLowerCase();
-        if (lang === 'mermaid') {
-            return `<div class="mermaid">${code}</div>`;
-        }
         let valid = (typeof code === 'string' ? code : code.text);
+        let lang = (language || '').toLowerCase();
         if (!lang && (valid.includes('<!DOCTYPE') || valid.includes('<html'))) lang = 'html';
+        if (lang === 'mermaid') { return `<div class="mermaid">${code}</div>`; }
         let highlighted = valid;
         if (lang && hljs.getLanguage(lang)) { try { highlighted = hljs.highlight(valid, { language: lang }).value; } catch (e) {} }
         else { highlighted = valid.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
