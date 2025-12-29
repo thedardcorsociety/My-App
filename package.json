@@ -1,6 +1,6 @@
 {
   "name": "dardcor-ai",
-  "version": "1.2.3",
+  "version": "2.6.1",
   "description": "Dardcor AI",
   "main": "server.js",
   "engines": {
