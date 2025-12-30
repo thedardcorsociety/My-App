@@ -10,11 +10,10 @@ const { handleChatStream } = require('../controllers/dardcorModel');
 const { YoutubeTranscript } = require('youtube-transcript');
 const cheerio = require('cheerio');
 const axios = require('axios');
-const PDFParser = require("pdf2json"); // LIBRARY BARU (STABIL)
 const mammoth = require('mammoth');
 const xlsx = require('xlsx');
 
-const upload = multer({ limits: { fileSize: 20 * 1024 * 1024 } }); // Limit 20MB per file
+const upload = multer({ limits: { fileSize: 20 * 1024 * 1024 } });
 
 const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -261,7 +260,15 @@ router.post('/dardcorchat/ai/delete-chat-history', checkUserAuth, async (req, re
 
 router.post('/dardcorchat/ai/store-preview', checkUserAuth, async (req, res) => {
     const previewId = uuidv4();
-    try { await supabase.from('previews_website').insert({ id: previewId, user_id: req.session.userAccount.id, code: req.body.code }); res.json({ success: true, previewId }); } catch (error) { res.status(500).json({ success: false }); }
+    try { 
+        await supabase.from('previews_website').insert({ 
+            id: previewId, 
+            user_id: req.session.userAccount.id, 
+            code: req.body.code,
+            type: req.body.type || 'website' 
+        });
+        res.json({ success: true, previewId }); 
+    } catch (error) { res.status(500).json({ success: false }); }
 });
 
 router.get('/dardcorchat/dardcor-ai/preview/:id', checkUserAuth, async (req, res) => {
@@ -269,6 +276,18 @@ router.get('/dardcorchat/dardcor-ai/preview/:id', checkUserAuth, async (req, res
         const { data } = await supabase.from('previews_website').select('code').eq('id', req.params.id).single();
         if (!data) return res.status(404).send('Not Found');
         res.setHeader('Content-Type', 'text/html'); res.send(data.code);
+    } catch (err) { res.status(500).send("Error"); }
+});
+
+router.get('/dardcorchat/dardcor-ai/diagram/:id', checkUserAuth, async (req, res) => {
+    try {
+        const { data } = await supabase.from('previews_website').select('code').eq('id', req.params.id).single();
+        if (!data) return res.status(404).send('Not Found');
+        
+        // ENCODE KE BASE64 DI SERVER
+        const codeBase64 = Buffer.from(data.code).toString('base64');
+        
+        res.render('dardcorchat/diagram', { code: codeBase64 });
     } catch (err) { res.status(500).send("Error"); }
 });
 
@@ -317,36 +336,16 @@ router.post('/dardcorchat/ai/chat-stream', checkUserAuth, uploadMiddleware, asyn
     if (uploadedFiles.length > 0) {
         for (const file of uploadedFiles) {
             const mime = file.mimetype;
-            
-            // 1. Gambar/Video/Audio -> Kirim ke Gemini (Native Vision)
-            if (mime.startsWith('image/') || mime.startsWith('video/') || mime.startsWith('audio/')) {
+            if (mime.startsWith('image/') || mime.startsWith('video/') || mime.startsWith('audio/') || mime === 'application/pdf') {
+                // PDF dan Media dikirim langsung ke Gemini (Native Vision)
                 geminiFiles.push(file);
             } 
-            // 2. PDF -> Kirim ke Gemini (Native) + Ekstrak Teks (Backup/Detail)
-            else if (mime === 'application/pdf') {
-                geminiFiles.push(file); // Gemini 1.5 support PDF native
-                
-                // Tambahan: Ekstrak teks manual dengan pdf2json (lebih aman)
-                try {
-                    const pdfParser = new PDFParser(this, 1);
-                    const parsedText = await new Promise((resolve, reject) => {
-                        pdfParser.on("pdfParser_dataError", errData => resolve(""));
-                        pdfParser.on("pdfParser_dataReady", pdfData => resolve(pdfParser.getRawTextContent()));
-                        pdfParser.parseBuffer(file.buffer);
-                    });
-                    if (parsedText) {
-                        fileTextContext += `\n[ISI FILE PDF (${file.originalname})]:\n${parsedText.substring(0, 50000)}\n`;
-                    }
-                } catch (e) {}
-            }
-            // 3. Word (DOCX)
             else if (mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
                 try {
                     const result = await mammoth.extractRawText({ buffer: file.buffer });
                     fileTextContext += `\n[ISI FILE WORD (${file.originalname})]:\n${result.value}\n`;
                 } catch (e) {}
             }
-            // 4. Excel (XLSX)
             else if (mime.includes('spreadsheet') || mime.includes('excel')) {
                 try {
                     const workbook = xlsx.read(file.buffer, { type: 'buffer' });
@@ -355,7 +354,6 @@ router.post('/dardcorchat/ai/chat-stream', checkUserAuth, uploadMiddleware, asyn
                     fileTextContext += `\n[ISI FILE EXCEL (${file.originalname})]:\n${csv}\n`;
                 } catch (e) {}
             }
-            // 5. Coding & Text
             else {
                 fileTextContext += `\n[ISI FILE TEXT/CODE (${file.originalname})]:\n${file.buffer.toString('utf-8')}\n`;
             }

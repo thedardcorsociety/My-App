@@ -13,7 +13,6 @@
                     <div class="flex items-center gap-2 mb-1 px-1">
                         <span class="text-[10px] uppercase tracking-wide text-gray-500 font-bold"><%= msg.role === 'user' ? 'You' : 'Dardcor AI' %></span>
                     </div>
-                    
                     <% if (msg.role === 'user') { %>
                         <div class="rounded-2xl p-4 shadow-lg text-sm bg-violet-600 text-white rounded-br-none rounded-bl-2xl border-none w-fit">
                             <% if (msg.file_metadata) { %>

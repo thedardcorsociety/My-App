@@ -1,5 +1,4 @@
-/* global marked, hljs, mermaid, SERVER_DATA */
-
+/* global marked, hljs, SERVER_DATA */
 document.addEventListener('DOMContentLoaded', () => {
 
     let currentConversationId = window.SERVER_DATA.currentConversationId;
@@ -10,69 +9,78 @@ document.addEventListener('DOMContentLoaded', () => {
     let isChatLoading = false;
     let selectedFiles = [];
 
-    // --- DOM Elements ---
     const chatContainer = document.getElementById('chat-container');
     const messageInput = document.getElementById('message-input');
     const messageList = document.getElementById('message-list');
-    const sidebar = document.getElementById('sidebar');
-    const mainContent = document.getElementById('main-content');
-    const overlay = document.getElementById('mobile-overlay');
     const toolsMenu = document.getElementById('tools-menu');
     const toolsChevron = document.getElementById('tools-chevron');
-    const loadingIndicator = document.getElementById('loading-indicator');
     const fileInput = document.getElementById('file-upload');
     const dropZone = document.getElementById('drop-zone');
     const previewContainer = document.getElementById('file-preview-container');
     const sendBtn = document.getElementById('send-btn');
     const sendIcon = document.getElementById('send-icon');
 
-    // --- Initial Setup ---
-    if (typeof mermaid !== 'undefined') {
-        mermaid.initialize({ startOnLoad: false, theme: 'dark' });
-    }
+    const markedRenderer = new marked.Renderer();
+    markedRenderer.code = function(code, language) {
+        let validCode = (typeof code === 'string' ? code : code.text);
+        let lang = (language || '').toLowerCase().trim();
+        
+        if (!lang && (validCode.startsWith('graph ') || validCode.startsWith('flowchart ') || validCode.startsWith('sequenceDiagram') || validCode.startsWith('classDiagram') || validCode.startsWith('gantt'))) {
+            lang = 'mermaid';
+        }
+        if (!lang && (validCode.includes('<!DOCTYPE html>') || validCode.includes('<html'))) {
+            lang = 'html';
+        }
 
-    function initHighlight() {
-        document.querySelectorAll('.message-bubble-container pre code').forEach(el => hljs.highlightElement(el));
-        document.querySelectorAll('.message-bubble-container .raw-message-content').forEach(raw => {
+        let highlighted = validCode;
+        if (lang && hljs.getLanguage(lang) && lang !== 'mermaid') { 
+            try { highlighted = hljs.highlight(validCode, { language: lang }).value; } catch (e) {} 
+        } else { 
+            highlighted = validCode.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); 
+        }
+        
+        let btnHtml = '';
+        if(['html','xml','ejs','php'].includes(lang)) {
+            btnHtml = `<button onclick="previewCode(this)" class="cmd-btn btn-preview"><i class="fas fa-play text-[9px]"></i> Preview App</button>`;
+        } else if (lang === 'mermaid') {
+            btnHtml = `<button onclick="previewDiagram(this)" class="cmd-btn btn-diagram" style="background-color: #7c3aed; color: white;"><i class="fas fa-project-diagram text-[9px]"></i> Preview Diagram</button>`;
+        }
+
+        return `
+        <div class="terminal-container">
+            <div class="terminal-head">
+                <div class="terminal-label">
+                    <i class="fas fa-code mr-1"></i> ${lang.toUpperCase() || 'TEXT'}
+                </div>
+                <div class="terminal-opts">
+                    ${btnHtml}
+                    <button onclick="copyCode(this)" class="cmd-btn btn-cp"><i class="fas fa-copy"></i> Copy</button>
+                </div>
+            </div>
+            <div class="terminal-code">
+                <pre><code class="hljs ${lang}">${highlighted}</code></pre>
+                <textarea class="hidden raw-code">${validCode.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</textarea>
+            </div>
+        </div>`;
+    };
+    marked.setOptions({ renderer: markedRenderer });
+
+    function initHighlight(scope = document) {
+        scope.querySelectorAll('.message-bubble-container pre code').forEach(el => hljs.highlightElement(el));
+        scope.querySelectorAll('.message-bubble-container .raw-message-content').forEach(raw => {
             const target = raw.nextElementSibling;
             if(target && target.classList.contains('markdown-body')) {
                 target.innerHTML = marked.parse(raw.value);
             }
         });
-        document.querySelectorAll('.message-bubble-container pre code').forEach(el => hljs.highlightElement(el));
-        renderMermaid();
     }
 
-    function renderMermaid() {
-        if (typeof mermaid === 'undefined') return;
-        document.querySelectorAll('.mermaid').forEach((el, index) => {
-            if(!el.getAttribute('data-processed')) {
-                el.setAttribute('data-processed', 'true');
-                const id = 'mermaid-' + index + '-' + Date.now();
-                const code = el.textContent;
-                try {
-                    mermaid.render(id, code).then(result => {
-                        el.innerHTML = result.svg;
-                    });
-                } catch(e) { el.innerHTML = code; }
-            }
-        });
-    }
-
-    // --- Initialize ---
     initHighlight();
     scrollToBottom();
 
-    // --- Event Listeners ---
-    if(document.getElementById('sidebar-toggle-btn')) {
-        document.getElementById('sidebar-toggle-btn').addEventListener('click', toggleSidebar);
-    }
-    if(document.getElementById('close-sidebar-btn')) {
-        document.getElementById('close-sidebar-btn').addEventListener('click', toggleSidebar);
-    }
-    if(document.getElementById('mobile-overlay')) {
-        document.getElementById('mobile-overlay').addEventListener('click', toggleSidebar);
-    }
+    if(document.getElementById('sidebar-toggle-btn')) { document.getElementById('sidebar-toggle-btn').addEventListener('click', toggleSidebar); }
+    if(document.getElementById('close-sidebar-btn')) { document.getElementById('close-sidebar-btn').addEventListener('click', toggleSidebar); }
+    if(document.getElementById('mobile-overlay')) { document.getElementById('mobile-overlay').addEventListener('click', toggleSidebar); }
 
     if(document.getElementById('model-dropdown-btn')) {
         document.getElementById('model-dropdown-btn').addEventListener('click', (e) => {
@@ -86,14 +94,8 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.addEventListener('click', () => setModel(btn.dataset.model));
     });
 
-    if(document.getElementById('refresh-chat-btn')) {
-        document.getElementById('refresh-chat-btn').addEventListener('click', refreshChat);
-    }
-
-    if(document.getElementById('new-chat-btn')) {
-        document.getElementById('new-chat-btn').addEventListener('click', createNewChat);
-    }
-    
+    if(document.getElementById('refresh-chat-btn')) { document.getElementById('refresh-chat-btn').addEventListener('click', refreshChat); }
+    if(document.getElementById('new-chat-btn')) { document.getElementById('new-chat-btn').addEventListener('click', createNewChat); }
     const newChatIndicator = document.getElementById('current-new-chat-item');
     if(newChatIndicator) newChatIndicator.addEventListener('click', createNewChat);
 
@@ -117,39 +119,39 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if(sendBtn) sendBtn.addEventListener('click', sendMessage);
-
     if(fileInput) fileInput.addEventListener('change', function() { handleFiles(this.files); });
     
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
         document.body.addEventListener(eventName, (e) => { e.preventDefault(); e.stopPropagation(); }, false);
     });
-
+    
     if(dropZone) {
         ['dragenter', 'dragover'].forEach(evt => document.body.addEventListener(evt, () => { dropZone.classList.remove('hidden'); dropZone.classList.add('flex'); }));
         ['dragleave', 'drop'].forEach(evt => dropZone.addEventListener(evt, () => { dropZone.classList.add('hidden'); dropZone.classList.remove('flex'); }));
         document.body.addEventListener('drop', (e) => handleFiles(e.dataTransfer.files));
     }
 
-    // --- Functions ---
-
     function toggleSidebar() {
-        if(sidebar) sidebar.classList.toggle('-translate-x-full');
-        
-        // Mobile behavior: Toggle Overlay
+        document.body.classList.toggle('sidebar-closed');
+        const isClosed = document.body.classList.contains('sidebar-closed');
+        localStorage.setItem('dardcor_sidebar_state', isClosed ? 'closed' : 'open');
         if (window.innerWidth < 1024) {
+            const overlay = document.getElementById('mobile-overlay');
             if(overlay) overlay.classList.toggle('hidden');
-        } 
-        // Desktop behavior: Push Main Content
-        else {
-            if(mainContent) mainContent.classList.toggle('left-72');
+            const sidebar = document.getElementById('sidebar');
+            if(sidebar) {
+                 if(isClosed) sidebar.classList.add('-translate-x-full');
+                 else sidebar.classList.remove('-translate-x-full');
+            }
         }
     }
 
     function setModel(type) {
         currentToolType = type;
+        const label = document.getElementById('tool-label');
+        if(label) label.innerText = type === 'dark' ? 'Dark Model' : 'Basic Model';
         if(toolsMenu) toolsMenu.classList.add('hidden');
         if(toolsChevron) toolsChevron.classList.remove('rotate-180');
-        
         if(type === 'dark') {
             if(messageInput) messageInput.placeholder = "Mode Tanpa Batas...";
         } else {
@@ -161,34 +163,27 @@ document.addEventListener('DOMContentLoaded', () => {
         if(isChatLoading) return;
         const icon = document.getElementById('refresh-icon');
         if(icon) icon.classList.add('animate-spin');
-        
         if(currentConversationId && currentConversationId.length > 20) {
             await loadChat(currentConversationId);
         } else {
             window.location.reload();
         }
-        
         if(icon) setTimeout(() => { icon.classList.remove('animate-spin'); }, 800);
     }
 
     window.loadChat = async function(id) {
         if(isChatLoading) return;
         isChatLoading = true;
-        
         try {
-            // Reset ALL chat items to inactive state (transparent border)
             document.querySelectorAll('[id^="chat-item-"]').forEach(el => {
                 el.classList.remove('bg-[#202336]', 'border-purple-500');
                 el.classList.add('border-transparent');
             });
-            
             const newItem = document.getElementById('current-new-chat-item');
             if(newItem) {
                 newItem.classList.remove('bg-[#202336]', 'border-purple-500');
                 newItem.classList.add('border-transparent');
             }
-
-            // Set ACTIVE item
             const activeItem = document.getElementById(`chat-item-${id}`);
             if (activeItem) {
                 activeItem.classList.add('bg-[#202336]', 'border-purple-500');
@@ -197,14 +192,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 newItem.classList.add('bg-[#202336]', 'border-purple-500');
                 newItem.classList.remove('border-transparent');
             }
-
             const res = await fetch(`/api/chat/${id}`);
             const data = await res.json();
-            
             if (data.success) {
                 currentConversationId = id;
                 messageList.innerHTML = '';
-                
                 if (data.history.length === 0) {
                     messageList.innerHTML = `<div id="empty-state" class="flex flex-col items-center justify-center text-gray-500 opacity-60 min-h-[50vh]"><div class="w-24 h-24 bg-gray-800/50 rounded-full flex items-center justify-center mb-6 overflow-hidden border border-gray-700 shadow-xl bg-black"><img src="/logo.png" class="w-full h-full object-cover"></div><p class="text-lg font-medium text-gray-400 text-center">Apa yang bisa saya bantu?</p></div>`;
                 } else {
@@ -217,7 +209,6 @@ document.addEventListener('DOMContentLoaded', () => {
                                 fileHtml += `<div class="mb-2 text-xs flex gap-2 bg-black/20 p-2 rounded border border-white/10"><i class="fas fa-file"></i> <span>${f.filename}</span></div>`;
                             });
                         }
-
                         if (msg.role === 'user') {
                             div.innerHTML = `<div class="flex flex-col items-end message-bubble w-full max-w-[95%]"><div class="flex items-center gap-2 mb-1 px-1"><span class="text-[10px] uppercase tracking-wide text-gray-500 font-bold">You</span></div><div class="rounded-2xl p-4 shadow-lg text-sm bg-violet-600 text-white rounded-br-none rounded-bl-2xl border-none w-fit">${fileHtml}<div class="whitespace-pre-wrap">${escapeHtml(msg.message)}</div></div><div class="flex gap-3 mt-1 self-end pr-1 opacity-60 hover:opacity-100 transition-opacity"><button onclick="copyUserText(this, decodeURIComponent('${encodeURIComponent(msg.message)}'))" class="text-[10px] text-gray-400 hover:text-white transition-colors flex items-center gap-1"><i class="fas fa-copy"></i> Salin</button><button onclick="editMessage(decodeURIComponent('${encodeURIComponent(msg.message)}'))" class="text-[10px] text-gray-400 hover:text-white transition-colors flex items-center gap-1"><i class="fas fa-pen"></i> Edit</button></div></div>`;
                         } else {
@@ -225,17 +216,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                         messageList.appendChild(div);
                     });
-                    
-                    messageList.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
-                    renderMermaid();
                 }
-                
                 const loader = document.createElement('div');
                 loader.id = 'loading-indicator';
                 loader.className = 'hidden flex w-full justify-start mb-6';
                 loader.innerHTML = `<div class="flex items-center gap-3 bg-[#13131f] px-4 py-3 rounded-2xl rounded-bl-none border border-gray-800 shadow-md"><div class="loader"></div><span class="text-xs text-gray-400 font-medium animate-pulse">Sedang berpikir...</span></div>`;
                 messageList.appendChild(loader);
-
                 window.history.pushState({id: id}, '', `/dardcorchat/dardcor-ai/${id}`);
                 scrollToBottom();
             }
@@ -245,10 +231,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function sendMessage() {
         if(isSending) {
-            if(abortController) { abortController.abort(); abortController = null; isSending = false; if(sendIcon) sendIcon.classList.replace('fa-stop', 'fa-paper-plane'); if(loadingIndicator) loadingIndicator.classList.add('hidden'); }
+            if(abortController) { abortController.abort(); abortController = null; isSending = false; if(sendIcon) sendIcon.classList.replace('fa-stop', 'fa-paper-plane'); const li = document.getElementById('loading-indicator'); if(li) li.classList.add('hidden'); }
             return;
         }
-
         const msg = messageInput.value.trim();
         if(!msg && selectedFiles.length === 0) return;
         
@@ -263,12 +248,14 @@ document.addEventListener('DOMContentLoaded', () => {
         userDiv.className = "flex w-full justify-end mb-6 message-bubble-container";
         let fileHtml = '';
         if(selectedFiles.length > 0) fileHtml = `<div class="mb-2 text-xs flex gap-2 bg-black/20 p-2 rounded border border-white/10"><i class="fas fa-file"></i> ${selectedFiles.length} File</div>`;
-        
         userDiv.innerHTML = `<div class="flex flex-col items-end message-bubble w-full max-w-[95%]"><div class="flex items-center gap-2 mb-1 px-1"><span class="text-[10px] uppercase tracking-wide text-gray-500 font-bold">You</span></div><div class="rounded-2xl p-4 shadow-lg text-sm bg-violet-600 text-white rounded-br-none rounded-bl-2xl border-none w-fit">${fileHtml}<div class="whitespace-pre-wrap">${escapeHtml(msg)}</div></div><div class="flex gap-3 mt-1 self-end pr-1 opacity-60 hover:opacity-100 transition-opacity"><button onclick="copyUserText(this, decodeURIComponent('${encodeURIComponent(msg)}'))" class="text-[10px] text-gray-400 hover:text-white transition-colors flex items-center gap-1"><i class="fas fa-copy"></i> Salin</button><button onclick="editMessage(decodeURIComponent('${encodeURIComponent(msg)}'))" class="text-[10px] text-gray-400 hover:text-white transition-colors flex items-center gap-1"><i class="fas fa-pen"></i> Edit</button></div></div>`;
         
+        const loadingIndicator = document.getElementById('loading-indicator');
         if(loadingIndicator) {
             messageList.insertBefore(userDiv, loadingIndicator);
             loadingIndicator.classList.remove('hidden');
+        } else {
+            messageList.appendChild(userDiv);
         }
         scrollToBottom();
 
@@ -284,9 +271,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const botDiv = document.createElement('div');
             botDiv.className = "flex w-full justify-start mb-6 message-bubble-container";
             botDiv.innerHTML = `<div class="flex flex-col items-start message-bubble w-full max-w-[95%]"><div class="flex items-center gap-2 mb-1 px-1"><span class="text-[10px] uppercase tracking-wide text-gray-500 font-bold">Dardcor AI</span></div><div class="rounded-2xl p-4 shadow-lg text-sm bg-[#13131f] text-gray-200 rounded-bl-none border border-gray-800 w-full overflow-hidden"><div class="markdown-body"></div></div></div>`;
-            if(loadingIndicator) {
-                messageList.insertBefore(botDiv, loadingIndicator);
-                loadingIndicator.classList.add('hidden');
+            
+            const currentLoader = document.getElementById('loading-indicator');
+            if(currentLoader) {
+                messageList.insertBefore(botDiv, currentLoader);
+                currentLoader.classList.add('hidden');
             } else {
                 messageList.appendChild(botDiv);
             }
@@ -312,8 +301,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             isStreaming = false;
             botContent.innerHTML = marked.parse(fullText);
-            botContent.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
-            renderMermaid();
             
             const btnDiv = document.createElement('div');
             btnDiv.className = "mt-2 flex items-center gap-3 pt-2 border-t border-gray-800/50";
@@ -322,7 +309,8 @@ document.addEventListener('DOMContentLoaded', () => {
             scrollToBottom();
 
         } catch(e) {
-            if(loadingIndicator) loadingIndicator.classList.add('hidden');
+            const currentLoader = document.getElementById('loading-indicator');
+            if(currentLoader) currentLoader.classList.add('hidden');
             if (e.name !== 'AbortError') alert("Gagal terhubung.");
         } finally {
             isSending = false;
@@ -358,7 +346,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function removeFile(index) { selectedFiles.splice(index, 1); renderPreviews(); if(fileInput) fileInput.value = ''; }
     function clearFiles() { selectedFiles = []; renderPreviews(); if(fileInput) fileInput.value = ''; }
 
-    // --- Helpers (Global Scope) ---
     window.toggleMenu = function(e, id) { e.stopPropagation(); document.querySelectorAll('.dropdown-menu').forEach(el => el.classList.add('hidden')); document.getElementById(id).classList.toggle('hidden'); };
     window.openDeleteModal = function(id) { targetChatId = id; document.getElementById('delete-modal').classList.remove('hidden'); document.getElementById('delete-modal').classList.add('flex'); };
     window.closeModal = function(id) { document.getElementById(id).classList.add('hidden'); };
@@ -394,11 +381,29 @@ document.addEventListener('DOMContentLoaded', () => {
             else { const u = new SpeechSynthesisUtterance(txt); u.lang = 'id-ID'; window.speechSynthesis.speak(u); }
         } else alert("TTS Error"); 
     };
+    
+    // --- FUNGSI PREVIEW YANG DIPERBAIKI (SANITASI) ---
     window.previewCode = async function(btn) {
         const rawCode = btn.closest('.terminal-container').querySelector('.raw-code').value.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
         const original = btn.innerHTML; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; btn.disabled = true;
         try { const res = await fetch('/dardcorchat/ai/store-preview', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: rawCode }) }); const data = await res.json(); if(data.success) window.open(`/dardcorchat/dardcor-ai/preview/${data.previewId}`, '_blank'); } catch(e) { alert('Preview Error'); } finally { btn.innerHTML = original; btn.disabled = false; }
     };
+
+    window.previewDiagram = async function(btn) {
+        let rawCode = btn.closest('.terminal-container').querySelector('.raw-code').value;
+        // Sanitasi: Hapus sisa markdown (backticks) dan unescape HTML entities
+        rawCode = rawCode.replace(/```mermaid/g, '').replace(/```/g, '').trim();
+        rawCode = rawCode.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&").replace(/&quot;/g, '"');
+
+        const original = btn.innerHTML; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; btn.disabled = true;
+        try { 
+            const res = await fetch('/dardcorchat/ai/store-preview', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: rawCode, type: 'diagram' }) }); 
+            const data = await res.json(); 
+            if(data.success) window.open(`/dardcorchat/dardcor-ai/diagram/${data.previewId}`, '_blank'); 
+            else alert('Gagal menyimpan diagram.');
+        } catch(e) { alert('Diagram Preview Error'); } finally { btn.innerHTML = original; btn.disabled = false; }
+    };
+
     window.copyCode = function(btn) {
         const code = btn.closest('.terminal-container').querySelector('.raw-code').value.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
         navigator.clipboard.writeText(code).then(() => { const origin = btn.innerHTML; btn.innerHTML = '<i class="fas fa-check"></i>'; setTimeout(() => btn.innerHTML = origin, 2000); });
@@ -410,18 +415,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function scrollToBottom() { if(chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight; }
     function escapeHtml(unsafe) { return unsafe.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); }
-
-    const markedRenderer = new marked.Renderer();
-    markedRenderer.code = function(code, language) {
-        let valid = (typeof code === 'string' ? code : code.text);
-        let lang = (language || '').toLowerCase();
-        if (!lang && (valid.includes('<!DOCTYPE') || valid.includes('<html'))) lang = 'html';
-        if (lang === 'mermaid') { return `<div class="mermaid">${code}</div>`; }
-        let highlighted = valid;
-        if (lang && hljs.getLanguage(lang)) { try { highlighted = hljs.highlight(valid, { language: lang }).value; } catch (e) {} }
-        else { highlighted = valid.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
-        let btn = ['html','xml','ejs','php'].includes(lang) ? `<button onclick="previewCode(this)" class="cmd-btn btn-preview"><i class="fas fa-play text-[9px]"></i> Preview</button>` : '';
-        return `<div class="terminal-container"><div class="terminal-head"><div class="terminal-label"><i class="fas fa-code mr-1"></i> ${lang.toUpperCase() || 'CODE'}</div><div class="terminal-opts">${btn}<button onclick="copyCode(this)" class="cmd-btn btn-cp"><i class="fas fa-copy"></i> Copy</button></div></div><div class="terminal-code"><pre><code class="hljs ${lang}">${highlighted}</code></pre><textarea class="hidden raw-code">${valid.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</textarea></div></div>`;
-    };
-    marked.setOptions({ renderer: markedRenderer });
 });

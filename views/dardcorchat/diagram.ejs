@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dardcor Diagram Editor</title>
+    <link rel="icon" href="/logo.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body { background-color: #0b0c15; color: white; height: 100vh; margin: 0; overflow: hidden; display: flex; font-family: 'Consolas', sans-serif; }
+        
+        /* TOMBOL TOGGLE (FLUSH POJOK KIRI ATAS) */
+        #sidebar-toggle {
+            position: fixed; top: 0; left: 0; z-index: 100;
+            width: 50px; height: 50px;
+            background-color: #0e0f19; /* Warna menyatu dengan sidebar */
+            color: #a5b3ce;
+            border: none; border-right: 1px solid #333; border-bottom: 1px solid #333;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.2s;
+            border-bottom-right-radius: 8px;
+        }
+        #sidebar-toggle:hover { background-color: #2a2d3d; color: white; }
+
+        /* SIDEBAR EDITOR */
+        #editor-pane {
+            position: fixed; top: 0; bottom: 0; left: 0;
+            width: 100%; max-width: 400px;
+            display: flex; flex-direction: column;
+            background-color: #13131f; border-right: 1px solid #333;
+            z-index: 50; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translateX(-100%); 
+        }
+        
+        body.sidebar-open #editor-pane { transform: translateX(0); }
+
+        /* Header kosong (spacer) */
+        #editor-header { height: 50px; background: #0e0f19; border-bottom: 1px solid #333; flex-shrink: 0; }
+        
+        #code-editor { 
+            flex: 1; background-color: #13131f; color: #a5b3ce; 
+            border: none; padding: 20px; 
+            resize: none; outline: none; 
+            font-family: 'Consolas', monospace; font-size: 14px; line-height: 1.6; 
+            -webkit-tap-highlight-color: transparent; 
+        }
+        
+        #editor-footer { padding: 15px; border-top: 1px solid #333; background: #0e0f19; display: flex; justify-content: flex-end; gap: 10px; flex-shrink: 0; }
+
+        /* PREVIEW AREA */
+        #preview-pane { 
+            flex: 1; position: relative; width: 100%; height: 100%;
+            background-color: #0b0c15; 
+            background-image: radial-gradient(#1f2937 1px, transparent 1px); 
+            background-size: 20px 20px; 
+            overflow: hidden; cursor: grab; 
+            transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        #preview-pane:active { cursor: grabbing; }
+
+        /* Desktop Layout */
+        @media (min-width: 768px) {
+            #editor-pane { transform: translateX(0); } 
+            body.sidebar-closed #editor-pane { transform: translateX(-100%); }
+            
+            #preview-pane { margin-left: 400px; }
+            body.sidebar-closed #preview-pane { margin-left: 0; }
+        }
+
+        #diagram-content { transform-origin: center center; transition: transform 0.1s ease-out; display: flex; align-items: center; justify-content: center; min-height: 100%; min-width: 100%; padding: 50px; box-sizing: border-box; }
+        .mermaid svg { max-width: none !important; height: auto !important; }
+
+        /* CONTROLS */
+        .floating-controls { position: absolute; bottom: 20px; right: 20px; display: flex; gap: 8px; background: #13131f; padding: 8px; border-radius: 12px; border: 1px solid #333; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5); z-index: 40; }
+        .ctrl-btn { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 8px; background: #2a2d3d; color: white; transition: all 0.2s; border: none; cursor: pointer; }
+        .ctrl-btn:hover { background: #8b5cf6; }
+
+        .top-controls { position: absolute; top: 20px; right: 20px; display: flex; gap: 10px; z-index: 40; }
+        
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0b0c15; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+    </style>
+</head>
+<body class="">
+    <input type="hidden" id="initial-data" value="<%= code %>">
+
+    <button onclick="toggleEditor()" id="sidebar-toggle">
+        <i class="fas fa-bars text-xl"></i>
+    </button>
+
+    <aside id="editor-pane">
+        <div id="editor-header"></div> <textarea id="code-editor" spellcheck="false" placeholder="Tulis kode mermaid disini..."></textarea>
+        <div id="editor-footer">
+            <button onclick="renderDiagram()" class="px-6 py-2.5 bg-purple-600 hover:bg-purple-700 text-white text-sm font-bold rounded-lg flex items-center gap-2 transition w-full justify-center md:w-auto shadow-lg shadow-purple-900/20">
+                <i class="fas fa-play"></i> RENDER
+            </button>
+        </div>
+    </aside>
+
+    <main id="preview-pane">
+        <div class="top-controls">
+            <button onclick="downloadSVG()" class="px-4 py-2 bg-[#13131f] hover:bg-[#2a2d3d] text-white rounded-lg text-xs font-bold border border-gray-700 flex items-center gap-2 transition shadow-lg">
+                <i class="fas fa-download"></i> <span class="hidden sm:inline">SVG</span>
+            </button>
+            <button onclick="window.close()" class="px-4 py-2 bg-red-900/80 hover:bg-red-800 text-white rounded-lg text-xs font-bold border border-red-700 flex items-center gap-2 transition shadow-lg">
+                <i class="fas fa-times"></i> <span class="hidden sm:inline">CLOSE</span>
+            </button>
+        </div>
+
+        <div id="diagram-content">
+            <div id="mermaid-target" class="mermaid"></div>
+        </div>
+
+        <div class="floating-controls">
+            <button onclick="adjustZoom(-0.1)" class="ctrl-btn"><i class="fas fa-minus"></i></button>
+            <button onclick="resetZoom()" class="ctrl-btn"><i class="fas fa-expand"></i></button>
+            <button onclick="adjustZoom(0.1)" class="ctrl-btn"><i class="fas fa-plus"></i></button>
+        </div>
+    </main>
+
+    <script>
+        let currentScale = 1;
+        let pannedX = 0;
+        let pannedY = 0;
+        let isDragging = false;
+        let startX, startY;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            mermaid.initialize({ startOnLoad: false, theme: 'dark', securityLevel: 'loose' });
+            
+            // Decode & Load Initial Data
+            try {
+                const b64 = document.getElementById('initial-data').value;
+                const decoded = atob(b64);
+                document.getElementById('code-editor').value = decoded;
+                renderDiagram();
+            } catch(e) {}
+
+            // Set Initial Sidebar State
+            if (window.innerWidth >= 768) {
+                document.body.classList.remove('sidebar-closed');
+            } else {
+                document.body.classList.remove('sidebar-open');
+            }
+
+            // --- PAN & ZOOM LOGIC ---
+            const previewPane = document.getElementById('preview-pane');
+            
+            previewPane.addEventListener('mousedown', (e) => {
+                if(e.target.closest('button')) return;
+                isDragging = true;
+                startX = e.clientX - pannedX;
+                startY = e.clientY - pannedY;
+                previewPane.style.cursor = 'grabbing';
+            });
+
+            window.addEventListener('mouseup', () => {
+                isDragging = false;
+                previewPane.style.cursor = 'grab';
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                e.preventDefault();
+                pannedX = e.clientX - startX;
+                pannedY = e.clientY - startY;
+                updateTransform();
+            });
+
+            // Touch Events (Mobile)
+            previewPane.addEventListener('touchstart', (e) => {
+                if(e.target.closest('button')) return;
+                isDragging = true;
+                const touch = e.touches[0];
+                startX = touch.clientX - pannedX;
+                startY = touch.clientY - pannedY;
+            }, {passive: false});
+
+            window.addEventListener('touchend', () => { isDragging = false; });
+
+            window.addEventListener('touchmove', (e) => {
+                if (!isDragging) return;
+                const touch = e.touches[0];
+                pannedX = touch.clientX - startX;
+                pannedY = touch.clientY - startY;
+                updateTransform();
+            }, {passive: false});
+
+            // Wheel Zoom
+            previewPane.addEventListener('wheel', (e) => {
+                if(e.ctrlKey) {
+                    e.preventDefault();
+                    adjustZoom(e.deltaY > 0 ? -0.1 : 0.1);
+                }
+            }, {passive: false});
+        });
+
+        function toggleEditor() {
+            if (window.innerWidth >= 768) {
+                document.body.classList.toggle('sidebar-closed');
+            } else {
+                document.body.classList.toggle('sidebar-open');
+            }
+        }
+
+        async function renderDiagram() {
+            const code = document.getElementById('code-editor').value;
+            const target = document.getElementById('mermaid-target');
+            
+            target.innerHTML = '';
+            target.removeAttribute('data-processed');
+            
+            try {
+                const { svg } = await mermaid.render('mermaid-svg-' + Date.now(), code);
+                target.innerHTML = svg;
+                if (window.innerWidth < 768) {
+                    document.body.classList.remove('sidebar-open');
+                }
+            } catch(error) {
+                target.innerHTML = `<div class="text-red-400 p-4 border border-red-800 rounded bg-red-900/20 text-xs font-mono text-center flex flex-col items-center gap-2"><i class="fas fa-exclamation-triangle text-2xl"></i><span>Syntax Error:</span><span class="opacity-75">${error.message}</span></div>`;
+            }
+        }
+
+        function adjustZoom(delta) {
+            currentScale += delta;
+            if (currentScale < 0.1) currentScale = 0.1;
+            if (currentScale > 10) currentScale = 10;
+            updateTransform();
+        }
+
+        function resetZoom() {
+            currentScale = 1;
+            pannedX = 0;
+            pannedY = 0;
+            updateTransform();
+        }
+
+        function updateTransform() {
+            const content = document.getElementById('diagram-content');
+            content.style.transform = `translate(${pannedX}px, ${pannedY}px) scale(${currentScale})`;
+        }
+
+        function downloadSVG() {
+            const svg = document.querySelector('#mermaid-target svg');
+            if (!svg) return alert('Tidak ada diagram.');
+            
+            const svgData = new XMLSerializer().serializeToString(svg);
+            const blob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `dardcor-diagram-${Date.now()}.svg`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>
