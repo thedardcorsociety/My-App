@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#0b0c15">
     
-    <title>Dardcor AI</title>
+    <title>Dardcor Diagram Editor</title>
     
     <link rel="icon" href="/logo.png">
     <link rel="manifest" href="/manifest.json">
@@ -23,30 +23,20 @@
     <script src="/js/marked.min.js"></script>
     
     <style>
-        /* Mengunci HTML dan Body agar tidak ada scroll browser */
-        html {
-            height: 100%;
-            width: 100%;
-            overflow: hidden;
-            background-color: #0b0c15;
-        }
-
-        body { 
-            background-color: #0b0c15; 
-            color: white; 
-            /* Teknik Fixed Inset: Memaksa body memenuhi layar tanpa memicu UI browser */
-            position: fixed; 
-            top: 0; left: 0; right: 0; bottom: 0;
-            margin: 0; padding: 0;
+        html, body { 
+            height: 100dvh; 
+            width: 100%; 
+            margin: 0; 
+            padding: 0; 
             overflow: hidden; 
-            display: flex; 
+            background-color: #0b0c15; 
+            position: fixed; 
+            inset: 0; 
+            color: white; 
             font-family: 'Consolas', sans-serif;
-            overscroll-behavior: none; /* Mencegah karet/bounce effect di iOS */
-            -webkit-user-select: none; /* Opsional: mencegah seleksi teks tidak sengaja */
-            user-select: none;
+            overscroll-behavior: none;
         }
         
-        /* Tombol Toggle Sidebar (Flush Pojok Kiri) */
         #sidebar-toggle {
             position: fixed; 
             top: max(0px, env(safe-area-inset-top)); 
@@ -63,7 +53,6 @@
         }
         #sidebar-toggle:hover { background-color: #2a2d3d; color: white; }
 
-        /* Sidebar Editor */
         #editor-pane {
             position: fixed; 
             top: 0; bottom: 0; left: 0;
@@ -72,7 +61,6 @@
             background-color: #13131f; border-right: 1px solid #333;
             z-index: 50; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             transform: translateX(-100%);
-            /* Safe area padding untuk notch */
             padding-top: env(safe-area-inset-top);
             padding-bottom: env(safe-area-inset-bottom);
             padding-left: env(safe-area-inset-left);
@@ -88,12 +76,10 @@
             resize: none; outline: none; 
             font-family: 'Consolas', monospace; font-size: 14px; line-height: 1.6; 
             -webkit-tap-highlight-color: transparent; 
-            user-select: text; /* Izinkan seleksi teks di editor */
         }
         
         #editor-footer { padding: 15px; border-top: 1px solid #333; background: #0e0f19; display: flex; justify-content: flex-end; gap: 10px; flex-shrink: 0; }
 
-        /* Preview Pane */
         #preview-pane { 
             flex: 1; position: relative; width: 100%; height: 100%;
             background-color: #0b0c15; 
@@ -121,7 +107,6 @@
         }
         .mermaid svg { max-width: none !important; height: auto !important; }
 
-        /* Controls UI */
         .floating-controls { 
             position: absolute; 
             bottom: max(20px, env(safe-area-inset-bottom)); 
@@ -225,7 +210,6 @@
 
             const previewPane = document.getElementById('preview-pane');
             
-            // Mouse Events
             previewPane.addEventListener('mousedown', (e) => {
                 if(e.target.closest('button')) return;
                 isDragging = true;
@@ -247,7 +231,6 @@
                 updateTransform();
             });
 
-            // Touch Events (Mobile)
             previewPane.addEventListener('touchstart', (e) => {
                 if(e.target.closest('button')) return;
                 isDragging = true;
@@ -260,14 +243,13 @@
 
             window.addEventListener('touchmove', (e) => {
                 if (!isDragging) return;
-                if (e.cancelable) e.preventDefault(); // Mencegah scroll browser asli
+                if (e.cancelable) e.preventDefault();
                 const touch = e.touches[0];
                 pannedX = touch.clientX - startX;
                 pannedY = touch.clientY - startY;
                 updateTransform();
             }, {passive: false});
 
-            // Wheel Zoom
             previewPane.addEventListener('wheel', (e) => {
                 if(e.ctrlKey) {
                     e.preventDefault();
