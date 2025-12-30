@@ -7,13 +7,18 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#0b0c15">
     <title>Dardcor AI</title>
+    
     <link rel="icon" href="/logo.png">
+    <link rel="manifest" href="/manifest.json">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+
     <style>
         html, body { height: 100dvh; width: 100%; margin: 0; padding: 0; overflow: hidden; background-color: #0b0c15; position: fixed; inset: 0; color: white; font-family: sans-serif; }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
@@ -89,17 +94,21 @@
             </button>
             <div class="text-gray-500 text-center text-xs font-semibold uppercase tracking-wider mb-2 px-2">Riwayat</div>
             
-            <% let isNewChat = true; if (conversationList && conversationList.length > 0) { isNewChat = !conversationList.some(c => c.id === activeConversationId); } %>
-            <% if (isNewChat) { %>
-                <div id="current-new-chat-item" class="group relative flex items-center px-3 h-[44px] rounded-lg bg-[#202336] border-l-4 border-purple-500 cursor-pointer w-full mb-1">
-                    <div class="flex-1 min-w-0 pr-2 flex items-center h-full pointer-events-none">
-                        <div class="w-5 flex justify-center text-gray-500 mr-3 flex-shrink-0">
-                            <i class="fas fa-message text-xs"></i>
-                        </div>
-                        <span class="text-sm text-white truncate">Percakapan Baru</span>
+            <% 
+                let isNewChat = true; 
+                if (conversationList && conversationList.length > 0) { 
+                    isNewChat = !conversationList.some(c => c.id === activeConversationId); 
+                } 
+            %>
+            
+            <div id="current-new-chat-item" class="group relative flex items-center px-3 h-[44px] rounded-lg cursor-pointer w-full mb-1 <%= isNewChat ? 'bg-[#202336] border-l-4 border-purple-500' : 'border-l-4 border-transparent hover:bg-[#202336]' %>">
+                <div class="flex-1 min-w-0 pr-2 flex items-center h-full pointer-events-none">
+                    <div class="w-5 flex justify-center text-gray-500 mr-3 flex-shrink-0">
+                        <i class="fas fa-message text-xs"></i>
                     </div>
+                    <span class="text-sm text-white truncate">Percakapan Baru</span>
                 </div>
-            <% } %>
+            </div>
 
             <% if (conversationList) { conversationList.forEach(chat => { %>
                 <div id="chat-item-<%= chat.id %>" onclick="loadChat('<%= chat.id %>')" class="group relative flex items-center px-3 h-[44px] rounded-lg hover:bg-[#202336] cursor-pointer w-full border-l-4 <%= chat.id === activeConversationId ? 'bg-[#202336] border-purple-500' : 'border-transparent' %>">

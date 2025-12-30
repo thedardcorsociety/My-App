@@ -3,19 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0b0c15">
+    
     <title>Dardcor Diagram Editor</title>
+    
     <link rel="icon" href="/logo.png">
+    <link rel="manifest" href="/manifest.json">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
     <style>
         body { background-color: #0b0c15; color: white; height: 100vh; margin: 0; overflow: hidden; display: flex; font-family: 'Consolas', sans-serif; }
         
-        /* TOMBOL TOGGLE (FLUSH POJOK KIRI ATAS) */
+        /* TOMBOL TOGGLE (FLUSH) */
         #sidebar-toggle {
             position: fixed; top: 0; left: 0; z-index: 100;
             width: 50px; height: 50px;
-            background-color: #0e0f19; /* Warna menyatu dengan sidebar */
+            background-color: #0e0f19;
             color: #a5b3ce;
             border: none; border-right: 1px solid #333; border-bottom: 1px solid #333;
             display: flex; align-items: center; justify-content: center;
@@ -36,7 +44,6 @@
         
         body.sidebar-open #editor-pane { transform: translateX(0); }
 
-        /* Header kosong (spacer) */
         #editor-header { height: 50px; background: #0e0f19; border-bottom: 1px solid #333; flex-shrink: 0; }
         
         #code-editor { 
@@ -60,11 +67,9 @@
         }
         #preview-pane:active { cursor: grabbing; }
 
-        /* Desktop Layout */
         @media (min-width: 768px) {
             #editor-pane { transform: translateX(0); } 
             body.sidebar-closed #editor-pane { transform: translateX(-100%); }
-            
             #preview-pane { margin-left: 400px; }
             body.sidebar-closed #preview-pane { margin-left: 0; }
         }
@@ -72,7 +77,6 @@
         #diagram-content { transform-origin: center center; transition: transform 0.1s ease-out; display: flex; align-items: center; justify-content: center; min-height: 100%; min-width: 100%; padding: 50px; box-sizing: border-box; }
         .mermaid svg { max-width: none !important; height: auto !important; }
 
-        /* CONTROLS */
         .floating-controls { position: absolute; bottom: 20px; right: 20px; display: flex; gap: 8px; background: #13131f; padding: 8px; border-radius: 12px; border: 1px solid #333; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5); z-index: 40; }
         .ctrl-btn { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 8px; background: #2a2d3d; color: white; transition: all 0.2s; border: none; cursor: pointer; }
         .ctrl-btn:hover { background: #8b5cf6; }
@@ -92,7 +96,8 @@
     </button>
 
     <aside id="editor-pane">
-        <div id="editor-header"></div> <textarea id="code-editor" spellcheck="false" placeholder="Tulis kode mermaid disini..."></textarea>
+        <div id="editor-header"></div> 
+        <textarea id="code-editor" spellcheck="false" placeholder="Tulis kode mermaid disini..."></textarea>
         <div id="editor-footer">
             <button onclick="renderDiagram()" class="px-6 py-2.5 bg-purple-600 hover:bg-purple-700 text-white text-sm font-bold rounded-lg flex items-center gap-2 transition w-full justify-center md:w-auto shadow-lg shadow-purple-900/20">
                 <i class="fas fa-play"></i> RENDER
@@ -131,7 +136,6 @@
         document.addEventListener('DOMContentLoaded', function() {
             mermaid.initialize({ startOnLoad: false, theme: 'dark', securityLevel: 'loose' });
             
-            // Decode & Load Initial Data
             try {
                 const b64 = document.getElementById('initial-data').value;
                 const decoded = atob(b64);
@@ -139,14 +143,12 @@
                 renderDiagram();
             } catch(e) {}
 
-            // Set Initial Sidebar State
             if (window.innerWidth >= 768) {
                 document.body.classList.remove('sidebar-closed');
             } else {
                 document.body.classList.remove('sidebar-open');
             }
 
-            // --- PAN & ZOOM LOGIC ---
             const previewPane = document.getElementById('preview-pane');
             
             previewPane.addEventListener('mousedown', (e) => {
@@ -170,7 +172,6 @@
                 updateTransform();
             });
 
-            // Touch Events (Mobile)
             previewPane.addEventListener('touchstart', (e) => {
                 if(e.target.closest('button')) return;
                 isDragging = true;
@@ -189,7 +190,6 @@
                 updateTransform();
             }, {passive: false});
 
-            // Wheel Zoom
             previewPane.addEventListener('wheel', (e) => {
                 if(e.ctrlKey) {
                     e.preventDefault();
@@ -209,10 +209,8 @@
         async function renderDiagram() {
             const code = document.getElementById('code-editor').value;
             const target = document.getElementById('mermaid-target');
-            
             target.innerHTML = '';
             target.removeAttribute('data-processed');
-            
             try {
                 const { svg } = await mermaid.render('mermaid-svg-' + Date.now(), code);
                 target.innerHTML = svg;
@@ -246,11 +244,9 @@
         function downloadSVG() {
             const svg = document.querySelector('#mermaid-target svg');
             if (!svg) return alert('Tidak ada diagram.');
-            
             const svgData = new XMLSerializer().serializeToString(svg);
             const blob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
             const url = URL.createObjectURL(blob);
-            
             const link = document.createElement("a");
             link.href = url;
             link.download = `dardcor-diagram-${Date.now()}.svg`;
