@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#0b0c15">
-    <meta name="apple-mobile-web-app-title" content="Dardcor Diagram">
+    <meta name="apple-mobile-web-app-title" content="Dardcor AI">
     
     <title>Dardcor AI</title>
     
@@ -26,7 +25,7 @@
     <script src="/js/marked.min.js"></script>
     
     <style>
-        /* Reset HTML & Body untuk Fullscreen Mutlak */
+        /* Mengunci HTML dan Body agar tidak ada scroll browser */
         html {
             height: 100%;
             width: 100%;
@@ -37,37 +36,32 @@
         body { 
             background-color: #0b0c15; 
             color: white; 
-            /* Gunakan 100dvh (Dynamic Viewport Height) untuk mengabaikan address bar browser mobile */
-            height: 100dvh; 
-            width: 100vw;
-            margin: 0; 
-            padding: 0;
+            /* Teknik Fixed Inset: Memaksa body memenuhi layar tanpa memicu UI browser */
+            position: fixed; 
+            top: 0; left: 0; right: 0; bottom: 0;
+            margin: 0; padding: 0;
             overflow: hidden; 
             display: flex; 
             font-family: 'Consolas', sans-serif;
-            /* Mencegah efek tarik-turun (pull-to-refresh) yang bisa memunculkan UI browser */
-            overscroll-behavior: none;
-            touch-action: none; /* Mencegah zoom browser native */
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
+            overscroll-behavior: none; /* Mencegah karet/bounce effect di iOS */
+            -webkit-user-select: none; /* Opsional: mencegah seleksi teks tidak sengaja */
+            user-select: none;
         }
         
-        /* Tombol Toggle Sidebar */
+        /* Tombol Toggle Sidebar (Flush Pojok Kiri) */
         #sidebar-toggle {
             position: fixed; 
-            /* Gunakan safe-area agar tidak tertutup notch/status bar HP */
-            top: max(10px, env(safe-area-inset-top)); 
-            left: max(10px, env(safe-area-inset-left)); 
+            top: max(0px, env(safe-area-inset-top)); 
+            left: max(0px, env(safe-area-inset-left)); 
             z-index: 100;
-            width: 44px; height: 44px;
+            width: 50px; height: 50px;
             background-color: #0e0f19;
             color: #a5b3ce;
-            border: 1px solid #333;
+            border: none; border-right: 1px solid #333; border-bottom: 1px solid #333;
             display: flex; align-items: center; justify-content: center;
             cursor: pointer; transition: all 0.2s;
-            border-radius: 8px;
+            border-bottom-right-radius: 8px;
             -webkit-tap-highlight-color: transparent;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
         }
         #sidebar-toggle:hover { background-color: #2a2d3d; color: white; }
 
@@ -80,15 +74,15 @@
             background-color: #13131f; border-right: 1px solid #333;
             z-index: 50; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             transform: translateX(-100%);
-            /* Padding Safe Area untuk Sidebar */
+            /* Safe area padding untuk notch */
             padding-top: env(safe-area-inset-top);
-            padding-bottom: env(safe-area-inset-bottom); 
+            padding-bottom: env(safe-area-inset-bottom);
             padding-left: env(safe-area-inset-left);
         }
         
         body.sidebar-open #editor-pane { transform: translateX(0); }
 
-        #editor-header { height: 60px; background: #0e0f19; border-bottom: 1px solid #333; flex-shrink: 0; }
+        #editor-header { height: 50px; background: #0e0f19; border-bottom: 1px solid #333; flex-shrink: 0; }
         
         #code-editor { 
             flex: 1; background-color: #13131f; color: #a5b3ce; 
@@ -96,6 +90,7 @@
             resize: none; outline: none; 
             font-family: 'Consolas', monospace; font-size: 14px; line-height: 1.6; 
             -webkit-tap-highlight-color: transparent; 
+            user-select: text; /* Izinkan seleksi teks di editor */
         }
         
         #editor-footer { padding: 15px; border-top: 1px solid #333; background: #0e0f19; display: flex; justify-content: flex-end; gap: 10px; flex-shrink: 0; }
@@ -112,7 +107,6 @@
         }
         #preview-pane:active { cursor: grabbing; }
 
-        /* Desktop Layout */
         @media (min-width: 768px) {
             #editor-pane { transform: translateX(0); } 
             body.sidebar-closed #editor-pane { transform: translateX(-100%); }
@@ -120,10 +114,16 @@
             body.sidebar-closed #preview-pane { margin-left: 0; }
         }
 
-        #diagram-content { transform-origin: center center; transition: transform 0.1s ease-out; display: flex; align-items: center; justify-content: center; min-height: 100%; min-width: 100%; padding: 50px; box-sizing: border-box; }
+        #diagram-content { 
+            transform-origin: center center; 
+            transition: transform 0.1s ease-out; 
+            display: flex; align-items: center; justify-content: center; 
+            min-height: 100%; min-width: 100%; 
+            padding: 50px; box-sizing: border-box; 
+        }
         .mermaid svg { max-width: none !important; height: auto !important; }
 
-        /* Floating Controls (Zoom) */
+        /* Controls UI */
         .floating-controls { 
             position: absolute; 
             bottom: max(20px, env(safe-area-inset-bottom)); 
@@ -137,17 +137,16 @@
         .ctrl-btn { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 8px; background: #2a2d3d; color: white; transition: all 0.2s; border: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
         .ctrl-btn:hover { background: #8b5cf6; }
 
-        /* Top Controls (Action Buttons) */
         .top-controls { 
             position: absolute; 
-            top: max(10px, env(safe-area-inset-top)); 
-            right: max(10px, env(safe-area-inset-right)); 
-            display: flex; gap: 8px; 
+            top: max(20px, env(safe-area-inset-top)); 
+            right: max(20px, env(safe-area-inset-right)); 
+            display: flex; gap: 10px; 
             z-index: 40; 
         }
         
         .action-btn {
-            height: 44px; padding: 0 16px;
+            height: 40px; padding: 0 16px;
             background: #13131f; border: 1px solid #333;
             color: white; border-radius: 8px;
             font-size: 12px; font-weight: bold;
@@ -169,7 +168,7 @@
     <input type="hidden" id="initial-data" value="<%= code %>">
 
     <button onclick="toggleEditor()" id="sidebar-toggle">
-        <i class="fas fa-bars text-lg"></i>
+        <i class="fas fa-bars text-xl"></i>
     </button>
 
     <aside id="editor-pane">
@@ -250,7 +249,7 @@
                 updateTransform();
             });
 
-            // Touch Events (Mobile) - Support for Pan
+            // Touch Events (Mobile)
             previewPane.addEventListener('touchstart', (e) => {
                 if(e.target.closest('button')) return;
                 isDragging = true;
@@ -263,9 +262,7 @@
 
             window.addEventListener('touchmove', (e) => {
                 if (!isDragging) return;
-                // Prevent browser native scroll behavior (browser UI trigger)
-                if (e.cancelable) e.preventDefault();
-                
+                if (e.cancelable) e.preventDefault(); // Mencegah scroll browser asli
                 const touch = e.touches[0];
                 pannedX = touch.clientX - startX;
                 pannedY = touch.clientY - startY;

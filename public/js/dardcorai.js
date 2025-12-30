@@ -1,13 +1,10 @@
-/* global marked, hljs, SERVER_DATA, mermaid */
 document.addEventListener('DOMContentLoaded', () => {
 
-    // 1. SETUP MARKED RENDERER (CRITICAL FOR RELOAD STABILITY)
     const markedRenderer = new marked.Renderer();
     markedRenderer.code = function(code, language) {
         let validCode = (typeof code === 'string' ? code : code.text);
         let lang = (language || '').toLowerCase().trim();
         
-        // Auto Detect Mermaid
         if (!lang && (validCode.startsWith('graph ') || validCode.startsWith('flowchart ') || validCode.startsWith('sequenceDiagram') || validCode.startsWith('classDiagram') || validCode.startsWith('gantt'))) {
             lang = 'mermaid';
         }
@@ -24,12 +21,11 @@ document.addEventListener('DOMContentLoaded', () => {
         
         let btnHtml = '';
         if(['html','xml','ejs','php'].includes(lang)) {
-            btnHtml = `<button onclick="previewCode(this)" class="cmd-btn btn-preview"><i class="fas fa-play text-[9px]"></i> Preview App</button>`;
+            btnHtml = `<button onclick="previewCode(this)" class="cmd-btn btn-preview"><i class="fas fa-play text-[9px]"></i> Preview</button>`;
         } else if (lang === 'mermaid') {
-            btnHtml = `<button onclick="previewDiagram(this)" class="cmd-btn btn-diagram" style="background-color: #7c3aed; color: white;"><i class="fas fa-project-diagram text-[9px]"></i> Preview Diagram</button>`;
+            btnHtml = `<button onclick="previewDiagram(this)" class="cmd-btn btn-diagram" style="background-color: #7c3aed; color: white;"><i class="fas fa-project-diagram text-[9px]"></i> Preview</button>`;
         }
 
-        // ALWAYS RETURN TERMINAL STRUCTURE
         return `
         <div class="terminal-container">
             <div class="terminal-head">
@@ -49,7 +45,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     marked.setOptions({ renderer: markedRenderer });
 
-    // DISABLE MERMAID AUTO RENDER
     if (typeof mermaid !== 'undefined') {
         mermaid.initialize({ startOnLoad: false });
     }
@@ -79,7 +74,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.message-bubble-container .raw-message-content').forEach(raw => {
             const target = raw.nextElementSibling;
             if(target && target.classList.contains('markdown-body')) {
-                // Ensure Markdown parses using the custom renderer we set above
                 target.innerHTML = marked.parse(raw.value);
             }
         });
@@ -88,7 +82,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initHighlight();
     scrollToBottom();
 
-    // --- EVENT LISTENERS ---
     if(document.getElementById('sidebar-toggle-btn')) { document.getElementById('sidebar-toggle-btn').addEventListener('click', toggleSidebar); }
     if(document.getElementById('close-sidebar-btn')) { document.getElementById('close-sidebar-btn').addEventListener('click', toggleSidebar); }
     if(document.getElementById('mobile-overlay')) { document.getElementById('mobile-overlay').addEventListener('click', toggleSidebar); }
@@ -141,9 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ['dragleave', 'drop'].forEach(evt => dropZone.addEventListener(evt, () => { dropZone.classList.add('hidden'); dropZone.classList.remove('flex'); }));
         document.body.addEventListener('drop', (e) => handleFiles(e.dataTransfer.files));
     }
-
-    // --- CORE FUNCTIONS ---
-
+    
     function toggleSidebar() {
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('mobile-overlay');
