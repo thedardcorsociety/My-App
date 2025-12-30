@@ -14,10 +14,15 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
-    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+
+    <link rel="stylesheet" href="/css/tailwind.css">
+    <link rel="stylesheet" href="/vendor/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="/css/atom-one-dark.min.css">
+    <script src="/js/highlight.min.js"></script>
+    <script src="/js/marked.min.js"></script>
 
     <style>
         html, body { height: 100dvh; width: 100%; margin: 0; padding: 0; overflow: hidden; background-color: #0b0c15; position: fixed; inset: 0; color: white; font-family: sans-serif; }
@@ -54,24 +59,28 @@
     </style>
 </head>
 <body class="flex text-white font-sans">
+    
     <script>
         (function() {
-            const savedState = localStorage.getItem('dardcor_sidebar_state');
-            if (savedState === 'closed') {
-                document.body.classList.add('sidebar-closed');
+            if (window.innerWidth >= 1024) {
+                const savedState = localStorage.getItem('dardcor_sidebar_state');
+                if (savedState === 'closed') {
+                    document.body.classList.add('sidebar-closed');
+                }
             }
         })();
     </script>
+    
     <style>
-        body.sidebar-closed #sidebar { transform: translateX(-100%); }
-        body.sidebar-closed #main-content { left: 0; }
         @media (min-width: 1024px) {
+            body.sidebar-closed #sidebar { transform: translateX(-100%); }
+            body.sidebar-closed #main-content { left: 0; }
             body:not(.sidebar-closed) #main-content { left: 18rem; }
             body:not(.sidebar-closed) #sidebar { transform: translateX(0); }
         }
     </style>
 
-    <div id="mobile-overlay" class="fixed inset-0 bg-black/60 z-40 hidden backdrop-blur-sm transition-opacity"></div>
+    <div id="mobile-overlay" class="fixed inset-0 bg-black/60 z-40 hidden backdrop-blur-sm transition-opacity lg:hidden"></div>
 
     <aside id="sidebar" class="fixed inset-y-0 left-0 w-72 bg-[#13131f] border-r border-purple-900/30 flex flex-col transform -translate-x-full lg:translate-x-0 z-[60] shadow-2xl safe-pl transition-transform duration-300">
         <div class="h-16 shrink-0 flex items-center justify-between px-4 border-b border-purple-900/30 safe-pt">

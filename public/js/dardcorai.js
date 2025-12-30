@@ -1,30 +1,13 @@
-/* global marked, hljs, SERVER_DATA */
+/* global marked, hljs, SERVER_DATA, mermaid */
 document.addEventListener('DOMContentLoaded', () => {
 
-    let currentConversationId = window.SERVER_DATA.currentConversationId;
-    let currentToolType = window.SERVER_DATA.toolType;
-    let targetChatId = null;
-    let isSending = false;
-    let abortController = null;
-    let isChatLoading = false;
-    let selectedFiles = [];
-
-    const chatContainer = document.getElementById('chat-container');
-    const messageInput = document.getElementById('message-input');
-    const messageList = document.getElementById('message-list');
-    const toolsMenu = document.getElementById('tools-menu');
-    const toolsChevron = document.getElementById('tools-chevron');
-    const fileInput = document.getElementById('file-upload');
-    const dropZone = document.getElementById('drop-zone');
-    const previewContainer = document.getElementById('file-preview-container');
-    const sendBtn = document.getElementById('send-btn');
-    const sendIcon = document.getElementById('send-icon');
-
+    // 1. SETUP MARKED RENDERER (CRITICAL FOR RELOAD STABILITY)
     const markedRenderer = new marked.Renderer();
     markedRenderer.code = function(code, language) {
         let validCode = (typeof code === 'string' ? code : code.text);
         let lang = (language || '').toLowerCase().trim();
         
+        // Auto Detect Mermaid
         if (!lang && (validCode.startsWith('graph ') || validCode.startsWith('flowchart ') || validCode.startsWith('sequenceDiagram') || validCode.startsWith('classDiagram') || validCode.startsWith('gantt'))) {
             lang = 'mermaid';
         }
@@ -46,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
             btnHtml = `<button onclick="previewDiagram(this)" class="cmd-btn btn-diagram" style="background-color: #7c3aed; color: white;"><i class="fas fa-project-diagram text-[9px]"></i> Preview Diagram</button>`;
         }
 
+        // ALWAYS RETURN TERMINAL STRUCTURE
         return `
         <div class="terminal-container">
             <div class="terminal-head">
@@ -65,11 +49,37 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     marked.setOptions({ renderer: markedRenderer });
 
-    function initHighlight(scope = document) {
-        scope.querySelectorAll('.message-bubble-container pre code').forEach(el => hljs.highlightElement(el));
-        scope.querySelectorAll('.message-bubble-container .raw-message-content').forEach(raw => {
+    // DISABLE MERMAID AUTO RENDER
+    if (typeof mermaid !== 'undefined') {
+        mermaid.initialize({ startOnLoad: false });
+    }
+
+    let currentConversationId = window.SERVER_DATA.currentConversationId;
+    let currentToolType = window.SERVER_DATA.toolType;
+    let targetChatId = null;
+    let isSending = false;
+    let abortController = null;
+    let isChatLoading = false;
+    let selectedFiles = [];
+
+    const chatContainer = document.getElementById('chat-container');
+    const messageInput = document.getElementById('message-input');
+    const messageList = document.getElementById('message-list');
+    const toolsMenu = document.getElementById('tools-menu');
+    const toolsChevron = document.getElementById('tools-chevron');
+    const fileInput = document.getElementById('file-upload');
+    const dropZone = document.getElementById('drop-zone');
+    const previewContainer = document.getElementById('file-preview-container');
+    const sendBtn = document.getElementById('send-btn');
+    const sendIcon = document.getElementById('send-icon');
+
+    function initHighlight() {
+        document.querySelectorAll('.message-bubble-container pre code').forEach(el => hljs.highlightElement(el));
+        
+        document.querySelectorAll('.message-bubble-container .raw-message-content').forEach(raw => {
             const target = raw.nextElementSibling;
             if(target && target.classList.contains('markdown-body')) {
+                // Ensure Markdown parses using the custom renderer we set above
                 target.innerHTML = marked.parse(raw.value);
             }
         });
@@ -78,6 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initHighlight();
     scrollToBottom();
 
+    // --- EVENT LISTENERS ---
     if(document.getElementById('sidebar-toggle-btn')) { document.getElementById('sidebar-toggle-btn').addEventListener('click', toggleSidebar); }
     if(document.getElementById('close-sidebar-btn')) { document.getElementById('close-sidebar-btn').addEventListener('click', toggleSidebar); }
     if(document.getElementById('mobile-overlay')) { document.getElementById('mobile-overlay').addEventListener('click', toggleSidebar); }
@@ -131,18 +142,26 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.addEventListener('drop', (e) => handleFiles(e.dataTransfer.files));
     }
 
+    // --- CORE FUNCTIONS ---
+
     function toggleSidebar() {
-        document.body.classList.toggle('sidebar-closed');
-        const isClosed = document.body.classList.contains('sidebar-closed');
-        localStorage.setItem('dardcor_sidebar_state', isClosed ? 'closed' : 'open');
-        if (window.innerWidth < 1024) {
-            const overlay = document.getElementById('mobile-overlay');
-            if(overlay) overlay.classList.toggle('hidden');
-            const sidebar = document.getElementById('sidebar');
-            if(sidebar) {
-                 if(isClosed) sidebar.classList.add('-translate-x-full');
-                 else sidebar.classList.remove('-translate-x-full');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('mobile-overlay');
+        const isMobile = window.innerWidth < 1024;
+
+        if (isMobile) {
+            const isClosed = sidebar.classList.contains('-translate-x-full');
+            if (isClosed) {
+                sidebar.classList.remove('-translate-x-full');
+                if(overlay) overlay.classList.remove('hidden');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                if(overlay) overlay.classList.add('hidden');
             }
+        } else {
+            document.body.classList.toggle('sidebar-closed');
+            const state = document.body.classList.contains('sidebar-closed') ? 'closed' : 'open';
+            localStorage.setItem('dardcor_sidebar_state', state);
         }
     }
 
@@ -224,6 +243,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 messageList.appendChild(loader);
                 window.history.pushState({id: id}, '', `/dardcorchat/dardcor-ai/${id}`);
                 scrollToBottom();
+                if(window.innerWidth < 1024) {
+                    const sidebar = document.getElementById('sidebar');
+                    const overlay = document.getElementById('mobile-overlay');
+                    if(sidebar) sidebar.classList.add('-translate-x-full');
+                    if(overlay) overlay.classList.add('hidden');
+                }
             }
         } catch (error) { console.error(error); } 
         finally { isChatLoading = false; }
@@ -382,7 +407,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } else alert("TTS Error"); 
     };
     
-    // --- FUNGSI PREVIEW YANG DIPERBAIKI (SANITASI) ---
     window.previewCode = async function(btn) {
         const rawCode = btn.closest('.terminal-container').querySelector('.raw-code').value.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
         const original = btn.innerHTML; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; btn.disabled = true;
@@ -391,7 +415,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.previewDiagram = async function(btn) {
         let rawCode = btn.closest('.terminal-container').querySelector('.raw-code').value;
-        // Sanitasi: Hapus sisa markdown (backticks) dan unescape HTML entities
         rawCode = rawCode.replace(/```mermaid/g, '').replace(/```/g, '').trim();
         rawCode = rawCode.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&").replace(/&quot;/g, '"');
 
