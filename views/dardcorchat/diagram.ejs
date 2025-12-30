@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
-    <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#0b0c15">
     <meta name="apple-mobile-web-app-title" content="Dardcor Diagram">
@@ -26,30 +26,35 @@
     <script src="/js/marked.min.js"></script>
     
     <style>
-        body { 
+        html, body { 
             background-color: #0b0c15; 
             color: white; 
             height: 100dvh; 
+            width: 100vw;
             margin: 0; 
+            padding: 0;
             overflow: hidden; 
             display: flex; 
             font-family: 'Consolas', sans-serif;
             overscroll-behavior: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
         }
         
         #sidebar-toggle {
             position: fixed; 
-            top: env(safe-area-inset-top); 
-            left: env(safe-area-inset-left); 
+            top: max(10px, env(safe-area-inset-top)); 
+            left: max(10px, env(safe-area-inset-left)); 
             z-index: 100;
-            width: 50px; height: 50px;
+            width: 44px; height: 44px;
             background-color: #0e0f19;
             color: #a5b3ce;
-            border: none; border-right: 1px solid #333; border-bottom: 1px solid #333;
+            border: 1px solid #333;
             display: flex; align-items: center; justify-content: center;
             cursor: pointer; transition: all 0.2s;
-            border-bottom-right-radius: 8px;
+            border-radius: 8px;
             -webkit-tap-highlight-color: transparent;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
         }
         #sidebar-toggle:hover { background-color: #2a2d3d; color: white; }
 
@@ -62,13 +67,12 @@
             z-index: 50; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             transform: translateX(-100%);
             padding-top: env(safe-area-inset-top);
-            padding-left: env(safe-area-inset-left);
             padding-bottom: env(safe-area-inset-bottom); 
         }
         
         body.sidebar-open #editor-pane { transform: translateX(0); }
 
-        #editor-header { height: 50px; background: #0e0f19; border-bottom: 1px solid #333; flex-shrink: 0; }
+        #editor-header { height: 60px; background: #0e0f19; border-bottom: 1px solid #333; flex-shrink: 0; }
         
         #code-editor { 
             flex: 1; background-color: #13131f; color: #a5b3ce; 
@@ -116,11 +120,24 @@
 
         .top-controls { 
             position: absolute; 
-            top: max(20px, env(safe-area-inset-top)); 
-            right: max(20px, env(safe-area-inset-right)); 
-            display: flex; gap: 10px; 
+            top: max(10px, env(safe-area-inset-top)); 
+            right: max(10px, env(safe-area-inset-right)); 
+            display: flex; gap: 8px; 
             z-index: 40; 
         }
+        
+        .action-btn {
+            height: 44px; padding: 0 16px;
+            background: #13131f; border: 1px solid #333;
+            color: white; border-radius: 8px;
+            font-size: 12px; font-weight: bold;
+            display: flex; align-items: center; gap: 8px;
+            cursor: pointer; transition: all 0.2s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .action-btn:hover { background: #2a2d3d; }
+        .btn-close { border-color: #7f1d1d; background: rgba(127, 29, 29, 0.2); color: #fca5a5; }
+        .btn-close:hover { background: #7f1d1d; color: white; }
         
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #0b0c15; }
@@ -131,7 +148,7 @@
     <input type="hidden" id="initial-data" value="<%= code %>">
 
     <button onclick="toggleEditor()" id="sidebar-toggle">
-        <i class="fas fa-bars text-xl"></i>
+        <i class="fas fa-bars text-lg"></i>
     </button>
 
     <aside id="editor-pane">
@@ -146,10 +163,10 @@
 
     <main id="preview-pane">
         <div class="top-controls">
-            <button onclick="downloadSVG()" class="px-4 py-2 bg-[#13131f] hover:bg-[#2a2d3d] text-white rounded-lg text-xs font-bold border border-gray-700 flex items-center gap-2 transition shadow-lg">
+            <button onclick="downloadSVG()" class="action-btn">
                 <i class="fas fa-download"></i> <span class="hidden sm:inline">SVG</span>
             </button>
-            <button onclick="window.close()" class="px-4 py-2 bg-red-900/80 hover:bg-red-800 text-white rounded-lg text-xs font-bold border border-red-700 flex items-center gap-2 transition shadow-lg">
+            <button onclick="window.close()" class="action-btn btn-close">
                 <i class="fas fa-times"></i> <span class="hidden sm:inline">CLOSE</span>
             </button>
         </div>

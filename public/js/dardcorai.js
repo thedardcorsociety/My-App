@@ -172,9 +172,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if(toolsMenu) toolsMenu.classList.add('hidden');
         if(toolsChevron) toolsChevron.classList.remove('rotate-180');
         if(type === 'dark') {
-            if(messageInput) messageInput.placeholder = "Mode Tanpa Batas...";
+            if(messageInput) messageInput.placeholder = "Ask To Dardcor...";
         } else {
-            if(messageInput) messageInput.placeholder = "Ketik pesan, paste link, atau upload file...";
+            if(messageInput) messageInput.placeholder = "Ask To Dardcor...";
         }
     }
 
