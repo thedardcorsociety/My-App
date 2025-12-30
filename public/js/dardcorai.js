@@ -1,5 +1,7 @@
+/* global marked, hljs, SERVER_DATA, mermaid */
 document.addEventListener('DOMContentLoaded', () => {
 
+    // 1. SETUP MARKED RENDERER
     const markedRenderer = new marked.Renderer();
     markedRenderer.code = function(code, language) {
         let validCode = (typeof code === 'string' ? code : code.text);
@@ -70,7 +72,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function initHighlight() {
         document.querySelectorAll('.message-bubble-container pre code').forEach(el => hljs.highlightElement(el));
-        
         document.querySelectorAll('.message-bubble-container .raw-message-content').forEach(raw => {
             const target = raw.nextElementSibling;
             if(target && target.classList.contains('markdown-body')) {
@@ -82,6 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initHighlight();
     scrollToBottom();
 
+    // Event Listeners
     if(document.getElementById('sidebar-toggle-btn')) { document.getElementById('sidebar-toggle-btn').addEventListener('click', toggleSidebar); }
     if(document.getElementById('close-sidebar-btn')) { document.getElementById('close-sidebar-btn').addEventListener('click', toggleSidebar); }
     if(document.getElementById('mobile-overlay')) { document.getElementById('mobile-overlay').addEventListener('click', toggleSidebar); }
@@ -134,7 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ['dragleave', 'drop'].forEach(evt => dropZone.addEventListener(evt, () => { dropZone.classList.add('hidden'); dropZone.classList.remove('flex'); }));
         document.body.addEventListener('drop', (e) => handleFiles(e.dataTransfer.files));
     }
-    
+
     function toggleSidebar() {
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('mobile-overlay');
@@ -234,6 +236,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 messageList.appendChild(loader);
                 window.history.pushState({id: id}, '', `/dardcorchat/dardcor-ai/${id}`);
                 scrollToBottom();
+                
                 if(window.innerWidth < 1024) {
                     const sidebar = document.getElementById('sidebar');
                     const overlay = document.getElementById('mobile-overlay');
@@ -362,6 +365,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function removeFile(index) { selectedFiles.splice(index, 1); renderPreviews(); if(fileInput) fileInput.value = ''; }
     function clearFiles() { selectedFiles = []; renderPreviews(); if(fileInput) fileInput.value = ''; }
 
+    // --- Helpers (Global Scope) ---
     window.toggleMenu = function(e, id) { e.stopPropagation(); document.querySelectorAll('.dropdown-menu').forEach(el => el.classList.add('hidden')); document.getElementById(id).classList.toggle('hidden'); };
     window.openDeleteModal = function(id) { targetChatId = id; document.getElementById('delete-modal').classList.remove('hidden'); document.getElementById('delete-modal').classList.add('flex'); };
     window.closeModal = function(id) { document.getElementById(id).classList.add('hidden'); };
@@ -398,10 +402,21 @@ document.addEventListener('DOMContentLoaded', () => {
         } else alert("TTS Error"); 
     };
     
+    // FUNGSI PREVIEW: INJECT IFRAME OVERLAY (IDE GILA)
     window.previewCode = async function(btn) {
         const rawCode = btn.closest('.terminal-container').querySelector('.raw-code').value.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
         const original = btn.innerHTML; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; btn.disabled = true;
-        try { const res = await fetch('/dardcorchat/ai/store-preview', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: rawCode }) }); const data = await res.json(); if(data.success) window.open(`/dardcorchat/dardcor-ai/preview/${data.previewId}`, '_blank'); } catch(e) { alert('Preview Error'); } finally { btn.innerHTML = original; btn.disabled = false; }
+        try { 
+            const res = await fetch('/dardcorchat/ai/store-preview', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: rawCode }) }); 
+            const data = await res.json(); 
+            if(data.success) {
+                // Gunakan Iframe Overlay alih-alih window.open
+                const overlay = document.getElementById('diagram-overlay');
+                const frame = document.getElementById('diagram-frame');
+                frame.src = `/dardcorchat/dardcor-ai/preview/${data.previewId}`;
+                overlay.classList.remove('hidden');
+            }
+        } catch(e) { alert('Preview Error'); } finally { btn.innerHTML = original; btn.disabled = false; }
     };
 
     window.previewDiagram = async function(btn) {
@@ -413,7 +428,13 @@ document.addEventListener('DOMContentLoaded', () => {
         try { 
             const res = await fetch('/dardcorchat/ai/store-preview', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: rawCode, type: 'diagram' }) }); 
             const data = await res.json(); 
-            if(data.success) window.open(`/dardcorchat/dardcor-ai/diagram/${data.previewId}`, '_blank'); 
+            if(data.success) {
+                // Gunakan Iframe Overlay alih-alih window.open
+                const overlay = document.getElementById('diagram-overlay');
+                const frame = document.getElementById('diagram-frame');
+                frame.src = `/dardcorchat/dardcor-ai/diagram/${data.previewId}`;
+                overlay.classList.remove('hidden');
+            } 
             else alert('Gagal menyimpan diagram.');
         } catch(e) { alert('Diagram Preview Error'); } finally { btn.innerHTML = original; btn.disabled = false; }
     };

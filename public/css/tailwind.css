@@ -1285,11 +1285,6 @@ video {
   border-color: rgb(239 68 68 / 0.5);
 }
 
-.border-red-700 {
-  --tw-border-opacity: 1;
-  border-color: rgb(185 28 28 / var(--tw-border-opacity, 1));
-}
-
 .border-red-800 {
   --tw-border-opacity: 1;
   border-color: rgb(153 27 27 / var(--tw-border-opacity, 1));
@@ -1328,6 +1323,11 @@ video {
 
 .border-yellow-500\/20 {
   border-color: rgb(234 179 8 / 0.2);
+}
+
+.border-red-700 {
+  --tw-border-opacity: 1;
+  border-color: rgb(185 28 28 / var(--tw-border-opacity, 1));
 }
 
 .border-t-transparent {
@@ -1454,10 +1454,6 @@ video {
   background-color: rgb(127 29 29 / 0.2);
 }
 
-.bg-red-900\/80 {
-  background-color: rgb(127 29 29 / 0.8);
-}
-
 .bg-transparent {
   background-color: transparent;
 }
@@ -1469,6 +1465,10 @@ video {
 
 .bg-yellow-500\/10 {
   background-color: rgb(234 179 8 / 0.1);
+}
+
+.bg-red-900\/80 {
+  background-color: rgb(127 29 29 / 0.8);
 }
 
 .bg-gradient-to-r {
@@ -2134,11 +2134,6 @@ video {
   background-color: rgb(32 35 54 / var(--tw-bg-opacity, 1));
 }
 
-.hover\:bg-\[\#2a2d3d\]:hover {
-  --tw-bg-opacity: 1;
-  background-color: rgb(42 45 61 / var(--tw-bg-opacity, 1));
-}
-
 .hover\:bg-gray-700:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(55 65 81 / var(--tw-bg-opacity, 1));
@@ -2172,11 +2167,6 @@ video {
   background-color: rgb(220 38 38 / var(--tw-bg-opacity, 1));
 }
 
-.hover\:bg-red-800:hover {
-  --tw-bg-opacity: 1;
-  background-color: rgb(153 27 27 / var(--tw-bg-opacity, 1));
-}
-
 .hover\:bg-slate-800:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(30 41 59 / var(--tw-bg-opacity, 1));
@@ -2189,6 +2179,16 @@ video {
 
 .hover\:bg-white\/10:hover {
   background-color: rgb(255 255 255 / 0.1);
+}
+
+.hover\:bg-\[\#2a2d3d\]:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(42 45 61 / var(--tw-bg-opacity, 1));
+}
+
+.hover\:bg-red-800:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(153 27 27 / var(--tw-bg-opacity, 1));
 }
 
 .hover\:from-violet-500:hover {
@@ -2248,6 +2248,12 @@ video {
 .focus\:ring-purple-500:focus {
   --tw-ring-opacity: 1;
   --tw-ring-color: rgb(168 85 247 / var(--tw-ring-opacity, 1));
+}
+
+.active\:scale-95:active {
+  --tw-scale-x: .95;
+  --tw-scale-y: .95;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 
 .group\/btn:hover .group-hover\/btn\:-translate-x-1 {
