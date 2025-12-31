@@ -138,7 +138,7 @@
                     <div class="w-5 flex justify-center text-gray-500 mr-3 flex-shrink-0">
                         <i class="fas fa-message text-xs"></i>
                     </div>
-                    <span class="text-sm text-gray-300 truncate">Percakapan Baru</span>
+                    <span class="text-sm text-white truncate">Percakapan Baru</span>
                 </div>
             </div>
 
@@ -183,22 +183,21 @@
                 </button>
                 <div class="relative">
                     <button id="model-dropdown-btn" class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-purple-500/30 bg-purple-500/10 text-purple-400 text-xs md:text-sm font-medium hover:bg-purple-500/20 hover:text-white transition-all h-[34px]">
-                        <span id="tool-label"><%= toolType === 'dark' ? 'Dark Model' : (toolType === 'pro' ? 'Pro Model' : (toolType === 'sahabat' ? 'Mode Sahabat' : 'Basic Model')) %></span> <i class="fas fa-chevron-down text-[10px] ml-1 transition-transform" id="tools-chevron"></i>
+                        <span id="tool-label"><%= toolType === 'dark' ? 'Dark Model' : (toolType === 'pro' ? 'Pro Model' : 'Basic Model') %></span> <i class="fas fa-chevron-down text-[10px] ml-1 transition-transform" id="tools-chevron"></i>
                     </button>
                     <div id="tools-menu" class="hidden absolute right-0 top-full mt-2 w-48 bg-[#0b0c15] border border-purple-500/30 rounded-lg shadow-xl shadow-purple-900/20 z-[100] overflow-hidden">
                         <button data-model="basic" class="model-select-btn w-full text-left px-3 py-2.5 text-xs md:text-sm font-medium text-purple-400 hover:bg-purple-500/20 hover:text-white transition-all border-b border-purple-500/30 whitespace-nowrap">Basic Model</button>
                         <button data-model="dark" class="model-select-btn w-full text-left px-3 py-2.5 text-xs md:text-sm font-medium text-purple-400 hover:bg-purple-500/20 hover:text-white transition-all border-b border-purple-500/30 whitespace-nowrap">Dark Model</button>
                         <button data-model="pro" class="model-select-btn w-full text-left px-3 py-2.5 text-xs md:text-sm font-medium text-purple-400 hover:bg-purple-500/20 hover:text-white transition-all border-b border-purple-500/30 whitespace-nowrap">Pro Model</button>
-                        <button data-model="sahabat" class="model-select-btn w-full text-left px-3 py-2.5 text-xs md:text-sm font-medium text-purple-400 hover:bg-purple-500/20 hover:text-white transition-all whitespace-nowrap">Mode Sahabat</button>
                     </div>
                 </div>
             </div>
         </header>
 
-        <div id="chat-container" class="flex-1 overflow-y-auto scrollbar-hide px-4 pt-4 w-full relative">
-            <div class="max-w-4xl mx-auto w-full pb-4">
+        <div id="chat-container" class="flex-1 overflow-y-auto scrollbar-hide px-4 w-full relative flex flex-col">
+            <div class="max-w-4xl mx-auto w-full pb-4 mt-auto">
                 <%- include(contentPage) %>
-                <div class="h-[60px]"></div>
+                <div class="h-[10px]"></div> 
             </div>
         </div>
 

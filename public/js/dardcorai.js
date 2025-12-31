@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentToolType = SERVER_DATA.toolType;
     let selectedPersonaId = null;
 
+    // --- 1. GLOBAL FUNCTIONS ---
     window.toggleSidebar = function() {
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('mobile-overlay');
@@ -47,6 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const activeItem = document.getElementById(`chat-item-${id}`);
+        
         if (activeItem) {
             activeItem.classList.add('bg-[#202336]', 'border-purple-500'); 
             activeItem.classList.remove('border-transparent'); 
@@ -110,13 +112,13 @@ document.addEventListener('DOMContentLoaded', () => {
     window.setModel = function(type) {
         currentToolType = type;
         const label = document.getElementById('tool-label');
-        if(label) label.innerText = type === 'dark' ? 'Dark Model' : (type === 'pro' ? 'Pro Model' : (type === 'sahabat' ? 'Mode Sahabat' : 'Basic Model'));
+        if(label) label.innerText = type === 'dark' ? 'Dark Model' : (type === 'pro' ? 'Pro Model' : 'Basic Model');
         const menu = document.getElementById('tools-menu');
         const chevron = document.getElementById('tools-chevron');
         if(menu) menu.classList.add('hidden');
         if(chevron) chevron.classList.remove('rotate-180');
         const msgInput = document.getElementById('message-input');
-        if(msgInput) msgInput.placeholder = type === 'sahabat' ? "Ask To Dardcor..." : (type === 'pro' ? "Ask To Dardcor..." : "Ask To Dardcor...");
+        if(msgInput) msgInput.placeholder = type === 'pro' ? "Ask Dardcor Pro..." : "Ask To Dardcor...";
     };
 
     window.openPersonaModal = async function() {
@@ -227,9 +229,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 let btnHtml = '';
                 if(lang === 'mermaid') {
-                    btnHtml = `<button onclick="previewDiagram(this)" class="cmd-btn btn-diagram" style="background-color: #7c3aed; color: white;"><i class="fas fa-project-diagram text-[9px]"></i> Preview</button>`;
+                    btnHtml = `<button onclick="previewDiagram(this)" class="cmd-btn btn-diagram" style="background-color: #7c3aed; color: white;"><i class="fas fa-project-diagram text-[9px]"></i> Preview Diagram</button>`;
                 } else if(['html','xml','ejs','php'].includes(lang)) {
-                    btnHtml = `<button onclick="previewCode(this)" class="cmd-btn btn-preview"><i class="fas fa-play text-[9px]"></i> Preview</button>`;
+                    btnHtml = `<button onclick="previewCode(this)" class="cmd-btn btn-preview"><i class="fas fa-play text-[9px]"></i> Preview App</button>`;
                 }
                 
                 return `<div class="terminal-container"><div class="terminal-head"><div class="terminal-label"><i class="fas fa-code mr-1"></i> ${lang.toUpperCase() || 'TEXT'}</div><div class="terminal-opts">${btnHtml}<button onclick="copyCode(this)" class="cmd-btn btn-cp"><i class="fas fa-copy"></i> Copy</button></div></div><div class="terminal-code"><pre><code class="hljs ${lang}">${highlighted}</code></pre><textarea class="hidden raw-code">${validCode.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</textarea></div></div>`;
@@ -350,7 +352,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if(window.renderMathInElement) renderMathInElement(botContent, { delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}], throwOnError: false });
                 if(typeof hljs !== 'undefined') botContent.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
-                scrollToBottom(); 
+                scrollToBottom(true); 
                 requestAnimationFrame(render); 
             };
             requestAnimationFrame(render);
@@ -366,7 +368,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             isStreaming = false;
-            
+            // Final Render
             let formatted = fullText;
             const thinkMatch = fullText.match(/<think>([\s\S]*?)<\/think>/);
             if(thinkMatch) formatted = fullText.replace(/<think>[\s\S]*?<\/think>/, `<details class="mb-4 bg-gray-900/50 rounded-lg border border-gray-700/50 overflow-hidden group"><summary class="flex items-center gap-2 px-3 py-2 cursor-pointer bg-gray-800/50 hover:bg-gray-800 text-xs font-mono text-gray-400 select-none"><i class="fas fa-brain text-purple-500"></i><span>Thinking</span><i class="fas fa-chevron-down ml-auto transition-transform group-open:rotate-180"></i></summary><div class="p-3 text-xs text-gray-400 font-mono border-t border-gray-700/50 bg-black/20 leading-relaxed italic">${thinkMatch[1].trim().replace(/\n/g, '<br>')}</div></details>`);
