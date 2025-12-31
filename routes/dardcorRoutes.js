@@ -6,7 +6,8 @@ const supabase = require('../config/supabase');
 const { v4: uuidv4 } = require('uuid');
 const rateLimit = require('express-rate-limit');
 const nodemailer = require('nodemailer');
-const { handleChatStream } = require('../controllers/dardcorModel');
+const { handleChatStream: handleProChatStream } = require('../controllers/dardcorProModel');
+const { handleChatStream: handleBasicChatStream } = require('../controllers/dardcorModel');
 const { YoutubeTranscript } = require('youtube-transcript');
 const cheerio = require('cheerio');
 const axios = require('axios');
@@ -14,6 +15,13 @@ const mammoth = require('mammoth');
 const xlsx = require('xlsx');
 
 const upload = multer({ limits: { fileSize: 20 * 1024 * 1024 } });
+
+const uploadMiddleware = (req, res, next) => {
+    upload.array('file_attachment', 10)(req, res, function (err) {
+        if (err) return res.status(400).json({ success: false, message: "Upload Error" });
+        next();
+    });
+};
 
 const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -23,7 +31,7 @@ const transporter = nodemailer.createTransport({
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, 
     max: 20, 
-    message: "Terlalu banyak percobaan. Silakan coba lagi nanti."
+    message: "Terlalu banyak percobaan."
 });
 
 function getCookie(req, name) {
@@ -56,54 +64,46 @@ async function checkUserAuth(req, res, next) {
     res.redirect('/dardcor');
 }
 
-const uploadMiddleware = (req, res, next) => {
-    upload.array('file_attachment', 10)(req, res, function (err) {
-        if (err) return res.status(400).json({ success: false, response: "Max 10 File." });
-        next();
-    });
-};
-
 async function getYouTubeData(url) {
     let videoId = null;
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
     const match = url.match(regExp);
     if (match && match[2].length === 11) videoId = match[2];
-
-    if (!videoId) return { success: false, message: "ID Video tidak valid." };
-
+    if (!videoId) return { success: false };
     let data = { title: '', description: '', transcript: '' };
-
     try {
-        const pageRes = await axios.get(`https://www.youtube.com/watch?v=${videoId}`, {
-            headers: { 'User-Agent': 'Mozilla/5.0' }
-        });
+        const pageRes = await axios.get(`https://www.youtube.com/watch?v=${videoId}`, { headers: { 'User-Agent': 'Mozilla/5.0' } });
         const $ = cheerio.load(pageRes.data);
         data.title = $('meta[name="title"]').attr('content') || $('title').text();
         data.description = $('meta[name="description"]').attr('content') || '';
     } catch (e) {}
-
     try {
-        const transcriptObj = await YoutubeTranscript.fetchTranscript(videoId, { lang: 'id' })
-            .catch(() => YoutubeTranscript.fetchTranscript(videoId, { lang: 'en' }))
-            .catch(() => YoutubeTranscript.fetchTranscript(videoId));
-
+        const transcriptObj = await YoutubeTranscript.fetchTranscript(videoId, { lang: 'id' }).catch(() => YoutubeTranscript.fetchTranscript(videoId));
         if (transcriptObj && transcriptObj.length > 0) {
             data.transcript = transcriptObj.map(t => t.text).join(' ');
         }
     } catch (e) {}
-
     return { success: true, ...data };
 }
 
 async function getWebsiteContent(url) {
     try {
-        const response = await axios.get(url, { 
-            headers: { 'User-Agent': 'Mozilla/5.0' },
-            timeout: 10000 
-        });
+        const response = await axios.get(url, { headers: { 'User-Agent': 'Mozilla/5.0' }, timeout: 10000 });
         const $ = cheerio.load(response.data);
         $('script, style, nav, footer, header, svg, img, iframe, noscript').remove();
         return $('body').text().replace(/\s+/g, ' ').trim(); 
+    } catch (e) { return null; }
+}
+
+async function searchWeb(query) {
+    try {
+        if (!query) return null;
+        const searchQuery = encodeURIComponent(query);
+        const res = await axios.get(`https://ddg-api.herokuapp.com/search?q=${searchQuery}&limit=3`); 
+        if (res.data && res.data.length > 0) {
+            return res.data.map(r => `- [${r.title}](${r.link}): ${r.snippet}`).join('\n');
+        }
+        return null;
     } catch (e) { return null; }
 }
 
@@ -127,23 +127,21 @@ router.post('/dardcor-login', authLimiter, async (req, res) => {
     try {
         const { data: user } = await supabase.from('dardcor_users').select('*').eq('email', email.trim().toLowerCase()).single();
         if (!user || !await bcrypt.compare(password, user.password)) return res.status(400).json({ success: false, message: 'Login gagal.' });
-        
         req.session.userAccount = user;
         const tenYears = 1000 * 60 * 60 * 24 * 365 * 10;
         req.session.cookie.expires = new Date(Date.now() + tenYears);
         req.session.cookie.maxAge = tenYears;
         res.cookie('dardcor_uid', user.id, { maxAge: tenYears, httpOnly: true, secure: true, sameSite: 'lax' });
-
         req.session.save((err) => {
-            if (err) return res.status(500).json({ success: false, message: 'Gagal memproses login.' });
+            if (err) return res.status(500).json({ success: false });
             res.status(200).json({ success: true, redirectUrl: '/dardcorchat/dardcor-ai' });
         });
-    } catch (err) { res.status(500).json({ success: false, message: 'Terjadi kesalahan sistem.' }); }
+    } catch (err) { res.status(500).json({ success: false }); }
 });
 
 router.get('/dardcor-logout', (req, res) => { 
     res.clearCookie('dardcor_uid');
-    req.session.destroy((err) => { res.clearCookie('connect.sid'); res.redirect('/dardcor'); });
+    req.session.destroy(() => { res.clearCookie('connect.sid'); res.redirect('/dardcor'); });
 });
 
 router.post('/register', authLimiter, async (req, res) => {
@@ -152,18 +150,16 @@ router.post('/register', authLimiter, async (req, res) => {
     try {
         const { data: existingUser } = await supabase.from('dardcor_users').select('email').eq('email', email).single();
         if (existingUser) return res.status(400).json({ success: false, message: 'Email sudah terdaftar.' });
-
         await supabase.from('verification_codes').delete().eq('email', email);
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         const hashedPassword = await bcrypt.hash(password, 12);
-
         await supabase.from('verification_codes').insert([{ username, email, password: hashedPassword, otp }]);
         await transporter.sendMail({
-            from: '"Dardcor Security" <no-reply@dardcor.com>', to: email, subject: 'Kode Verifikasi Dardcor AI',
-            html: `<div style="font-family: sans-serif; padding:20px;"><h2>OTP Anda:</h2><h1 style="color: #8b5cf6;">${otp}</h1></div>`
+            from: '"Dardcor Security" <no-reply@dardcor.com>', to: email, subject: 'Kode Verifikasi',
+            html: `<div><h2>OTP:</h2><h1>${otp}</h1></div>`
         });
         res.status(200).json({ success: true, email: email, redirectUrl: `/verify-otp?email=${encodeURIComponent(email)}` });
-    } catch (err) { res.status(500).json({ success: false, message: 'Gagal memproses pendaftaran.' }); }
+    } catch (err) { res.status(500).json({ success: false }); }
 });
 
 router.get('/verify-otp', (req, res) => {
@@ -174,19 +170,16 @@ router.get('/verify-otp', (req, res) => {
 router.post('/verify-otp', async (req, res) => {
     try {
         const { data: record } = await supabase.from('verification_codes').select('*').eq('email', req.body.email).eq('otp', req.body.otp).single();
-        if (!record) return res.status(400).json({ success: false, message: "Kode OTP Salah!" });
-
+        if (!record) return res.status(400).json({ success: false });
         const { data: newUser } = await supabase.from('dardcor_users').insert([{ username: record.username, email: record.email, password: record.password }]).select().single();
         await supabase.from('verification_codes').delete().eq('email', req.body.email);
-        
         req.session.userAccount = newUser;
         const tenYears = 1000 * 60 * 60 * 24 * 365 * 10;
         req.session.cookie.expires = new Date(Date.now() + tenYears);
         req.session.cookie.maxAge = tenYears;
         res.cookie('dardcor_uid', newUser.id, { maxAge: tenYears, httpOnly: true, secure: true, sameSite: 'lax' });
-
-        req.session.save(() => { res.status(200).json({ success: true, message: "Akun berhasil dibuat!", redirectUrl: '/dardcorchat/dardcor-ai' }); });
-    } catch (err) { res.status(500).json({ success: false, message: "Terjadi kesalahan server." }); }
+        req.session.save(() => { res.status(200).json({ success: true, redirectUrl: '/dardcorchat/dardcor-ai' }); });
+    } catch (err) { res.status(500).json({ success: false }); }
 });
 
 router.get('/dardcorchat/profile', checkUserAuth, (req, res) => {
@@ -198,7 +191,7 @@ router.post('/dardcor/profile/update', checkUserAuth, upload.single('profile_ima
     let updates = { username: req.body.username };
     try {
         if (req.body.password && req.body.password.trim() !== "") {
-            if (req.body.password !== req.body.confirm_password) return res.render('dardcorchat/profile', { user: req.session.userAccount, error: "Password tidak sama.", success: null });
+            if (req.body.password !== req.body.confirm_password) return res.render('dardcorchat/profile', { user: req.session.userAccount, error: "Password beda.", success: null });
             updates.password = await bcrypt.hash(req.body.password.trim(), 12);
         }
         if (req.file) {
@@ -209,7 +202,7 @@ router.post('/dardcor/profile/update', checkUserAuth, upload.single('profile_ima
         }
         const { data } = await supabase.from('dardcor_users').update(updates).eq('id', userId).select().single();
         req.session.userAccount = data; 
-        req.session.save(() => { res.render('dardcorchat/profile', { user: data, success: "Profil diperbarui!", error: null }); });
+        req.session.save(() => { res.render('dardcorchat/profile', { user: data, success: "Sukses!", error: null }); });
     } catch (err) { res.render('dardcorchat/profile', { user: req.session.userAccount, error: err.message, success: null }); }
 });
 
@@ -261,12 +254,7 @@ router.post('/dardcorchat/ai/delete-chat-history', checkUserAuth, async (req, re
 router.post('/dardcorchat/ai/store-preview', checkUserAuth, async (req, res) => {
     const previewId = uuidv4();
     try { 
-        await supabase.from('previews_website').insert({ 
-            id: previewId, 
-            user_id: req.session.userAccount.id, 
-            code: req.body.code,
-            type: req.body.type || 'website' 
-        });
+        await supabase.from('previews_website').insert({ id: previewId, user_id: req.session.userAccount.id, code: req.body.code, type: req.body.type || 'website' });
         res.json({ success: true, previewId }); 
     } catch (error) { res.status(500).json({ success: false }); }
 });
@@ -283,26 +271,90 @@ router.get('/dardcorchat/dardcor-ai/diagram/:id', checkUserAuth, async (req, res
     try {
         const { data } = await supabase.from('previews_website').select('code').eq('id', req.params.id).single();
         if (!data) return res.status(404).send('Not Found');
-        
-        // ENCODE KE BASE64 DI SERVER
         const codeBase64 = Buffer.from(data.code).toString('base64');
-        
         res.render('dardcorchat/diagram', { code: codeBase64 });
     } catch (err) { res.status(500).send("Error"); }
 });
 
+router.get('/api/personas', checkUserAuth, async (req, res) => {
+    try {
+        const { data } = await supabase.from('personas').select('*').eq('user_id', req.session.userAccount.id);
+        res.json({ success: true, data });
+    } catch (e) { res.status(500).json({ success: false }); }
+});
+
+router.post('/api/personas', checkUserAuth, async (req, res) => {
+    try {
+        const { name, instruction } = req.body;
+        await supabase.from('personas').insert({ user_id: req.session.userAccount.id, name, instruction, is_public: false });
+        res.json({ success: true });
+    } catch (e) { res.status(500).json({ success: false }); }
+});
+
+router.delete('/api/personas/:id', checkUserAuth, async (req, res) => {
+    try {
+        await supabase.from('personas').delete().eq('id', req.params.id).eq('user_id', req.session.userAccount.id);
+        res.json({ success: true });
+    } catch (e) { res.status(500).json({ success: false }); }
+});
+
+router.get('/api/vault', checkUserAuth, async (req, res) => {
+    try {
+        const { data } = await supabase.from('vault_docs').select('id, title, created_at').eq('user_id', req.session.userAccount.id);
+        res.json({ success: true, data });
+    } catch (e) { res.status(500).json({ success: false }); }
+});
+
+router.post('/api/vault', checkUserAuth, async (req, res) => {
+    try {
+        const { title, content } = req.body;
+        await supabase.from('vault_docs').insert({ user_id: req.session.userAccount.id, title, content });
+        res.json({ success: true });
+    } catch (e) { res.status(500).json({ success: false }); }
+});
+
+router.delete('/api/vault/:id', checkUserAuth, async (req, res) => {
+    try {
+        await supabase.from('vault_docs').delete().eq('id', req.params.id).eq('user_id', req.session.userAccount.id);
+        res.json({ success: true });
+    } catch (e) { res.status(500).json({ success: false }); }
+});
+
+router.get('/api/memories', checkUserAuth, async (req, res) => {
+    try {
+        const { data } = await supabase.from('user_memories').select('*').eq('user_id', req.session.userAccount.id);
+        res.json({ success: true, data });
+    } catch (e) { res.status(500).json({ success: false }); }
+});
+
+router.post('/api/memories', checkUserAuth, async (req, res) => {
+    try {
+        await supabase.from('user_memories').insert({ user_id: req.session.userAccount.id, fact: req.body.fact });
+        res.json({ success: true });
+    } catch (e) { res.status(500).json({ success: false }); }
+});
+
+router.delete('/api/memories/:id', checkUserAuth, async (req, res) => {
+    try {
+        await supabase.from('user_memories').delete().eq('id', req.params.id).eq('user_id', req.session.userAccount.id);
+        res.json({ success: true });
+    } catch (e) { res.status(500).json({ success: false }); }
+});
+
 router.post('/dardcorchat/ai/chat-stream', checkUserAuth, uploadMiddleware, async (req, res) => {
+    const userId = req.session.userAccount.id;
     let message = req.body.message ? req.body.message.trim() : "";
     const uploadedFiles = req.files || [];
-    const userId = req.session.userAccount.id;
     let conversationId = req.body.conversationId || uuidv4();
     const toolType = req.body.toolType || 'basic';
+    const personaId = req.body.personaId;
     
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
     try {
+        const contextData = { vaultContent: '', memories: '', searchResults: '' };
         const urlRegex = /(https?:\/\/[^\s]+)/g;
         const urls = message.match(urlRegex);
         let systemContext = "";
@@ -312,93 +364,89 @@ router.post('/dardcorchat/ai/chat-stream', checkUserAuth, uploadMiddleware, asyn
                 if (url.includes('youtube.com') || url.includes('youtu.be')) {
                     const ytData = await getYouTubeData(url);
                     if (ytData.success) {
-                        systemContext += `\n[SYSTEM INFO - VIDEO SOURCE]:\nURL: ${url}\nJUDUL VIDEO: "${ytData.title}"\nDESKRIPSI VIDEO: "${ytData.description}"\n`;
-                        if (ytData.transcript && ytData.transcript.length > 50) {
-                            systemContext += `ISI TRANSKRIP LENGKAP: "${ytData.transcript}"\n`;
-                        } else {
-                            systemContext += `(Transkrip tidak tersedia. Analisislah berdasarkan Judul dan Deskripsi diatas seakurat mungkin).\n`;
-                        }
+                        systemContext += `\n[VIDEO]: URL: ${url}, JUDUL: ${ytData.title}, DESC: ${ytData.description}, TRANSKRIP: ${ytData.transcript}\n`;
                     }
                 } else {
                     const pageContent = await getWebsiteContent(url);
-                    if (pageContent) {
-                        systemContext += `\n[SYSTEM INFO - WEBSITE SOURCE]:\nURL: ${url}\nISI KONTEN: "${pageContent}"\n`;
-                    }
+                    if (pageContent) systemContext += `\n[WEBSITE]: URL: ${url}, KONTEN: ${pageContent}\n`;
                 }
             }
-            if (systemContext) message = `${systemContext}\n\nPERTANYAAN USER: ${message}`;
+            if (systemContext) message = `${systemContext}\n\nUSER: ${message}`;
         }
-    } catch (err) {}
 
-    const geminiFiles = [];
-    let fileTextContext = "";
+        if (message.toLowerCase().includes('cari') || message.toLowerCase().includes('search') || message.toLowerCase().includes('harga') || message.toLowerCase().includes('terbaru')) {
+            const searchRes = await searchWeb(message);
+            if (searchRes) contextData.searchResults = searchRes;
+        }
 
-    if (uploadedFiles.length > 0) {
-        for (const file of uploadedFiles) {
-            const mime = file.mimetype;
-            if (mime.startsWith('image/') || mime.startsWith('video/') || mime.startsWith('audio/') || mime === 'application/pdf') {
-                // PDF dan Media dikirim langsung ke Gemini (Native Vision)
-                geminiFiles.push(file);
-            } 
-            else if (mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-                try {
-                    const result = await mammoth.extractRawText({ buffer: file.buffer });
-                    fileTextContext += `\n[ISI FILE WORD (${file.originalname})]:\n${result.value}\n`;
-                } catch (e) {}
-            }
-            else if (mime.includes('spreadsheet') || mime.includes('excel')) {
-                try {
-                    const workbook = xlsx.read(file.buffer, { type: 'buffer' });
-                    const sheetName = workbook.SheetNames[0];
-                    const csv = xlsx.utils.sheet_to_csv(workbook.Sheets[sheetName]);
-                    fileTextContext += `\n[ISI FILE EXCEL (${file.originalname})]:\n${csv}\n`;
-                } catch (e) {}
-            }
-            else {
-                fileTextContext += `\n[ISI FILE TEXT/CODE (${file.originalname})]:\n${file.buffer.toString('utf-8')}\n`;
+        const { data: memories } = await supabase.from('user_memories').select('fact').eq('user_id', userId).limit(10);
+        if (memories && memories.length > 0) contextData.memories = memories.map(m => `- ${m.fact}`).join('\n');
+
+        const { data: vault } = await supabase.from('vault_docs').select('content').eq('user_id', userId).textSearch('content', message.split(' ').slice(0, 3).join(' ')).limit(2);
+        if (vault && vault.length > 0) contextData.vaultContent = vault.map(v => v.content.substring(0, 500) + '...').join('\n---\n');
+
+        const geminiFiles = [];
+        let fileTextContext = "";
+        if (uploadedFiles.length > 0) {
+            for (const file of uploadedFiles) {
+                const mime = file.mimetype;
+                if (mime.startsWith('image/') || mime.startsWith('video/') || mime.startsWith('audio/') || mime === 'application/pdf') {
+                    geminiFiles.push(file);
+                } 
+                else if (mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+                    try { const result = await mammoth.extractRawText({ buffer: file.buffer }); fileTextContext += `\n[WORD ${file.originalname}]:\n${result.value}\n`; } catch (e) {}
+                }
+                else if (mime.includes('spreadsheet') || mime.includes('excel')) {
+                    try {
+                        const workbook = xlsx.read(file.buffer, { type: 'buffer' });
+                        const sheetName = workbook.SheetNames[0];
+                        const csv = xlsx.utils.sheet_to_csv(workbook.Sheets[sheetName]);
+                        fileTextContext += `\n[EXCEL ${file.originalname}]:\n${csv}\n`;
+                    } catch (e) {}
+                }
+                else {
+                    fileTextContext += `\n[TEXT ${file.originalname}]:\n${file.buffer.toString('utf-8')}\n`;
+                }
             }
         }
-    }
+        if (fileTextContext) message += `\n\n${fileTextContext}`;
 
-    if (fileTextContext) message += `\n\n${fileTextContext}`;
-
-    const userMessageDisplay = req.body.message || (uploadedFiles.length > 0 ? `Menganalisis ${uploadedFiles.length} file...` : "");
-
-    try {
+        const userMessageDisplay = req.body.message || (uploadedFiles.length > 0 ? `Analisis ${uploadedFiles.length} file...` : "...");
         const { data: convCheck } = await supabase.from('conversations').select('id').eq('id', conversationId).single();
-        if (!convCheck) {
-            await supabase.from('conversations').insert({ id: conversationId, user_id: userId, title: userMessageDisplay.substring(0, 30) || "Percakapan Baru" });
-        } else {
-            await supabase.from('conversations').update({ updated_at: new Date() }).eq('id', conversationId);
-        }
+        if (!convCheck) await supabase.from('conversations').insert({ id: conversationId, user_id: userId, title: userMessageDisplay.substring(0, 30) });
+        else await supabase.from('conversations').update({ updated_at: new Date() }).eq('id', conversationId);
 
         let fileMetadata = uploadedFiles.map(f => ({ filename: f.originalname, size: f.size, mimetype: f.mimetype }));
-
-        await supabase.from('history_chat').insert({
-            user_id: userId, conversation_id: conversationId, role: 'user', message: userMessageDisplay, file_metadata: fileMetadata
-        });
+        await supabase.from('history_chat').insert({ user_id: userId, conversation_id: conversationId, role: 'user', message: userMessageDisplay, file_metadata: fileMetadata });
         
         const { data: historyData } = await supabase.from('history_chat').select('role, message').eq('conversation_id', conversationId).order('created_at', { ascending: true });
         
-        const stream = await handleChatStream(message, geminiFiles, historyData, toolType);
-        let fullResponse = "";
+        let customSystemPrompt = null;
+        if (personaId) {
+            const { data: persona } = await supabase.from('personas').select('instruction').eq('id', personaId).single();
+            if (persona) customSystemPrompt = persona.instruction;
+        }
 
+        let stream;
+        if (toolType === 'pro' || toolType === 'sahabat') {
+            stream = await handleProChatStream(message, geminiFiles, historyData, toolType, customSystemPrompt, contextData);
+        } else {
+            stream = await handleBasicChatStream(message, geminiFiles, historyData, toolType);
+        }
+
+        let fullResponse = "";
         for await (const chunk of stream) {
             const chunkText = chunk.text();
             fullResponse += chunkText;
             res.write(`data: ${JSON.stringify({ chunk: chunkText })}\n\n`);
         }
-
-        if (fullResponse) {
-            await supabase.from('history_chat').insert({ user_id: userId, conversation_id: conversationId, role: 'bot', message: fullResponse });
-        }
+        if (fullResponse) await supabase.from('history_chat').insert({ user_id: userId, conversation_id: conversationId, role: 'bot', message: fullResponse });
 
         res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
         res.end();
-
     } catch (error) {
         console.log(error);
-        res.write(`data: ${JSON.stringify({ error: "Gagal memproses AI." })}\n\n`);
+        res.write(`data: ${JSON.stringify({ error: "Gagal." })}\n\n`);
         res.end();
     }
 });

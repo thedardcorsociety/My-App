@@ -25,7 +25,8 @@
     
     <style>
         html, body { 
-            height: 100dvh; width: 100%; margin: 0; padding: 0; 
+            height: 100dvh; 
+            width: 100%; margin: 0; padding: 0; 
             overflow: hidden; background-color: #0b0c15; 
             position: fixed; inset: 0; color: white; 
             font-family: 'Consolas', sans-serif;
@@ -33,7 +34,6 @@
             -webkit-user-select: none; user-select: none;
         }
         
-        /* HEADER CONTROLS (FLUSH TOP) */
         #sidebar-toggle {
             position: fixed; 
             top: 0; left: 0; z-index: 100;
@@ -66,7 +66,6 @@
         .action-btn:hover { background-color: #2a2d3d; color: white; }
         .btn-close:hover { background-color: #7f1d1d; color: #fca5a5; }
 
-        /* EDITOR & PREVIEW PANES */
         #editor-pane {
             position: fixed; top: 0; bottom: 0; left: 0;
             width: 100%; max-width: 400px;
@@ -85,7 +84,10 @@
         #editor-footer { padding: 15px; border-top: 1px solid #333; background: #0e0f19; display: flex; justify-content: flex-end; gap: 10px; flex-shrink: 0; }
 
         #preview-pane { 
-            flex: 1; position: relative; width: 100%; height: 100%;
+            flex: 1; 
+            position: relative; 
+            height: 100%;
+            /* HAPUS width: 100% AGAR TIDAK OVERFLOW */
             background-color: #0b0c15; 
             background-image: radial-gradient(#1f2937 1px, transparent 1px); 
             background-size: 20px 20px; 
@@ -105,16 +107,17 @@
         #diagram-content { transform-origin: center center; transition: transform 0.1s ease-out; display: flex; align-items: center; justify-content: center; min-height: 100%; min-width: 100%; padding: 50px; box-sizing: border-box; }
         .mermaid svg { max-width: none !important; height: auto !important; }
 
-        /* FLOATING ZOOM CONTROLS */
+        /* FIXED POSITION AGAR TIDAK TERGESER OLEH SIDEBAR */
         .floating-controls { 
-            position: absolute; bottom: max(20px, env(safe-area-inset-bottom)); right: max(20px, env(safe-area-inset-right)); 
+            position: fixed; 
+            bottom: max(20px, env(safe-area-inset-bottom)); 
+            right: max(20px, env(safe-area-inset-right)); 
             display: flex; gap: 8px; background: #13131f; padding: 8px; border-radius: 12px; border: 1px solid #333; 
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5); z-index: 40; 
         }
         .ctrl-btn { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 8px; background: #2a2d3d; color: white; transition: all 0.2s; border: none; cursor: pointer; }
         .ctrl-btn:hover { background: #8b5cf6; }
 
-        /* DOWNLOAD MODAL */
         #download-modal {
             position: fixed; inset: 0; z-index: 200;
             background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(4px);
@@ -209,11 +212,18 @@
         let startX, startY;
 
         document.addEventListener('DOMContentLoaded', function() {
-            mermaid.initialize({ startOnLoad: false, theme: 'dark', securityLevel: 'loose' });
+            mermaid.initialize({ 
+                startOnLoad: false, 
+                theme: 'dark', 
+                securityLevel: 'loose',
+                flowchart: { useMaxWidth: false, htmlLabels: true },
+                sequence: { useMaxWidth: false },
+                gantt: { useMaxWidth: false }
+            });
             
             try {
                 const b64 = document.getElementById('initial-data').value;
-                const decoded = atob(b64);
+                const decoded = decodeURIComponent(escape(atob(b64)));
                 document.getElementById('code-editor').value = decoded;
                 renderDiagram();
             } catch(e) {}
@@ -285,10 +295,19 @@
         }
 
         async function renderDiagram() {
-            const code = document.getElementById('code-editor').value;
+            let code = document.getElementById('code-editor').value.trim();
             const target = document.getElementById('mermaid-target');
+            
+            code = code.replace(/^```mermaid\s*/i, '')
+                       .replace(/^```\s*/i, '')
+                       .replace(/```$/i, '')
+                       .trim();
+
+            if (!code) return;
+
             target.innerHTML = '';
             target.removeAttribute('data-processed');
+            
             try {
                 const { svg } = await mermaid.render('mermaid-svg-' + Date.now(), code);
                 target.innerHTML = svg;
@@ -306,7 +325,9 @@
         }
 
         function resetZoom() {
-            currentScale = 1; pannedX = 0; pannedY = 0;
+            currentScale = 1;
+            pannedX = 0;
+            pannedY = 0;
             updateTransform();
         }
 
@@ -315,7 +336,6 @@
             content.style.transform = `translate(${pannedX}px, ${pannedY}px) scale(${currentScale})`;
         }
 
-        // --- DOWNLOAD LOGIC ---
         function openDownloadModal() {
             document.getElementById('download-modal').classList.add('active');
         }
@@ -333,13 +353,12 @@
             const ctx = canvas.getContext("2d");
             const img = new Image();
             
-            // Fix: SVG scaling for high res
             const svgRect = svg.getBoundingClientRect();
             canvas.width = svgRect.width * 2; 
             canvas.height = svgRect.height * 2;
             
             img.onload = function() {
-                ctx.fillStyle = "#0b0c15"; // Dark Background
+                ctx.fillStyle = "#0b0c15";
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                 

@@ -2,28 +2,24 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#0b0c15">
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Dardcor AI</title>
     <link rel="icon" href="/logo.png">
     <link rel="manifest" href="/manifest.json">
-
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
-
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
     <link rel="stylesheet" href="/css/tailwind.css">
     <link rel="stylesheet" href="/vendor/fontawesome/css/all.min.css">
     <link rel="stylesheet" href="/css/atom-one-dark.min.css">
     <script src="/js/highlight.min.js"></script>
     <script src="/js/marked.min.js"></script>
-
     <style>
         html, body { height: 100dvh; width: 100%; margin: 0; padding: 0; overflow: hidden; background-color: #0b0c15; position: fixed; inset: 0; color: white; font-family: sans-serif; }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
@@ -56,34 +52,36 @@
         .markdown-body blockquote { border-left: 4px solid #4b5563; padding-left: 1em; color: #9ca3af; font-style: italic; }
         .loader { border: 3px solid rgba(139, 92, 246, 0.2); border-top: 3px solid #8b5cf6; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        /* IFRAME OVERLAY FOR DIAGRAM (NO URL BAR TRICK) */
         #diagram-overlay iframe { width: 100%; height: 100%; border: none; }
+        .markdown-body table { width: 100%; border-collapse: separate; border-spacing: 0; margin: 1.2em 0; overflow-x: auto; display: block; border: 1px solid #333; border-radius: 8px; overflow: hidden; }
+        .markdown-body thead { background-color: #1f2937; }
+        .markdown-body th, .markdown-body td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #333; border-right: 1px solid #333; }
+        .markdown-body th:last-child, .markdown-body td:last-child { border-right: none; }
+        .markdown-body tr:last-child td { border-bottom: none; }
+        .markdown-body th { font-weight: 700; color: #e2e8f0; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.05em; }
+        .markdown-body tbody tr:nth-child(even) { background-color: #16172b; }
+        .markdown-body tbody tr:hover { background-color: #202336; transition: background-color 0.2s; }
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 200; }
+        .modal.active { display: flex; }
     </style>
 </head>
 <body class="flex text-white font-sans">
-    
     <script>
         (function() {
             if (window.innerWidth >= 1024) {
                 const savedState = localStorage.getItem('dardcor_sidebar_state');
-                if (savedState === 'closed') {
-                    document.body.classList.add('sidebar-closed');
-                }
+                if (savedState === 'closed') document.body.classList.add('sidebar-closed');
             }
         })();
-        
-        // Listener untuk menutup diagram dari dalam iframe
         window.addEventListener('message', function(event) {
             if (event.data === 'closeDiagram') {
                 const overlay = document.getElementById('diagram-overlay');
                 const frame = document.getElementById('diagram-frame');
                 overlay.classList.add('hidden');
-                setTimeout(() => { frame.src = 'about:blank'; }, 300); // Clear memory
+                setTimeout(() => { frame.src = 'about:blank'; }, 300);
             }
         });
     </script>
-    
     <style>
         @media (min-width: 1024px) {
             body.sidebar-closed #sidebar { transform: translateX(-100%); }
@@ -93,7 +91,7 @@
         }
     </style>
 
-    <div id="mobile-overlay" class="fixed inset-0 bg-black/60 z-40 hidden backdrop-blur-sm transition-opacity lg:hidden"></div>
+    <div id="mobile-overlay" class="fixed inset-0 bg-black/60 z-40 hidden backdrop-blur-sm transition-opacity lg:hidden" onclick="toggleSidebar()"></div>
 
     <div id="diagram-overlay" class="fixed inset-0 z-[100] hidden bg-[#0b0c15]">
         <iframe id="diagram-frame" class="w-full h-full"></iframe>
@@ -104,20 +102,28 @@
             <span class="font-bold text-lg tracking-wider text-purple-500 flex items-center gap-2">
                 <img src="/logo.png" class="w-6 h-6 rounded-full"> Dardcor <span class="text-white">AI</span>
             </span>
-            <button id="close-sidebar-btn" class="text-gray-400 hover:text-white p-2 rounded hover:bg-white/10 transition-colors">
+            <button onclick="toggleSidebar()" class="text-gray-400 hover:text-white p-2 rounded hover:bg-white/10 transition-colors">
                 <i class="fas fa-times text-lg"></i>
             </button>
         </div>
         
         <div class="flex-1 overflow-y-auto p-3 space-y-1.5 scrollbar-hide relative z-40">
-            <button id="new-chat-btn" class="group relative flex items-center pl-[15px] pr-3 h-[44px] rounded-lg border border-gray-600/30 hover:bg-[#202336] text-left transition-all w-full mb-4">
+            <div onclick="createNewChat()" class="group relative flex items-center pl-[15px] pr-3 h-[44px] rounded-lg border border-gray-600/30 hover:bg-[#202336] text-left transition-all w-full mb-4 cursor-pointer">
                 <div class="flex-1 min-w-0 flex items-center h-full pointer-events-none">
                     <div class="w-5 flex justify-center text-gray-500 group-hover:text-white mr-3 flex-shrink-0 transition-colors">
                         <i class="fas fa-plus text-xs"></i>
                     </div>
                     <span class="text-sm text-gray-300 group-hover:text-white font-medium truncate transition-colors">New Chat</span>
                 </div>
-            </button>
+            </div>
+
+            <div class="px-2 mb-4">
+                <div class="text-gray-500 text-center text-xs font-semibold uppercase tracking-wider mb-2 px-2">Tools</div>
+                <button onclick="openPersonaModal()" class="w-full text-left p-2 hover:bg-white/5 rounded text-xs text-gray-300 flex gap-2 items-center cursor-pointer transition"><i class="fas fa-users w-4"></i> Personas</button>
+                <button onclick="openVaultModal()" class="w-full text-left p-2 hover:bg-white/5 rounded text-xs text-gray-300 flex gap-2 items-center cursor-pointer transition"><i class="fas fa-archive w-4"></i> Vault (RAG)</button>
+                <button onclick="openMemoryModal()" class="w-full text-left p-2 hover:bg-white/5 rounded text-xs text-gray-300 flex gap-2 items-center cursor-pointer transition"><i class="fas fa-brain w-4"></i> Memory</button>
+            </div>
+
             <div class="text-gray-500 text-center text-xs font-semibold uppercase tracking-wider mb-2 px-2">Riwayat</div>
             
             <% 
@@ -127,7 +133,7 @@
                 } 
             %>
             
-            <div id="current-new-chat-item" class="group relative flex items-center px-3 h-[44px] rounded-lg cursor-pointer w-full mb-1 <%= isNewChat ? 'bg-[#202336] border-l-4 border-purple-500' : 'border-l-4 border-transparent hover:bg-[#202336]' %>">
+            <div id="current-new-chat-item" onclick="createNewChat()" class="group relative flex items-center px-3 h-[44px] rounded-lg cursor-pointer w-full mb-1 <%= isNewChat ? 'bg-[#202336] border-l-4 border-purple-500' : 'border-l-4 border-transparent hover:bg-[#202336]' %>">
                 <div class="flex-1 min-w-0 pr-2 flex items-center h-full pointer-events-none">
                     <div class="w-5 flex justify-center text-gray-500 mr-3 flex-shrink-0">
                         <i class="fas fa-message text-xs"></i>
@@ -146,7 +152,7 @@
                         <input type="hidden" id="raw-title-<%= chat.id %>" value="<%= chat.title %>">
                     </div>
                     <div class="relative flex items-center h-full">
-                        <button onclick="event.stopPropagation(); toggleMenu(event, 'menu-<%= chat.id %>')" class="p-1.5 text-gray-500 hover:text-white rounded opacity-0 group-hover:opacity-100 focus:opacity-100"><i class="fas fa-ellipsis-v text-xs"></i></button>
+                        <button onclick="event.stopPropagation(); toggleMenu(event, 'menu-<%= chat.id %>')" class="p-1.5 text-gray-500 hover:text-white rounded opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"><i class="fas fa-ellipsis-v text-xs"></i></button>
                         <div id="menu-<%= chat.id %>" class="dropdown-menu hidden absolute right-0 top-8 w-32 bg-[#2a2d3d] border border-gray-700 rounded-lg shadow-xl z-[70] py-1 overflow-hidden">
                             <button onclick="openRenameModal('<%= chat.id %>')" class="w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-gray-700 hover:text-white flex items-center gap-2"><i class="fas fa-edit"></i> Edit</button>
                             <button onclick="openDeleteModal('<%= chat.id %>')" class="w-full text-left px-3 py-2 text-xs text-red-400 hover:bg-red-600 hover:text-white flex items-center gap-2"><i class="fas fa-trash"></i> Delete</button>
@@ -165,9 +171,9 @@
     </aside>
 
     <main id="main-content" class="absolute inset-0 right-0 transition-all duration-300 flex flex-col bg-[#0b0c15] lg:left-72">
-        <header class="h-16 shrink-0 flex items-center justify-between px-4 border-b border-purple-900/30 bg-[#0b0c15]/95 backdrop-blur-md z-50 safe-pt">
+        <header class="h-16 shrink-0 flex items-center justify-between px-4 border-b border-purple-900/30 bg-[#0b0c15]/95 backdrop-blur-md z-50 safe-pt relative">
             <div class="flex items-center">
-                <button id="sidebar-toggle-btn" class="text-gray-400 p-2 rounded hover:bg-gray-800 transition-colors">
+                <button onclick="toggleSidebar()" class="text-gray-400 p-2 rounded hover:bg-gray-800 transition-colors">
                     <i class="fas fa-bars text-lg"></i>
                 </button>
             </div>
@@ -177,19 +183,23 @@
                 </button>
                 <div class="relative">
                     <button id="model-dropdown-btn" class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-purple-500/30 bg-purple-500/10 text-purple-400 text-xs md:text-sm font-medium hover:bg-purple-500/20 hover:text-white transition-all h-[34px]">
-                        <span id="tool-label"><%= toolType === 'dark' ? 'Dark Model' : 'Basic Model' %></span> <i class="fas fa-chevron-down text-[10px] ml-1 transition-transform" id="tools-chevron"></i>
+                        <span id="tool-label"><%= toolType === 'dark' ? 'Dark Model' : (toolType === 'pro' ? 'Pro Model' : (toolType === 'sahabat' ? 'Mode Sahabat' : 'Basic Model')) %></span> <i class="fas fa-chevron-down text-[10px] ml-1 transition-transform" id="tools-chevron"></i>
                     </button>
-                    <div id="tools-menu" class="hidden absolute right-0 top-full mt-2 w-fit bg-[#0b0c15] border border-purple-500/30 rounded-lg shadow-xl shadow-purple-900/20 z-[100] overflow-hidden">
-                        <button data-model="basic" class="model-select-btn w-full text-left px-3 py-2 text-xs md:text-sm font-medium text-purple-400 hover:bg-purple-500/20 hover:text-white transition-all border-b border-purple-500/30 whitespace-nowrap">Basic Model</button>
-                        <button data-model="dark" class="model-select-btn w-full text-left px-3 py-2 text-xs md:text-sm font-medium text-purple-400 hover:bg-purple-500/20 hover:text-white transition-all whitespace-nowrap">Dark Model</button>
+                    <div id="tools-menu" class="hidden absolute right-0 top-full mt-2 w-48 bg-[#0b0c15] border border-purple-500/30 rounded-lg shadow-xl shadow-purple-900/20 z-[100] overflow-hidden">
+                        <button data-model="basic" class="model-select-btn w-full text-left px-3 py-2.5 text-xs md:text-sm font-medium text-purple-400 hover:bg-purple-500/20 hover:text-white transition-all border-b border-purple-500/30 whitespace-nowrap">Basic Model</button>
+                        <button data-model="dark" class="model-select-btn w-full text-left px-3 py-2.5 text-xs md:text-sm font-medium text-purple-400 hover:bg-purple-500/20 hover:text-white transition-all border-b border-purple-500/30 whitespace-nowrap">Dark Model</button>
+                        <button data-model="pro" class="model-select-btn w-full text-left px-3 py-2.5 text-xs md:text-sm font-medium text-purple-400 hover:bg-purple-500/20 hover:text-white transition-all border-b border-purple-500/30 whitespace-nowrap">Pro Model</button>
+                        <button data-model="sahabat" class="model-select-btn w-full text-left px-3 py-2.5 text-xs md:text-sm font-medium text-purple-400 hover:bg-purple-500/20 hover:text-white transition-all whitespace-nowrap">Mode Sahabat</button>
                     </div>
                 </div>
             </div>
         </header>
 
         <div id="chat-container" class="flex-1 overflow-y-auto scrollbar-hide px-4 pt-4 w-full relative">
-            <%- include(contentPage) %>
-            <div class="h-[120px]"></div> 
+            <div class="max-w-4xl mx-auto w-full pb-4">
+                <%- include(contentPage) %>
+                <div class="h-[60px]"></div>
+            </div>
         </div>
 
         <%- include('input') %>
@@ -216,12 +226,50 @@
         </div>
     </div>
 
+    <div id="persona-modal" class="modal">
+        <div class="bg-[#13131f] w-96 p-6 rounded-xl border border-gray-700 relative">
+            <h3 class="text-xl font-bold mb-4">Persona Marketplace</h3>
+            <div id="persona-list" class="max-h-60 overflow-y-auto mb-4 space-y-2"></div>
+            <div class="border-t border-gray-700 pt-4">
+                <input id="new-persona-name" class="w-full bg-black/30 border border-gray-700 p-2 rounded mb-2 text-sm text-white" placeholder="Nama Karakter">
+                <textarea id="new-persona-inst" class="w-full bg-black/30 border border-gray-700 p-2 rounded mb-2 text-sm text-white" placeholder="Instruksi Sistem..."></textarea>
+                <button onclick="addPersona()" class="w-full bg-purple-600 p-2 rounded font-bold text-sm">Buat Persona</button>
+            </div>
+            <button onclick="closeModals()" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i class="fas fa-times text-xl"></i></button>
+        </div>
+    </div>
+
+    <div id="vault-modal" class="modal">
+        <div class="bg-[#13131f] w-[500px] p-6 rounded-xl border border-gray-700 relative">
+            <h3 class="text-xl font-bold mb-4">Knowledge Vault (RAG)</h3>
+            <div id="vault-list" class="max-h-60 overflow-y-auto mb-4 space-y-2"></div>
+            <div class="border-t border-gray-700 pt-4">
+                <input id="new-vault-title" class="w-full bg-black/30 border border-gray-700 p-2 rounded mb-2 text-sm text-white" placeholder="Judul Dokumen">
+                <textarea id="new-vault-content" class="w-full bg-black/30 border border-gray-700 p-2 rounded mb-2 text-sm h-32 text-white" placeholder="Isi Dokumen (Teks)..."></textarea>
+                <button onclick="addVault()" class="w-full bg-green-600 p-2 rounded font-bold text-sm">Simpan ke Vault</button>
+            </div>
+            <button onclick="closeModals()" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i class="fas fa-times text-xl"></i></button>
+        </div>
+    </div>
+
+    <div id="memory-modal" class="modal">
+        <div class="bg-[#13131f] w-96 p-6 rounded-xl border border-gray-700 relative">
+            <h3 class="text-xl font-bold mb-4">Local Memory</h3>
+            <div id="memory-list" class="max-h-60 overflow-y-auto mb-4 space-y-2"></div>
+            <div class="flex gap-2 border-t border-gray-700 pt-4">
+                <input id="new-memory" class="flex-1 bg-black/30 border border-gray-700 p-2 rounded text-sm text-white" placeholder="Fakta baru...">
+                <button onclick="addMemory()" class="bg-blue-600 px-4 rounded text-white"><i class="fas fa-save"></i></button>
+            </div>
+            <button onclick="closeModals()" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i class="fas fa-times text-xl"></i></button>
+        </div>
+    </div>
+
     <script>
         window.SERVER_DATA = {
             currentConversationId: "<%= activeConversationId || '' %>",
             toolType: "<%= typeof toolType !== 'undefined' ? toolType : 'basic' %>"
         };
     </script>
-    <script src="/js/dardcorai.js"></script>
+    <script src="/js/dardcorai.js?v=<%= Date.now() %>"></script>
 </body>
 </html>
