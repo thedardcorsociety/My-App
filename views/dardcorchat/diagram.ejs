@@ -25,8 +25,7 @@
     
     <style>
         html, body { 
-            height: 100dvh; 
-            width: 100%; margin: 0; padding: 0; 
+            height: 100dvh; width: 100%; margin: 0; padding: 0; 
             overflow: hidden; background-color: #0b0c15; 
             position: fixed; inset: 0; color: white; 
             font-family: 'Consolas', sans-serif;
@@ -34,37 +33,33 @@
             -webkit-user-select: none; user-select: none;
         }
         
+        .top-controls { 
+            position: fixed; top: 0; left: 0; z-index: 100;
+            display: flex;
+        }
+
         #sidebar-toggle {
-            position: fixed; 
-            top: 0; left: 0; z-index: 100;
             width: 50px; height: 50px;
             background-color: #0e0f19; color: #a5b3ce;
-            border: none; border-right: 1px solid #333; border-bottom: 1px solid #333;
+            border: none; border-right: 1px solid #333;
+            border-bottom: 1px solid #333;
             display: flex; align-items: center; justify-content: center;
             cursor: pointer; transition: all 0.2s;
-            border-bottom-right-radius: 8px;
             -webkit-tap-highlight-color: transparent;
         }
         #sidebar-toggle:hover { background-color: #2a2d3d; color: white; }
 
-        .top-controls { 
-            position: fixed; 
-            top: 0; right: 0; z-index: 100;
-            display: flex;
-        }
-        
         .action-btn {
             height: 50px; padding: 0 20px;
             background-color: #0e0f19; color: #a5b3ce;
-            border: none; border-left: 1px solid #333; border-bottom: 1px solid #333;
+            border: none; border-right: 1px solid #333; border-bottom: 1px solid #333;
             font-size: 12px; font-weight: bold;
             display: flex; align-items: center; gap: 8px;
             cursor: pointer; transition: all 0.2s;
+            border-bottom-right-radius: 8px;
             -webkit-tap-highlight-color: transparent;
         }
-        .action-btn:first-child { border-bottom-left-radius: 8px; }
         .action-btn:hover { background-color: #2a2d3d; color: white; }
-        .btn-close:hover { background-color: #7f1d1d; color: #fca5a5; }
 
         #editor-pane {
             position: fixed; top: 0; bottom: 0; left: 0;
@@ -84,14 +79,12 @@
         #editor-footer { padding: 15px; border-top: 1px solid #333; background: #0e0f19; display: flex; justify-content: flex-end; gap: 10px; flex-shrink: 0; }
 
         #preview-pane { 
-            flex: 1; 
-            position: relative; 
+            flex: 1; position: relative; 
             height: 100%;
-            /* HAPUS width: 100% AGAR TIDAK OVERFLOW */
-            background-color: #0b0c15; 
+            background-color: #0b0c15;
             background-image: radial-gradient(#1f2937 1px, transparent 1px); 
             background-size: 20px 20px; 
-            overflow: hidden; cursor: grab; 
+            overflow: hidden; cursor: grab;
             transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             touch-action: none;
         }
@@ -107,13 +100,11 @@
         #diagram-content { transform-origin: center center; transition: transform 0.1s ease-out; display: flex; align-items: center; justify-content: center; min-height: 100%; min-width: 100%; padding: 50px; box-sizing: border-box; }
         .mermaid svg { max-width: none !important; height: auto !important; }
 
-        /* FIXED POSITION AGAR TIDAK TERGESER OLEH SIDEBAR */
         .floating-controls { 
-            position: fixed; 
-            bottom: max(20px, env(safe-area-inset-bottom)); 
+            position: fixed; bottom: max(20px, env(safe-area-inset-bottom)); 
             right: max(20px, env(safe-area-inset-right)); 
-            display: flex; gap: 8px; background: #13131f; padding: 8px; border-radius: 12px; border: 1px solid #333; 
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5); z-index: 40; 
+            display: flex; gap: 8px; background: #13131f; padding: 8px; border-radius: 12px; border: 1px solid #333;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5); z-index: 40;
         }
         .ctrl-btn { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 8px; background: #2a2d3d; color: white; transition: all 0.2s; border: none; cursor: pointer; }
         .ctrl-btn:hover { background: #8b5cf6; }
@@ -151,16 +142,12 @@
 <body class="">
     <input type="hidden" id="initial-data" value="<%= code %>">
 
-    <button onclick="toggleEditor()" id="sidebar-toggle">
-        <i class="fas fa-bars text-xl"></i>
-    </button>
-
     <div class="top-controls">
+        <button onclick="toggleEditor()" id="sidebar-toggle">
+            <i class="fas fa-bars text-xl"></i>
+        </button>
         <button onclick="openDownloadModal()" class="action-btn">
             <i class="fas fa-download"></i> <span class="hidden sm:inline">DOWNLOAD</span>
-        </button>
-        <button onclick="closeApp()" class="action-btn btn-close">
-            <i class="fas fa-times text-lg"></i>
         </button>
     </div>
 
@@ -168,6 +155,9 @@
         <div id="editor-header"></div> 
         <textarea id="code-editor" spellcheck="false" placeholder="Tulis kode mermaid disini..."></textarea>
         <div id="editor-footer">
+            <button onclick="fixCode()" class="px-4 py-2.5 bg-yellow-600 hover:bg-yellow-700 text-white text-sm font-bold rounded-lg flex items-center gap-2 transition w-full justify-center md:w-auto shadow-lg shadow-yellow-900/20">
+                <i class="fas fa-magic"></i> FIX
+            </button>
             <button onclick="renderDiagram()" class="px-6 py-2.5 bg-purple-600 hover:bg-purple-700 text-white text-sm font-bold rounded-lg flex items-center gap-2 transition w-full justify-center md:w-auto shadow-lg shadow-purple-900/20">
                 <i class="fas fa-play"></i> RENDER
             </button>
@@ -225,7 +215,9 @@
                 const b64 = document.getElementById('initial-data').value;
                 const decoded = decodeURIComponent(escape(atob(b64)));
                 document.getElementById('code-editor').value = decoded;
-                renderDiagram();
+                
+                // Auto-fix on load
+                fixCode();
             } catch(e) {}
 
             if (window.innerWidth >= 768) {
@@ -243,12 +235,10 @@
                 startY = e.clientY - pannedY;
                 previewPane.style.cursor = 'grabbing';
             });
-
             window.addEventListener('mouseup', () => {
                 isDragging = false;
                 previewPane.style.cursor = 'grab';
             });
-
             window.addEventListener('mousemove', (e) => {
                 if (!isDragging) return;
                 e.preventDefault();
@@ -264,7 +254,6 @@
                 startX = touch.clientX - pannedX;
                 startY = touch.clientY - pannedY;
             }, {passive: false});
-
             window.addEventListener('touchend', () => { isDragging = false; });
 
             window.addEventListener('touchmove', (e) => {
@@ -294,15 +283,28 @@
             else document.body.classList.toggle('sidebar-open');
         }
 
+        function fixCode() {
+            let code = document.getElementById('code-editor').value;
+            // Robust cleaning for all common issues
+            code = code.replace(/&lt;/g, '<')
+                       .replace(/&gt;/g, '>')
+                       .replace(/&amp;/g, '&')
+                       .replace(/&quot;/g, '"')
+                       .replace(/&#39;/g, "'")
+                       .replace(/^```mermaid\s*/i, '') // Remove start block
+                       .replace(/^```\s*/i, '')
+                       .replace(/```$/i, '') // Remove end block
+                       .replace(/<br\s*\/?>/gi, '\n')
+                       .trim();
+            
+            document.getElementById('code-editor').value = code;
+            renderDiagram();
+        }
+
         async function renderDiagram() {
             let code = document.getElementById('code-editor').value.trim();
             const target = document.getElementById('mermaid-target');
             
-            code = code.replace(/^```mermaid\s*/i, '')
-                       .replace(/^```\s*/i, '')
-                       .replace(/```$/i, '')
-                       .trim();
-
             if (!code) return;
 
             target.innerHTML = '';
@@ -354,8 +356,10 @@
             const img = new Image();
             
             const svgRect = svg.getBoundingClientRect();
-            canvas.width = svgRect.width * 2; 
-            canvas.height = svgRect.height * 2;
+            // High Resolution
+            const scaleFactor = 2;
+            canvas.width = svgRect.width * scaleFactor; 
+            canvas.height = svgRect.height * scaleFactor;
             
             img.onload = function() {
                 ctx.fillStyle = "#0b0c15";
