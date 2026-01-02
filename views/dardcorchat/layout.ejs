@@ -9,43 +9,53 @@
     <link rel="manifest" href="/manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/javascript.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/xml.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/css.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/php.min.js"></script>
+    
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
-    <script>mermaid.initialize({ startOnLoad: false });</script>
+    <script>mermaid.initialize({ startOnLoad: false, theme: 'dark' });</script>
+    
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
-    <link rel="stylesheet" href="/css/tailwind.css">
-    <link rel="stylesheet" href="/vendor/fontawesome/css/all.min.css">
-    <link rel="stylesheet" href="/css/atom-one-dark.min.css">
-    <script src="/js/highlight.min.js"></script>
-    <script src="/js/marked.min.js"></script>
+
     <style>
         :root { --bg-dark: #0b0c15; --bg-sidebar: #13131f; --primary: #9333ea; }
         html, body { height: 100dvh; width: 100vw; margin: 0; padding: 0; overflow: hidden; background-color: var(--bg-dark); color: #e2e8f0; font-family: sans-serif; position: fixed; inset: 0; overscroll-behavior: none; }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .markdown-body { font-size: 0.9rem; line-height: 1.6; width: 100%; max-width: 100%; overflow-wrap: break-word; }
+        
+        /* === NUCLEAR CSS DEFENSE (ANTI-BOCOR) === */
+        .markdown-body { 
+            font-size: 0.9rem; line-height: 1.6; width: 100% !important; max-width: 100% !important; min-width: 0 !important; 
+            overflow-x: hidden !important; overflow-wrap: break-word !important; word-break: break-word !important; box-sizing: border-box !important;
+        }
+        .markdown-body > * { max-width: 100% !important; box-sizing: border-box !important; }
         .markdown-body p { margin-bottom: 0.8em; }
         .markdown-body h1, .markdown-body h2 { font-weight: 700; color: #fff; margin-top: 1em; margin-bottom: 0.5em; }
         .markdown-body a { color: #a855f7; text-decoration: underline; }
-        .markdown-body hr { display: none; }
-        .markdown-body table { width: 100%; border-collapse: collapse; margin: 1.5em 0; background-color: #151520; border-radius: 8px; overflow: hidden; border: 1px solid #333; }
-        .markdown-body th { background-color: #2a2a3d; color: #fff; font-weight: bold; text-align: left; padding: 12px 15px; border-bottom: 2px solid #444; }
-        .markdown-body td { padding: 10px 15px; border-bottom: 1px solid #333; color: #d1d5db; }
-        .markdown-body tr:last-child td { border-bottom: none; }
-        .markdown-body tr:nth-child(even) { background-color: #1a1a27; }
-        .markdown-body tr:hover { background-color: #232333; }
-        .terminal-container { background: #000000 !important; border: 1px solid #333; border-radius: 6px; margin: 12px 0; overflow: hidden; font-family: 'Consolas', 'Monaco', monospace; width: 100%; }
-        .terminal-head { display: flex; justify-content: space-between; align-items: center; background: #111; padding: 6px 12px; border-bottom: 1px solid #333; height: 40px; }
-        .terminal-code { padding: 0; overflow-x: auto; width: 100%; background: #000000 !important; }
-        .terminal-code pre { margin: 0; padding: 0; }
-        .terminal-code code { padding: 16px !important; display: block; background: transparent !important; font-size: 13px; line-height: 1.5; font-family: 'Consolas', monospace; }
+        
+        /* Table Defense */
+        .markdown-body table { display: block !important; width: 100% !important; overflow-x: auto !important; margin: 1em 0; background-color: #151520; border-radius: 8px; border: 1px solid #333; border-collapse: collapse; }
+        .markdown-body th { background-color: #2a2a3d; color: #fff; font-weight: bold; text-align: left; padding: 10px; border-bottom: 2px solid #444; font-size: 0.85rem; white-space: nowrap; }
+        .markdown-body td { padding: 8px 10px; border-bottom: 1px solid #333; color: #d1d5db; font-size: 0.85rem; }
+        
+        /* Code Block Defense */
+        .terminal-container { 
+            background: #000000 !important; border: 1px solid #333; border-radius: 6px; margin: 10px 0; font-family: 'Consolas', 'Monaco', monospace; 
+            width: 100% !important; max-width: 100% !important; display: flex; flex-direction: column; overflow: hidden !important; 
+        }
+        .terminal-head { display: flex; justify-content: space-between; align-items: center; background: #111; padding: 6px 12px; border-bottom: 1px solid #333; height: 36px; flex-shrink: 0; }
+        .terminal-code { padding: 0; width: 100% !important; background: #000000 !important; overflow-x: auto !important; display: block; }
+        .terminal-code pre { margin: 0; padding: 0; width: 100%; }
+        .terminal-code code { padding: 12px 16px !important; display: block; background: transparent !important; font-size: 13px; line-height: 1.5; font-family: 'Consolas', monospace; white-space: pre; }
+        
         .cmd-btn { display: flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; outline: none; }
         .btn-preview { background-color: #2563eb; color: white; }
         .btn-preview:hover { background-color: #1d4ed8; }
@@ -53,10 +63,13 @@
         .btn-diagram:hover { background-color: #7e22ce; }
         .btn-copy { background-color: #333; color: #ccc; border: 1px solid #444; }
         .btn-copy:hover { background-color: #444; color: white; }
+        
         .loader { width: 18px; height: 18px; border: 2px solid rgba(168, 85, 247, 0.2); border-top-color: #a855f7; border-radius: 50%; animation: spin 0.8s linear infinite; box-shadow: 0 0 10px rgba(168, 85, 247, 0.5); }
         @keyframes spin { to { transform: rotate(360deg); } }
+        
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10000; display: none; align-items: center; justify-content: center; }
         .modal.active { display: flex; }
+        
         @media (min-width: 1024px) {
             body.sidebar-closed #sidebar { transform: translateX(-100%); }
             body.sidebar-closed #main-content { left: 0; width: 100%; }
@@ -64,23 +77,16 @@
             body:not(.sidebar-closed) #sidebar { transform: translateX(0); }
         }
         #sidebar, #main-content { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        #chat-container { overscroll-behavior-y: contain; }
+        #chat-container { overscroll-behavior-y: contain; scroll-behavior: smooth; }
     </style>
 </head>
 <body class="flex bg-[#0b0c15]">
     <script>
-        (function() {
-            if (window.innerWidth >= 1024) {
-                const saved = localStorage.getItem('dardcor_sidebar_state');
-                if (saved === 'closed') document.body.classList.add('sidebar-closed');
-            }
-        })();
-        window.addEventListener('message', function(event) {
-            if (event.data === 'closeDiagram') {
-                document.getElementById('diagram-overlay').classList.add('hidden');
-                setTimeout(() => { document.getElementById('diagram-frame').src = 'about:blank'; }, 300);
-            }
-        });
+        window.SERVER_DATA = { currentConversationId: "<%= activeConversationId || '' %>", toolType: "<%= typeof toolType !== 'undefined' ? toolType : 'basic' %>" };
+        window.closePreview = function() {
+            document.getElementById('diagram-overlay').classList.add('hidden');
+            setTimeout(() => { document.getElementById('diagram-frame').src = 'about:blank'; }, 300);
+        }
     </script>
     <div id="mobile-overlay" class="fixed inset-0 bg-black/80 z-[150] hidden lg:hidden backdrop-blur-sm transition-opacity" onclick="toggleSidebar()"></div>
     <div id="diagram-overlay" class="fixed inset-0 z-[10000] hidden bg-[#0b0c15]">
@@ -94,16 +100,18 @@
             <span class="font-bold text-lg text-white flex items-center gap-3">
                 <img src="/logo.png" class="w-7 h-7 rounded-full shadow-lg"> Dardcor AI
             </span>
-            <button onclick="toggleSidebar()" class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors z-[10000] p-2">
+             <button onclick="toggleSidebar()" class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors z-[10000] p-2">
                 <i class="fas fa-times text-lg"></i>
             </button>
         </div>
         <div class="flex-1 overflow-y-auto p-2 scrollbar-hide">
-            <div onclick="createNewChat()" class="flex items-center px-3 py-2.5 mb-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white cursor-pointer transition-all shadow-lg active:scale-95 mx-1">
-                <i class="fas fa-plus mr-3 text-sm"></i><span class="text-xs font-bold uppercase tracking-wider">New Chat</span>
+            <div id="current-new-chat-item" onclick="createNewChat()" class="chat-item group relative flex items-center px-3 py-2.5 rounded-lg cursor-pointer w-full transition-all text-gray-400 border border-purple-900 bg-white/5 hover:bg-white/10">
+                <div class="flex-1 min-w-0 flex items-center pointer-events-none">
+                    <i class="fas fa-plus mr-3 text-sm"></i><span class="text-xs font-bold uppercase tracking-wider">New Chat</span>
+                </div>
             </div>
             <div class="px-1 mb-4 mt-4">
-                <div class="text-[9px] text-gray-500 font-bold uppercase tracking-widest px-2 mb-2">Tools</div>
+                 <div class="text-[9px] text-gray-500 font-bold uppercase tracking-widest px-2 mb-2">Tools</div>
                 <div class="space-y-[2px]">
                     <div onclick="openPersonaModal()" class="flex items-center px-3 py-2 text-xs text-gray-400 hover:text-white hover:bg-white/5 rounded-lg cursor-pointer transition"><i class="fas fa-users w-5 text-blue-400"></i> Personas</div>
                     <div onclick="openVaultModal()" class="flex items-center px-3 py-2 text-xs text-gray-400 hover:text-white hover:bg-white/5 rounded-lg cursor-pointer transition"><i class="fas fa-archive w-5 text-emerald-400"></i> Vault</div>
@@ -112,31 +120,35 @@
             </div>
             <div class="text-[9px] text-gray-500 font-bold uppercase tracking-widest px-3 mb-2">Riwayat</div>
             <div class="space-y-[1px] px-1">
-                <% let isNewChatActive = true; if (conversationList && conversationList.length > 0 && activeConversationId) { const exists = conversationList.some(c => c.id === activeConversationId); if (exists) isNewChatActive = false; } %>
-                <div id="current-new-chat-item" onclick="createNewChat()" class="group relative flex items-center px-3 py-2.5 rounded-lg cursor-pointer w-full transition-all <%= isNewChatActive ? 'bg-[#202336] text-white border-l-2 border-purple-500' : 'text-gray-400 border-l-2 border-transparent hover:bg-white/5' %>">
+                <% let isNewChatActive = true;
+                if (conversationList && conversationList.length > 0 && activeConversationId) { const exists = conversationList.some(c => c.id === activeConversationId);
+                if (exists) isNewChatActive = false; } %>
+                <div id="new-chat-highlight-target" onclick="createNewChat()" class="chat-item group relative flex items-center px-3 py-2.5 rounded-lg cursor-pointer w-full transition-all <%= isNewChatActive ? 'bg-[#202336] text-white border-l-2 border-purple-500' : 'text-gray-400 border-l-2 border-transparent hover:bg-white/5' %>">
                     <div class="flex-1 min-w-0 flex items-center pointer-events-none">
                         <i class="fas fa-message text-xs mr-3 w-4 text-center opacity-70"></i>
                         <span class="text-xs truncate">Percakapan Baru</span>
                     </div>
                 </div>
                 <% if (conversationList) { conversationList.forEach(chat => { %>
-                    <div id="chat-item-<%= chat.id %>" onclick="loadChat('<%= chat.id %>')" class="group relative flex items-center px-3 py-2.5 rounded-lg cursor-pointer w-full transition-all <%= chat.id === activeConversationId ? 'bg-[#202336] text-white border-l-2 border-purple-500' : 'text-gray-400 border-l-2 border-transparent hover:bg-white/5' %>">
+                     <div id="chat-item-<%= chat.id %>" onclick="loadChat('<%= chat.id %>')" class="chat-item group relative flex items-center px-3 py-2.5 rounded-lg cursor-pointer w-full transition-all <%= chat.id === activeConversationId ? 'bg-[#202336] text-white border-l-2 border-purple-500' : 'text-gray-400 border-l-2 border-transparent hover:bg-white/5' %>">
                         <div class="flex-1 min-w-0 flex items-center pointer-events-none">
                             <i class="fas fa-message text-xs mr-3 w-4 text-center opacity-70"></i>
                             <span id="title-<%= chat.id %>" class="text-xs truncate"><%= chat.title ? chat.title.substring(0, 25) : 'Percakapan' %></span>
                             <input type="hidden" id="raw-title-<%= chat.id %>" value="<%= chat.title %>">
                         </div>
-                        <button onclick="toggleMenu(event, 'menu-<%= chat.id %>')" class="p-1 opacity-0 group-hover:opacity-100 hover:text-white transition-opacity absolute right-2"><i class="fas fa-ellipsis-v text-[10px]"></i></button>
-                        <div id="menu-<%= chat.id %>" class="hidden absolute right-2 top-8 w-32 bg-[#2a2d3d] border border-gray-600 rounded-lg shadow-xl z-[999] py-1">
-                            <button onclick="openRenameModal('<%= chat.id %>')" class="w-full text-left px-3 py-2 text-xs hover:bg-white/10 text-gray-300 flex gap-2"><i class="fas fa-edit"></i> Edit</button>
-                            <button onclick="openDeleteModal('<%= chat.id %>')" class="w-full text-left px-3 py-2 text-xs text-red-400 hover:bg-white/10 flex gap-2"><i class="fas fa-trash"></i> Hapus</button>
+                        <button onclick="event.stopPropagation(); toggleMenu(event, 'menu-<%= chat.id %>')" class="options-btn absolute right-2 z-20 w-6 h-6 flex items-center justify-center text-gray-400 hover:text-white transition-opacity bg-transparent outline-none focus:outline-none <%= chat.id === activeConversationId ? 'opacity-100' : 'opacity-0 group-hover:opacity-100' %>">
+                            <i class="fas fa-ellipsis-v text-[10px]"></i>
+                        </button>
+                        <div id="menu-<%= chat.id %>" class="hidden absolute right-2 top-8 w-32 bg-[#2a2d3d] border border-gray-600 rounded-lg shadow-xl z-30 py-1" onclick="event.stopPropagation()">
+                            <button onclick="openRenameModal('<%= chat.id %>')" class="w-full text-left px-3 py-2 text-xs hover:bg-white/10 text-gray-300 flex gap-2 items-center"><i class="fas fa-edit"></i> Edit</button>
+                            <button onclick="openDeleteModal('<%= chat.id %>')" class="w-full text-left px-3 py-2 text-xs text-red-400 hover:bg-white/10 flex gap-2 items-center"><i class="fas fa-trash"></i> Hapus</button>
                         </div>
                     </div>
                 <% }) } %>
             </div>
         </div>
         <div class="p-4 border-t border-white/10 bg-[#0e0f19] flex justify-between items-center">
-            <a href="/dardcorchat/profile" class="flex items-center gap-3">
+             <a href="/dardcorchat/profile" class="flex items-center gap-3">
                 <img src="<%= user.profile_image || 'https://ui-avatars.com/api/?name=' + user.username %>" class="w-8 h-8 rounded-full bg-gray-700 object-cover">
                 <div class="text-xs font-bold text-white truncate w-24"><%= user.username %></div>
             </a>
@@ -154,22 +166,27 @@
                 </button>
             </div>
             <div class="flex items-center gap-2 ml-auto">
+                <div id="active-persona-container" class="hidden items-center gap-2 px-3 py-1.5 rounded-lg border border-purple-500/30 bg-purple-500/10 text-purple-300 text-xs font-medium cursor-pointer hover:bg-purple-500/20" onclick="openPersonaModal()" title="Persona Aktif">
+                    <i class="fas fa-user-astronaut"></i>
+                    <span id="active-persona-label" class="max-w-[100px] truncate">Default</span>
+                    <i class="fas fa-times text-gray-400 hover:text-red-400 ml-1" onclick="event.stopPropagation(); deselectPersona();"></i>
+                </div>
                 <button id="refresh-chat-btn" class="w-9 h-9 flex items-center justify-center rounded-lg border border-purple-500/30 bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 hover:text-white transition-all"><i id="refresh-icon" class="fas fa-sync-alt text-xs"></i></button>
                 <div class="relative">
                     <button id="model-dropdown-btn" class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-purple-500/50 bg-[#151024] text-purple-400 text-xs font-medium hover:bg-purple-500/20 hover:text-white h-[36px] w-auto whitespace-nowrap transition-colors">
                         <span id="tool-label" class="block truncate"><%= toolType === 'dark' ? 'Dark Model' : (toolType === 'pro' ? 'Pro Model' : 'Basic Model') %></span> 
                         <i class="fas fa-chevron-down text-[10px] ml-1 flex-shrink-0" id="tools-chevron"></i>
-                    </button>
-                    <div id="tools-menu" class="hidden absolute right-0 top-full mt-1 w-auto min-w-[130px] flex flex-col bg-[#151024] border border-purple-500/50 rounded-lg shadow-2xl z-[9999] overflow-hidden backdrop-blur-sm">
-                        <button data-model="basic" class="model-select-btn w-full text-left px-3 py-2 text-xs font-bold text-gray-300 hover:text-white hover:bg-purple-600/50 transition-all border-b border-purple-500/10 whitespace-nowrap">Basic Model</button>
-                        <button data-model="dark" class="model-select-btn w-full text-left px-3 py-2 text-xs font-bold text-gray-300 hover:text-white hover:bg-purple-600/50 transition-all border-b border-purple-500/10 whitespace-nowrap">Dark Model</button>
-                        <button data-model="pro" class="model-select-btn w-full text-left px-3 py-2 text-xs font-bold text-gray-300 hover:text-white hover:bg-purple-600/50 transition-all whitespace-nowrap">Pro Model</button>
+                     </button>
+                    <div id="tools-menu" class="hidden absolute right-0 top-full mt-1 w-max flex flex-col bg-[#151024] border border-purple-500/50 rounded-lg shadow-2xl z-[9999] overflow-hidden backdrop-blur-sm p-1">
+                        <button data-model="basic" class="model-select-btn w-full text-left px-4 py-2 text-xs font-bold text-gray-300 hover:text-white hover:bg-purple-600/50 rounded-md transition-all whitespace-nowrap">Basic Model</button>
+                        <button data-model="dark" class="model-select-btn w-full text-left px-4 py-2 text-xs font-bold text-gray-300 hover:text-white hover:bg-purple-600/50 rounded-md transition-all whitespace-nowrap">Dark Model</button>
+                        <button data-model="pro" class="model-select-btn w-full text-left px-4 py-2 text-xs font-bold text-gray-300 hover:text-white hover:bg-purple-600/50 rounded-md transition-all whitespace-nowrap">Pro Model</button>
                     </div>
                 </div>
             </div>
         </header>
         <div id="chat-container" class="w-full h-full overflow-y-auto overflow-x-hidden scrollbar-hide relative min-h-0 px-4 pt-6">
-            <div class="w-full max-w-4xl mx-auto flex flex-col min-h-full pb-2 relative">
+            <div id="message-list" class="w-full max-w-3xl mx-auto flex flex-col min-h-full pb-2 relative">
                 <%- include(contentPage) %>
                 <div class="h-1 shrink-0"></div>
             </div>
@@ -181,13 +198,6 @@
     <div id="persona-modal" class="modal"><div class="bg-[#1c1c2e] w-[400px] p-6 rounded-xl border border-white/10 flex flex-col max-h-[80vh]"><div class="flex justify-between mb-4"><h3 class="font-bold text-white">Persona</h3><button onclick="closeModals()" class="text-gray-400"><i class="fas fa-times"></i></button></div><div id="persona-list" class="flex-1 overflow-y-auto mb-4 space-y-2"></div><div class="pt-4 border-t border-white/10"><input id="new-persona-name" class="w-full bg-black/50 p-2 rounded mb-2 text-xs text-white" placeholder="Nama"><textarea id="new-persona-inst" class="w-full bg-black/50 p-2 rounded mb-2 text-xs text-white h-20" placeholder="Instruksi"></textarea><button onclick="addPersona()" class="w-full bg-purple-600 p-2 rounded font-bold text-xs text-white">Buat</button></div></div></div>
     <div id="vault-modal" class="modal"><div class="bg-[#1c1c2e] w-[500px] p-6 rounded-xl border border-white/10 flex flex-col max-h-[80vh]"><div class="flex justify-between mb-4"><h3 class="font-bold text-white">Vault</h3><button onclick="closeModals()" class="text-gray-400"><i class="fas fa-times"></i></button></div><div id="vault-list" class="flex-1 overflow-y-auto mb-4 space-y-2"></div><div class="pt-4 border-t border-white/10"><input id="new-vault-title" class="w-full bg-black/50 p-2 rounded mb-2 text-xs text-white" placeholder="Judul"><textarea id="new-vault-content" class="w-full bg-black/50 p-2 rounded mb-2 text-xs text-white h-24" placeholder="Konten"></textarea><button onclick="addVault()" class="w-full bg-green-600 p-2 rounded font-bold text-xs text-white">Simpan</button></div></div></div>
     <div id="memory-modal" class="modal"><div class="bg-[#1c1c2e] w-[400px] p-6 rounded-xl border border-white/10 flex flex-col max-h-[80vh]"><div class="flex justify-between mb-4"><h3 class="font-bold text-white">Memory</h3><button onclick="closeModals()" class="text-gray-400"><i class="fas fa-times"></i></button></div><div id="memory-list" class="flex-1 overflow-y-auto mb-4 space-y-2"></div><div class="pt-4 border-t border-white/10 flex gap-2"><input id="new-memory" class="flex-1 bg-black/50 p-2 rounded text-xs text-white" placeholder="Fakta"><button onclick="addMemory()" class="bg-blue-600 px-4 rounded text-white"><i class="fas fa-save"></i></button></div></div></div>
-    <script>
-        window.SERVER_DATA = { currentConversationId: "<%= activeConversationId || '' %>", toolType: "<%= typeof toolType !== 'undefined' ? toolType : 'basic' %>" };
-        window.closePreview = function() {
-            document.getElementById('diagram-overlay').classList.add('hidden');
-            setTimeout(() => { document.getElementById('diagram-frame').src = 'about:blank'; }, 300);
-        }
-    </script>
     <script src="/js/dardcorai.js?v=<%= Date.now() %>"></script>
 </body>
 </html>

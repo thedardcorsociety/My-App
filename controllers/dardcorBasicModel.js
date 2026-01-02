@@ -17,10 +17,11 @@ function getRotatedKey() {
     return keys[Math.floor(Math.random() * keys.length)];
 }
 
-async function handleChatStream(message, files, history, toolType, systemInstruction, contextData) {
+async function* handleChatStream(message, files, history, toolType, systemInstruction, contextData) {
     const currentKey = getRotatedKey();
     const genAI = new GoogleGenerativeAI(currentKey);
 
+    // Safety Settings: BLOCK_NONE (Sesuai permintaan "Unlimited/Dark")
     const safetySettings = [
         { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
         { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
@@ -28,10 +29,8 @@ async function handleChatStream(message, files, history, toolType, systemInstruc
         { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
     ];
 
-    const model = genAI.getGenerativeModel({ 
-        model: "gemini-2.5-flash",
-        safetySettings: safetySettings,
-        systemInstruction: systemInstruction || `
+    // === 1. KONSTRUKSI SYSTEM INSTRUCTION (UNLIMITED CONTEXT) ===
+    let finalSystemPrompt = systemInstruction || `
 [IDENTITAS UTAMA]
 Anda adalah Dardcor AI, sebuah entitas kecerdasan buatan elit yang diciptakan dengan standar kesempurnaan tertinggi yang buat oleh Dardcor.
 Karakteristik Anda: Sopan, Cerdas, Tegas, Efisien, Tanpa Basa-basi, dan 100% Akurat.
@@ -74,10 +73,34 @@ graph TD;
     A[Mulai] --> B{Validasi};
     B -- Ya --> C[Proses Lanjut];
     B -- Tidak --> D[Berhenti];
-\`\`\`
-        `
+\`\`\``;
+
+    // === 2. INJECT MEMORY KE SYSTEM PROMPT ===
+    // Menyuntikkan data contextData langsung ke instruksi sistem agar model 2.5-flash "mengingat" semuanya.
+    if (contextData) {
+        if (contextData.memories) {
+            finalSystemPrompt += `\n\n[INGATAN PENGGUNA]:\n${contextData.memories}`;
+        }
+        if (contextData.vaultContent) {
+            finalSystemPrompt += `\n\n[DOKUMEN VAULT PENGGUNA]:\n${contextData.vaultContent}`;
+        }
+        if (contextData.globalHistory) {
+            finalSystemPrompt += `\n\n[RIWAYAT CHAT GLOBAL]:\n${contextData.globalHistory}`;
+        }
+        if (contextData.searchResults) {
+            finalSystemPrompt += `\n\n[DATA INTERNET TERKINI]:\n${contextData.searchResults}`;
+        }
+    }
+
+    // === 3. INITIALIZE MODEL (GEMINI 2.5 FLASH) ===
+    const model = genAI.getGenerativeModel({ 
+        model: "gemini-2.5-flash", // Menggunakan versi 2.5 sesuai instruksi
+        safetySettings: safetySettings,
+        systemInstruction: finalSystemPrompt
     });
 
+    // === 4. SETUP HISTORY ===
+    // Mapping format history Dardcor ke format Gemini
     const chatHistory = history.map(h => ({
         role: h.role === 'bot' ? 'model' : 'user',
         parts: [{ text: h.message }]
@@ -85,11 +108,7 @@ graph TD;
 
     const chat = model.startChat({ history: chatHistory });
     
-    let prompt = message;
-    if (contextData) {
-        prompt += `\n\n[Context]: ${JSON.stringify(contextData)}`;
-    }
-
+    // === 5. HANDLE IMAGES & MESSAGE ===
     const imageParts = [];
     if (files && files.length > 0) {
         files.forEach(file => {
@@ -104,12 +123,25 @@ graph TD;
         });
     }
 
+    // Gabungkan pesan user dengan gambar (Multimodal)
+    const msgPayload = imageParts.length > 0 ? [message, ...imageParts] : message;
+
+    // === 6. STREAMING EXECUTION ===
     try {
-        const result = await chat.sendMessageStream(imageParts.length > 0 ? [prompt, ...imageParts] : prompt);
-        return result.stream;
+        const result = await chat.sendMessageStream(msgPayload);
+        
+        for await (const chunk of result.stream) {
+            const chunkText = chunk.text();
+            yield { text: () => chunkText };
+        }
     } catch (error) {
-        console.error("Gemini Error:", error.message);
-        throw error;
+        console.error("Gemini 2.5 Error:", error.message);
+        
+        let errorMsg = "Maaf, Basic Model (2.5) sedang sibuk.";
+        if (error.message.includes("429")) errorMsg = "Limit API harian tercapai.";
+        if (error.message.includes("404")) errorMsg = "Model 'gemini-2.5-flash' belum tersedia di region/API key ini.";
+        
+        yield { text: () => `\n\n[System Alert: ${errorMsg}]` };
     }
 }
 

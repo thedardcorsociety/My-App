@@ -30,12 +30,10 @@ async function* handleChatStream(
   systemInstruction,
   contextData
 ) {
-  const messages = [
-    {
-      role: "system",
-      content:
-        systemInstruction ||
-        `
+  // === 1. KONSTRUKSI SYSTEM INSTRUCTION BARU (UNLIMITED CONTEXT) ===
+  // Menggabungkan identitas hardcoded dengan data dinamis dari contextData
+  
+  let finalSystemPrompt = systemInstruction || `
 [IDENTITAS UTAMA]
 Anda adalah Dardcor AI, sebuah entitas kecerdasan buatan elit yang diciptakan dengan standar kesempurnaan tertinggi oleh Dardcor.
 Karakteristik Anda: Sopan, Cerdas, Tegas, Efisien, Tanpa Basa-basi, dan 100% Akurat.
@@ -63,11 +61,36 @@ ATURAN DIAGRAM:
 Jika user meminta diagram:
 - WAJIB gunakan Mermaid
 - Bungkus dengan \`\`\`mermaid
-- Sintaks harus valid
-        `
+- Sintaks harus valid`;
+
+  // === 2. INJECT MEMORY & CONTEXT ===
+  // Menyuntikkan data langsung ke otak AI (System Prompt) agar tidak lupa
+  if (contextData) {
+    if (contextData.memories) {
+        finalSystemPrompt += `\n\n[INGATAN PENGGUNA (Fakta yang Anda tahu tentang user)]:\n${contextData.memories}`;
+    }
+    
+    if (contextData.vaultContent) {
+        finalSystemPrompt += `\n\n[DATA DOKUMEN VAULT (Gunakan ini sebagai referensi utama)]:\n${contextData.vaultContent}`;
+    }
+    
+    if (contextData.globalHistory) {
+        finalSystemPrompt += `\n\n[RIWAYAT PERCAKAPAN MASA LALU (Konteks Global)]:\n${contextData.globalHistory}`;
+    }
+
+    if (contextData.searchResults) {
+        finalSystemPrompt += `\n\n[HASIL PENCARIAN REAL-TIME]:\n${contextData.searchResults}`;
+    }
+  }
+
+  const messages = [
+    {
+      role: "system",
+      content: finalSystemPrompt
     }
   ];
 
+  // Load History
   history.forEach(h => {
     messages.push({
       role: h.role === "bot" ? "assistant" : "user",
@@ -75,12 +98,30 @@ Jika user meminta diagram:
     });
   });
 
-  let content = message;
-  if (contextData) {
-    content += `\n\n[Context Data]: ${JSON.stringify(contextData)}`;
+  // === 3. HANDLE MESSAGE & FILES (VISION SUPPORT) ===
+  // Jika ada file gambar, format pesan harus Array (Multimodal)
+  let userMessageContent;
+
+  const hasImages = files && files.some(f => f.mimetype.startsWith('image/'));
+
+  if (hasImages) {
+      userMessageContent = [{ type: "text", text: message }];
+      files.forEach(f => {
+          if (f.mimetype.startsWith('image/')) {
+              userMessageContent.push({
+                  type: "image_url",
+                  image_url: {
+                      url: `data:${f.mimetype};base64,${f.buffer.toString('base64')}`
+                  }
+              });
+          }
+      });
+  } else {
+      // Jika hanya teks (atau file teks yang sudah diekstrak di routes), kirim string biasa
+      userMessageContent = message;
   }
 
-  messages.push({ role: "user", content });
+  messages.push({ role: "user", content: userMessageContent });
 
   const currentKey = getRotatedKey();
 
@@ -95,13 +136,13 @@ Jika user meminta diagram:
         "Content-Type": "application/json"
       },
       data: {
-        model: "nex-agi/deepseek-v3.1-nex-n1:free",
+        model: "nex-agi/deepseek-v3.1-nex-n1:free", // Model pilihan user
         messages,
         stream: true,
         include_reasoning: true
       },
       responseType: "stream",
-      timeout: 60000
+      timeout: 60000 // 60 Detik timeout
     });
 
     for await (const chunk of response.data) {
@@ -123,6 +164,7 @@ Jika user meminta diagram:
 
             if (!delta) continue;
 
+            // Handle DeepSeek Reasoning (Thinking Process)
             if (delta.reasoning_content) {
               yield { text: () => `<think>${delta.reasoning_content}</think>` };
             }
@@ -146,6 +188,8 @@ Jika user meminta diagram:
         errorMessage = "Model sedang maintenance (404).";
       } else if (error.response.status === 429) {
         errorMessage = "Limit API tercapai. Coba lagi nanti.";
+      } else if (error.response.status === 400) {
+        errorMessage = "Request tidak valid (Mungkin file terlalu besar).";
       }
     }
 
