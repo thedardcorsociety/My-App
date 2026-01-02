@@ -155,10 +155,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 const rawInput = document.getElementById(`raw-title-${chatToEdit}`);
                 if (titleEl) titleEl.innerText = newTitle.length > 25 ? newTitle.substring(0, 25) + '...' : newTitle;
                 if (rawInput) rawInput.value = newTitle;
+                window.showNavbarAlert('Nama percakapan diperbarui', 'success');
                 closeModal('rename-modal');
+            } else {
+                window.showNavbarAlert('Gagal mengubah nama', 'error');
             }
         } catch (e) {
             console.error(e);
+            window.showNavbarAlert('Terjadi kesalahan sistem', 'error');
         }
     };
 
@@ -176,11 +180,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     const item = document.getElementById(`chat-item-${chatToDelete}`);
                     if (item) item.remove();
+                    window.showNavbarAlert('Percakapan dihapus', 'success');
                     closeModal('delete-modal');
                 }
+            } else {
+                window.showNavbarAlert('Gagal menghapus percakapan', 'error');
             }
         } catch (e) {
             console.error(e);
+            window.showNavbarAlert('Terjadi kesalahan sistem', 'error');
         }
     };
 
@@ -223,9 +231,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const newId = data.redirectUrl.split('/').pop();
                 loadChat(newId);
                 serverData.currentConversationId = newId;
+                window.showNavbarAlert('Percakapan baru dibuat', 'success');
             }
         } catch (e) {
             console.error(e);
+            window.showNavbarAlert('Gagal membuat chat baru', 'error');
         }
     };
 
@@ -242,12 +252,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 serverData.currentConversationId = id;
                 messageList.innerHTML = '';
                 
-                // FORCE CHECK FOR EMPTY HISTORY
                 if (!data.history || data.history.length === 0) {
                     renderEmptyState();
                 } else {
-                    // === STATE CHAT: AKTIFKAN LAYOUT LIST ===
-                    // Reset class to standard layout
                     messageList.className = "w-full max-w-3xl mx-auto flex flex-col gap-6 mt-auto pb-4 justify-start";
                     
                     data.history.forEach(msg => appendMessage(msg.role, msg.message, msg.file_metadata));
@@ -257,10 +264,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     }, 100);
                 }
                 window.history.pushState({ id: id }, '', `/dardcorchat/dardcor-ai/${id}`);
+            } else {
+                window.showNavbarAlert('Gagal memuat riwayat chat', 'error');
             }
         } catch (e) {
             console.error(e);
-            // On error, if list empty, show empty state
+            window.showNavbarAlert('Koneksi terputus', 'error');
             if (messageList && messageList.children.length === 0) renderEmptyState();
         } finally {
             isChatLoading = false;
@@ -407,12 +416,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = await res.json();
             if (result.success && result.data) {
                 selectPersona(result.data.id, result.data.name);
+                window.showNavbarAlert('Persona berhasil dibuat', 'success');
             }
             nameInput.value = '';
             instInput.value = '';
             fetchPersonas();
         } catch (e) {
             console.error(e);
+            window.showNavbarAlert('Gagal membuat persona', 'error');
         }
     };
 
@@ -421,9 +432,11 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             await fetch(`/api/personas/${id}`, { method: 'DELETE' });
             if (selectedPersonaId === id) deselectPersona();
+            window.showNavbarAlert('Persona dihapus', 'success');
             fetchPersonas();
         } catch (e) {
             console.error(e);
+            window.showNavbarAlert('Gagal menghapus persona', 'error');
         }
     };
 
@@ -433,6 +446,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('activePersonaId', id);
         localStorage.setItem('activePersonaName', name);
         updatePersonaUI();
+        window.showNavbarAlert(`Persona diaktifkan: ${name}`, 'info');
         const modal = document.getElementById('persona-modal');
         if (modal && modal.classList.contains('active')) fetchPersonas();
     };
@@ -443,6 +457,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem('activePersonaId');
         localStorage.removeItem('activePersonaName');
         updatePersonaUI();
+        window.showNavbarAlert('Persona dinonaktifkan', 'info');
         const modal = document.getElementById('persona-modal');
         if (modal && modal.classList.contains('active')) fetchPersonas();
     };
@@ -502,15 +517,24 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             titleInput.value = '';
             contentInput.value = '';
+            window.showNavbarAlert('Dokumen disimpan ke Vault', 'success');
             fetchVault();
         } catch (e) {
             console.error(e);
+            window.showNavbarAlert('Gagal menyimpan dokumen', 'error');
         }
     };
 
     window.deleteVault = async function(id) {
         if (!confirm('Hapus dokumen ini?')) return;
-        try { await fetch(`/api/vault/${id}`, { method: 'DELETE' }); fetchVault(); } catch (e) { console.error(e); }
+        try { 
+            await fetch(`/api/vault/${id}`, { method: 'DELETE' }); 
+            window.showNavbarAlert('Dokumen dihapus', 'success');
+            fetchVault(); 
+        } catch (e) { 
+            console.error(e); 
+            window.showNavbarAlert('Gagal menghapus dokumen', 'error');
+        }
     };
 
     window.openMemoryModal = function() {
@@ -552,15 +576,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ fact })
             });
             input.value = '';
+            window.showNavbarAlert('Memori baru ditambahkan', 'success');
             fetchMemories();
         } catch (e) {
             console.error(e);
+            window.showNavbarAlert('Gagal menambah memori', 'error');
         }
     };
 
     window.deleteMemory = async function(id) {
         if (!confirm('Hapus memori ini?')) return;
-        try { await fetch(`/api/memories/${id}`, { method: 'DELETE' }); fetchMemories(); } catch (e) { console.error(e); }
+        try { 
+            await fetch(`/api/memories/${id}`, { method: 'DELETE' }); 
+            window.showNavbarAlert('Memori dihapus', 'success');
+            fetchMemories(); 
+        } catch (e) { 
+            console.error(e); 
+            window.showNavbarAlert('Gagal menghapus memori', 'error');
+        }
     };
 
     // =========================================================================
@@ -589,9 +622,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 const frame = document.getElementById('diagram-frame');
                 if (frame) frame.src = `/dardcorchat/dardcor-ai/preview/${data.previewId}`;
                 if (overlay) overlay.classList.remove('hidden');
+            } else {
+                window.showNavbarAlert('Gagal memuat preview', 'error');
             }
         } catch (e) {
             console.error(e);
+            window.showNavbarAlert('Error sistem preview', 'error');
         } finally {
             btn.innerHTML = original;
             btn.disabled = false;
@@ -620,9 +656,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 const frame = document.getElementById('diagram-frame');
                 if (frame) frame.src = `/dardcorchat/dardcor-ai/diagram/${data.previewId}`;
                 if (overlay) overlay.classList.remove('hidden');
+            } else {
+                window.showNavbarAlert('Gagal memuat diagram', 'error');
             }
         } catch (e) {
             console.error(e);
+            window.showNavbarAlert('Error sistem diagram', 'error');
         } finally {
             btn.innerHTML = original;
             btn.disabled = false;
@@ -640,6 +679,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const origin = btn.innerHTML;
             btn.innerHTML = '<i class="fas fa-check"></i>';
             setTimeout(() => btn.innerHTML = origin, 2000);
+            window.showNavbarAlert('Kode disalin', 'success');
         });
     };
 
@@ -657,6 +697,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (chevron) chevron.classList.remove('rotate-180');
         const input = document.getElementById('message-input');
         if (input) input.placeholder = type === 'pro' ? "Ask Dardcor Pro..." : "Ask To Dardcor...";
+        
+        window.showNavbarAlert(`Model diubah ke ${type === 'dark' ? 'Dark' : (type === 'pro' ? 'Pro' : 'Basic')}`, 'info');
     };
 
     function escapeHtml(u) {
@@ -670,9 +712,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const renderTerminal = (codeContent, languageName, rawValue) => {
                 let btnHtml = '';
                 if (languageName === 'mermaid') {
-                    btnHtml = `<button onclick="previewDiagram(this)" class="cmd-btn btn-diagram"><i class="fas fa-project-diagram"></i> Preview Diagram</button>`;
+                    btnHtml = `<button onclick="previewDiagram(this)" class="cmd-btn btn-diagram"><i class="fas fa-project-diagram"></i>Preview</button>`;
                 } else if (['html', 'xml', 'ejs', 'php', 'svg'].includes(languageName)) {
-                    btnHtml = `<button onclick="previewCode(this)" class="cmd-btn btn-preview"><i class="fas fa-play"></i> Preview</button>`;
+                    btnHtml = `<button onclick="previewCode(this)" class="cmd-btn btn-preview"><i class="fas fa-play"></i>Preview</button>`;
                 }
                 
                 return `<div class="terminal-container"><div class="terminal-head"><div class="text-xs font-bold text-gray-400 uppercase flex items-center"><i class="fas fa-code mr-2"></i> ${languageName || 'CODE'}</div><div class="terminal-actions flex gap-2">${btnHtml}<button onclick="copyCode(this)" class="cmd-btn btn-copy" title="Salin Kode"><i class="fas fa-copy"></i></button></div></div><div class="terminal-code"><pre><code class="hljs ${languageName}">${codeContent}</code></pre><textarea class="hidden raw-code">${rawValue}</textarea></div></div>`;
@@ -850,12 +892,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const justify = role === 'user' ? 'justify-end' : 'justify-start';
             fileHtml = `<div class="flex flex-wrap gap-2 mb-2 ${justify} w-full">`;
             files.forEach(f => {
-                fileHtml += `<div class="text-[10px] flex items-center gap-2 bg-[#1c1c2e] px-3 py-1.5 rounded-lg border border-white/10 text-gray-300 max-w-full shadow-sm"><i class="fas fa-file text-purple-400"></i> <span class="truncate">${f.filename}</span></div>`;
+                fileHtml += `<div class="text-[10px] flex items-center gap-2 bg-transparent px-3 py-1.5 rounded-lg border border-white/10 text-gray-300 max-w-full shadow-sm"><i class="fas fa-file text-purple-400"></i> <span class="truncate">${f.filename}</span></div>`;
             });
             fileHtml += `</div>`;
         }
 
-        const bubbleClass = role === 'user' ? 'bg-purple-600 text-white rounded-br-sm' : 'bg-[#1e1e2e] text-gray-200 rounded-bl-sm border border-white/5';
+        // TRANSPARENT BUBBLE STYLES (GLASS EFFECT)
+        const bubbleClass = role === 'user' 
+            ? 'bg-transparent border border-purple-500/50 text-white shadow-[0_0_15px_rgba(147,51,234,0.15)] rounded-br-sm' 
+            : 'bg-transparent border border-white/10 text-gray-200 rounded-bl-sm';
         
         let contentHtml = '';
         if (role === 'user') {
@@ -869,15 +914,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         let contentLoading = `
-            <div class="flex items-center gap-3 bg-[#1e1e2e] px-4 py-3.5 rounded-2xl rounded-bl-sm border border-white/5 shadow-md">
+            <div class="flex items-center gap-3 bg-transparent border border-white/10 px-4 py-3.5 rounded-2xl rounded-bl-sm shadow-md">
                 <div class="loader"></div>
                 <span class="text-xs text-purple-400 font-medium animate-pulse">Sedang berpikir...</span>
             </div>`;
 
         let actionButtons = `
             <div class="flex items-center gap-2 mt-2 px-1 select-none">
-                <button onclick="copyMessageBubble(this)" class="text-gray-500 hover:text-white transition-colors flex items-center gap-1.5 bg-[#1c1c2e] border border-white/5 px-3 py-1.5 rounded-lg hover:bg-white/10 shadow-sm active:scale-95" title="Salin"><i class="fas fa-copy text-xs"></i> <span class="text-[10px] font-medium">Salin</span></button>
-                ${role !== 'user' ? `<button onclick="speakMessage(this)" class="text-gray-500 hover:text-white transition-colors flex items-center gap-1.5 bg-[#1c1c2e] border border-white/5 px-3 py-1.5 rounded-lg hover:bg-white/10 shadow-sm active:scale-95" title="Dengarkan"><i class="fas fa-volume-up text-xs"></i> <span class="text-[10px] font-medium">Dengar</span></button>` : ''}
+                <button onclick="copyMessageBubble(this)" class="text-gray-500 hover:text-white transition-colors flex items-center gap-1.5 bg-transparent border border-white/10 px-3 py-1.5 rounded-lg hover:bg-white/10 shadow-sm active:scale-95" title="Salin"><i class="fas fa-copy text-xs"></i> <span class="text-[10px] font-medium">Salin</span></button>
+                ${role !== 'user' ? `<button onclick="speakMessage(this)" class="text-gray-500 hover:text-white transition-colors flex items-center gap-1.5 bg-transparent border border-white/10 px-3 py-1.5 rounded-lg hover:bg-white/10 shadow-sm active:scale-95" title="Dengarkan"><i class="fas fa-volume-up text-xs"></i> <span class="text-[10px] font-medium">Dengar</span></button>` : ''}
             </div>
         `;
 
@@ -977,14 +1022,14 @@ document.addEventListener('DOMContentLoaded', () => {
             botDiv.className = "flex w-full justify-start message-bubble-container group min-w-0";
             botDiv.innerHTML = `
             <div class="flex flex-col items-start max-w-[85%] min-w-0">
-                <div class="chat-content-box relative rounded-2xl px-5 py-3.5 shadow-md text-sm bg-[#1e1e2e] text-gray-200 rounded-bl-sm border border-white/5 w-fit min-w-0 max-w-full overflow-hidden leading-7">
+                <div class="chat-content-box relative rounded-2xl px-5 py-3.5 shadow-md text-sm bg-transparent border border-white/10 text-gray-200 rounded-bl-sm w-fit min-w-0 max-w-full overflow-hidden leading-7">
                     <div class="overflow-guard w-full min-w-0 max-w-full">
                         <div class="markdown-body w-full max-w-full overflow-hidden break-words"></div>
                     </div>
                 </div>
                 <div class="flex items-center gap-2 mt-2 px-1 select-none">
-                    <button onclick="copyMessageBubble(this)" class="text-gray-500 hover:text-white transition-colors flex items-center gap-1.5 bg-[#1c1c2e] border border-white/5 px-3 py-1.5 rounded-lg hover:bg-white/10 shadow-sm group active:scale-95" title="Salin"><i class="fas fa-copy text-xs"></i> <span class="text-[10px] font-medium">Salin</span></button>
-                    <button onclick="speakMessage(this)" class="text-gray-500 hover:text-white transition-colors flex items-center gap-1.5 bg-[#1c1c2e] border border-white/5 px-3 py-1.5 rounded-lg hover:bg-white/10 shadow-sm group active:scale-95" title="Dengarkan"><i class="fas fa-volume-up text-xs"></i> <span class="text-[10px] font-medium">Dengar</span></button>
+                    <button onclick="copyMessageBubble(this)" class="text-gray-500 hover:text-white transition-colors flex items-center gap-1.5 bg-transparent border border-white/10 px-3 py-1.5 rounded-lg hover:bg-white/10 shadow-sm group active:scale-95" title="Salin"><i class="fas fa-copy text-xs"></i> <span class="text-[10px] font-medium">Salin</span></button>
+                    <button onclick="speakMessage(this)" class="text-gray-500 hover:text-white transition-colors flex items-center gap-1.5 bg-transparent border border-white/10 px-3 py-1.5 rounded-lg hover:bg-white/10 shadow-sm group active:scale-95" title="Dengarkan"><i class="fas fa-volume-up text-xs"></i> <span class="text-[10px] font-medium">Dengar</span></button>
                 </div>
             </div>`;
             
@@ -1011,7 +1056,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const thinkMatch = fullText.match(/<think>([\s\S]*?)<\/think>/);
                 if (thinkMatch) {
                     const clean = thinkMatch[1].trim().replace(/\n/g, '<br>');
-                    formatted = fullText.replace(/<think>[\s\S]*?<\/think>/, `<details class="mb-4 bg-gray-900/50 rounded-lg border border-gray-700/50 overflow-hidden group"><summary class="flex items-center gap-2 px-3 py-2 cursor-pointer bg-gray-800/50 hover:bg-gray-800 text-xs font-mono text-gray-400 select-none"><i class="fas fa-brain text-purple-500"></i><span>Thinking</span><i class="fas fa-chevron-down ml-auto transition-transform group-open:rotate-180"></i></summary><div class="p-3 text-xs text-gray-400 font-mono border-t border-gray-700/50 bg-black/20 leading-relaxed italic">${clean}</div></details>`);
+                    formatted = fullText.replace(/<think>[\s\S]*?<\/think>/, `<details class="mb-4 bg-transparent border border-white/10 rounded-lg overflow-hidden group"><summary class="flex items-center gap-2 px-3 py-2 cursor-pointer bg-white/5 hover:bg-white/10 text-xs font-mono text-gray-400 select-none"><i class="fas fa-brain text-purple-500"></i><span>Thinking</span><i class="fas fa-chevron-down ml-auto transition-transform group-open:rotate-180"></i></summary><div class="p-3 text-xs text-gray-400 font-mono border-t border-white/10 bg-black/20 leading-relaxed italic">${clean}</div></details>`);
                 }
                 
                 if (botContent) {
@@ -1058,7 +1103,7 @@ document.addEventListener('DOMContentLoaded', () => {
             isStreaming = false;
             let formatted = fullText;
             const thinkMatch = fullText.match(/<think>([\s\S]*?)<\/think>/);
-            if (thinkMatch) formatted = fullText.replace(/<think>[\s\S]*?<\/think>/, `<details class="mb-4 bg-gray-900/50 rounded-lg border border-gray-700/50 overflow-hidden group"><summary class="flex items-center gap-2 px-3 py-2 cursor-pointer bg-gray-800/50 hover:bg-gray-800 text-xs font-mono text-gray-400 select-none"><i class="fas fa-brain text-purple-500"></i><span>Thinking</span><i class="fas fa-chevron-down ml-auto transition-transform group-open:rotate-180"></i></summary><div class="p-3 text-xs text-gray-400 font-mono border-t border-gray-700/50 bg-black/20 leading-relaxed italic">${thinkMatch[1].trim().replace(/\n/g, '<br>')}</div></details>`);
+            if (thinkMatch) formatted = fullText.replace(/<think>[\s\S]*?<\/think>/, `<details class="mb-4 bg-transparent border border-white/10 rounded-lg overflow-hidden group"><summary class="flex items-center gap-2 px-3 py-2 cursor-pointer bg-white/5 hover:bg-white/10 text-xs font-mono text-gray-400 select-none"><i class="fas fa-brain text-purple-500"></i><span>Thinking</span><i class="fas fa-chevron-down ml-auto transition-transform group-open:rotate-180"></i></summary><div class="p-3 text-xs text-gray-400 font-mono border-t border-white/10 bg-black/20 leading-relaxed italic">${thinkMatch[1].trim().replace(/\n/g, '<br>')}</div></details>`);
             
             if (botContent) {
                 if (typeof marked !== 'undefined') botContent.innerHTML = marked.parse(formatted);
@@ -1085,6 +1130,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const indicator = document.getElementById('loading-indicator');
             if (indicator) indicator.remove();
             
+            window.showNavbarAlert('Gagal mengirim pesan', 'error');
             const errorDiv = document.createElement('div');
             errorDiv.className = "flex w-full justify-center message-bubble-container my-4";
             errorDiv.innerHTML = `<div class="bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-2 rounded-lg text-xs flex items-center gap-2"><i class="fas fa-exclamation-triangle"></i> Gagal terhubung ke server. Cek koneksi Anda.</div>`;

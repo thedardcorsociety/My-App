@@ -31,7 +31,6 @@
         html, body { height: 100dvh; width: 100vw; margin: 0; padding: 0; overflow: hidden; background-color: var(--bg-dark); color: #e2e8f0; font-family: sans-serif; position: fixed; inset: 0; overscroll-behavior: none; }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         
-        /* === NUCLEAR CSS DEFENSE (ANTI-BOCOR) === */
         .markdown-body { 
             font-size: 0.9rem; line-height: 1.6; width: 100% !important; max-width: 100% !important; min-width: 0 !important; 
             overflow-x: hidden !important; overflow-wrap: break-word !important; word-break: break-word !important; box-sizing: border-box !important;
@@ -41,12 +40,10 @@
         .markdown-body h1, .markdown-body h2 { font-weight: 700; color: #fff; margin-top: 1em; margin-bottom: 0.5em; }
         .markdown-body a { color: #a855f7; text-decoration: underline; }
         
-        /* Table Defense */
-        .markdown-body table { display: block !important; width: 100% !important; overflow-x: auto !important; margin: 1em 0; background-color: #151520; border-radius: 8px; border: 1px solid #333; border-collapse: collapse; }
-        .markdown-body th { background-color: #2a2a3d; color: #fff; font-weight: bold; text-align: left; padding: 10px; border-bottom: 2px solid #444; font-size: 0.85rem; white-space: nowrap; }
+        .markdown-body table { display: block !important; width: 100% !important; overflow-x: auto !important; margin: 1em 0; background-color: transparent !important; border-radius: 8px; border: 1px solid #333; border-collapse: collapse; }
+        .markdown-body th { background-color: rgba(42, 42, 61, 0.5); color: #fff; font-weight: bold; text-align: left; padding: 10px; border-bottom: 2px solid #444; font-size: 0.85rem; white-space: nowrap; }
         .markdown-body td { padding: 8px 10px; border-bottom: 1px solid #333; color: #d1d5db; font-size: 0.85rem; }
         
-        /* Code Block Defense */
         .terminal-container { 
             background: #000000 !important; border: 1px solid #333; border-radius: 6px; margin: 10px 0; font-family: 'Consolas', 'Monaco', monospace; 
             width: 100% !important; max-width: 100% !important; display: flex; flex-direction: column; overflow: hidden !important; 
@@ -78,6 +75,34 @@
         }
         #sidebar, #main-content { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         #chat-container { overscroll-behavior-y: contain; scroll-behavior: smooth; }
+
+        /* === FIX TRANSPARANSI PERMANEN (CSS ENFORCER) === */
+        /* Memaksa background transparan meskipun server merender warna lama */
+        #message-list .chat-content-box,
+        #message-list .bg-purple-600, 
+        #message-list .bg-\[\#1e1e2e\] {
+            background-color: transparent !important;
+            background-image: none !important;
+        }
+
+        /* Styling USER BUBBLE (Glass + Purple Border) */
+        #message-list .justify-end .chat-content-box,
+        #message-list .justify-end .bg-purple-600 {
+            border: 1px solid rgba(147, 51, 234, 0.5) !important; /* Purple Border */
+            box-shadow: 0 0 15px rgba(147, 51, 234, 0.15) !important;
+            color: white !important;
+            border-bottom-right-radius: 0.125rem !important;
+        }
+
+        /* Styling BOT BUBBLE (Glass + White Border) */
+        #message-list .justify-start .chat-content-box,
+        #message-list .justify-start .bg-\[\#1e1e2e\] {
+            border: 1px solid rgba(255, 255, 255, 0.1) !important; /* White Border */
+            box-shadow: none !important;
+            color: #e5e7eb !important;
+            border-bottom-left-radius: 0.125rem !important;
+        }
+        /* ================================================== */
     </style>
 </head>
 <body class="flex bg-[#0b0c15]">
@@ -86,6 +111,39 @@
         window.closePreview = function() {
             document.getElementById('diagram-overlay').classList.add('hidden');
             setTimeout(() => { document.getElementById('diagram-frame').src = 'about:blank'; }, 300);
+        }
+        
+        window.alertTimeout = null;
+        window.showNavbarAlert = function(message, type = 'info') {
+            const alertEl = document.getElementById('navbar-alert');
+            const textEl = document.getElementById('navbar-alert-text');
+            const iconEl = document.getElementById('navbar-alert-icon');
+            
+            if (!alertEl || !textEl || !iconEl) return;
+
+            alertEl.className = "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-4 py-1.5 rounded-full border shadow-[0_0_15px_rgba(0,0,0,0.5)] flex items-center gap-2 transition-all duration-300 transform z-[100] backdrop-blur-md";
+
+            if(type === 'success') {
+                alertEl.classList.add('bg-green-900/90', 'border-green-500/50');
+                iconEl.className = "fas fa-check-circle text-green-400 text-xs";
+            } else if (type === 'error') {
+                alertEl.classList.add('bg-red-900/90', 'border-red-500/50');
+                iconEl.className = "fas fa-exclamation-circle text-red-400 text-xs";
+            } else {
+                alertEl.classList.add('bg-[#1c1c2e]/90', 'border-purple-500/50');
+                iconEl.className = "fas fa-info-circle text-purple-400 text-xs";
+            }
+
+            textEl.innerText = message;
+
+            alertEl.classList.remove('opacity-0', 'pointer-events-none', 'scale-90');
+            alertEl.classList.add('opacity-100', 'scale-100');
+
+            if (window.alertTimeout) clearTimeout(window.alertTimeout);
+            window.alertTimeout = setTimeout(() => {
+                alertEl.classList.remove('opacity-100', 'scale-100');
+                alertEl.classList.add('opacity-0', 'pointer-events-none', 'scale-90');
+            }, 3000);
         }
     </script>
     <div id="mobile-overlay" class="fixed inset-0 bg-black/80 z-[150] hidden lg:hidden backdrop-blur-sm transition-opacity" onclick="toggleSidebar()"></div>
@@ -165,6 +223,12 @@
                     <i class="fas fa-bars text-lg"></i>
                 </button>
             </div>
+            
+            <div id="navbar-alert" class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-4 py-1.5 bg-[#1c1c2e] border border-purple-500/30 rounded-full shadow-lg flex items-center gap-2 transition-all duration-300 opacity-0 pointer-events-none transform scale-90 z-50">
+                <i id="navbar-alert-icon" class="fas fa-info-circle text-purple-400 text-xs"></i>
+                <span id="navbar-alert-text" class="text-xs font-bold text-gray-200 whitespace-nowrap">Notification</span>
+            </div>
+
             <div class="flex items-center gap-2 ml-auto">
                 <div id="active-persona-container" class="hidden items-center gap-2 px-3 py-1.5 rounded-lg border border-purple-500/30 bg-purple-500/10 text-purple-300 text-xs font-medium cursor-pointer hover:bg-purple-500/20" onclick="openPersonaModal()" title="Persona Aktif">
                     <i class="fas fa-user-astronaut"></i>
