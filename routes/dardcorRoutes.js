@@ -80,13 +80,7 @@ function extractKeywords(text) {
     if (!text) return "";
     const cleanText = text.replace(/[^\w\s]/gi, ' ').toLowerCase();
     const words = cleanText.split(/\s+/);
-    
-    const stopWords = [
-        'yang', 'di', 'ke', 'dari', 'ini', 'itu', 'dan', 'atau', 'dengan', 'untuk', 'pada', 'adalah', 'saya', 'kamu', 'dia', 'mereka', 'kita',
-        'apa', 'siapa', 'kapan', 'dimana', 'kenapa', 'bagaimana', 'bisa', 'tolong', 'minta', 'buatkan', 'jelaskan', 'gimana', 'dong', 'sih',
-        'the', 'is', 'at', 'of', 'in', 'and', 'or', 'to', 'for', 'with', 'a', 'an', 'are', 'this', 'that', 'how', 'what', 'why'
-    ];
-    
+    const stopWords = ['yang', 'di', 'ke', 'dari', 'ini', 'itu', 'dan', 'atau', 'dengan', 'untuk', 'pada', 'adalah', 'saya', 'kamu', 'dia', 'mereka', 'kita', 'apa', 'siapa', 'kapan', 'dimana', 'kenapa', 'bagaimana', 'bisa', 'tolong', 'minta', 'buatkan', 'jelaskan', 'gimana', 'dong', 'sih', 'the', 'is', 'at', 'of', 'in', 'and', 'or', 'to', 'for', 'with', 'a', 'an', 'are', 'this', 'that', 'how', 'what', 'why'];
     const keywords = [...new Set(words.filter(w => w.length > 2 && !stopWords.includes(w)))];
     return keywords.join(' | '); 
 }
@@ -387,20 +381,45 @@ router.post('/dardcorchat/ai/chat-stream', checkUserAuth, uploadMiddleware, asyn
 
         const geminiFiles = [];
         let fileTextContext = "";
+        let fileMetadata = []; 
+
         if (uploadedFiles.length > 0) {
             for (const file of uploadedFiles) {
                 const mime = file.mimetype;
+                const originalName = file.originalname;
+                const cleanName = originalName.replace(/[^a-zA-Z0-9.]/g, '-');
+                const fileExt = cleanName.split('.').pop() || 'bin';
+                const fileNamePath = `${userId}/${Date.now()}-${uuidv4()}.${fileExt}`;
+                const meta = { filename: originalName, size: file.size, mimetype: mime, path: null, url: null };
+
+                try {
+                    const { error: uploadError } = await supabase.storage
+                        .from('chat-attachments')
+                        .upload(fileNamePath, file.buffer, { contentType: mime, upsert: false });
+
+                    if (!uploadError) {
+                        const { data: urlData } = supabase.storage.from('chat-attachments').getPublicUrl(fileNamePath);
+                        if (urlData && urlData.publicUrl) {
+                            meta.path = urlData.publicUrl; 
+                            meta.url = urlData.publicUrl;
+                        }
+                    }
+                } catch (err) { }
+
+                fileMetadata.push(meta);
+
                 if (mime.startsWith('image/') || mime.startsWith('video/') || mime.startsWith('audio/') || mime === 'application/pdf') {
                     geminiFiles.push(file);
                 } else if (mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-                    try { const result = await mammoth.extractRawText({ buffer: file.buffer }); fileTextContext += `\n[DOKUMEN WORD: ${file.originalname}]\n${result.value}\n`; } catch (e) {}
+                    try { const result = await mammoth.extractRawText({ buffer: file.buffer }); fileTextContext += `\n[DOKUMEN WORD: ${originalName}]\n${result.value}\n`; } catch (e) {}
                 } else if (mime.includes('spreadsheet') || mime.includes('excel')) {
-                    try { const workbook = xlsx.read(file.buffer, { type: 'buffer' }); const sheetName = workbook.SheetNames[0]; const csv = xlsx.utils.sheet_to_csv(workbook.Sheets[sheetName]); fileTextContext += `\n[DATA EXCEL: ${file.originalname}]\n${csv}\n`; } catch (e) {}
+                    try { const workbook = xlsx.read(file.buffer, { type: 'buffer' }); const sheetName = workbook.SheetNames[0]; const csv = xlsx.utils.sheet_to_csv(workbook.Sheets[sheetName]); fileTextContext += `\n[DATA EXCEL: ${originalName}]\n${csv}\n`; } catch (e) {}
                 } else {
-                    fileTextContext += `\n[FILE TEKS: ${file.originalname}]\n${file.buffer.toString('utf-8')}\n`;
+                    fileTextContext += `\n[FILE TEKS: ${originalName}]\n${file.buffer.toString('utf-8')}\n`;
                 }
             }
         }
+
         if (fileTextContext) message += `\n\n${fileTextContext}`;
 
         const userMessageDisplay = req.body.message || (uploadedFiles.length > 0 ? `Analisis ${uploadedFiles.length} file...` : "...");
@@ -408,8 +427,14 @@ router.post('/dardcorchat/ai/chat-stream', checkUserAuth, uploadMiddleware, asyn
         if (!convCheck) await supabase.from('conversations').insert({ id: conversationId, user_id: userId, title: userMessageDisplay.substring(0, 30) });
         else await supabase.from('conversations').update({ updated_at: new Date() }).eq('id', conversationId);
 
-        let fileMetadata = uploadedFiles.map(f => ({ filename: f.originalname, size: f.size, mimetype: f.mimetype }));
-        await supabase.from('history_chat').insert({ user_id: userId, conversation_id: conversationId, role: 'user', message: userMessageDisplay, file_metadata: fileMetadata });
+        await supabase.from('history_chat').insert({ 
+            user_id: userId, 
+            conversation_id: conversationId, 
+            role: 'user', 
+            message: userMessageDisplay, 
+            file_metadata: fileMetadata 
+        });
+
         const { data: botMsg } = await supabase.from('history_chat').insert({ user_id: userId, conversation_id: conversationId, role: 'bot', message: '' }).select('id').single();
         if (botMsg) botMessageId = botMsg.id;
 

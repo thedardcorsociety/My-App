@@ -2,24 +2,20 @@
     <div class="w-full max-w-3xl mx-auto px-4 pb-4">
         <div id="file-preview-container" class="flex flex-wrap gap-2 mb-2 hidden"></div>
         <div class="relative flex items-end gap-2 bg-[#13131f] border border-gray-700 rounded-xl p-2 shadow-lg focus-within:border-purple-900 transition-colors">
-            <button type="button" onclick="document.getElementById('file-upload').click()" class="p-2 text-gray-400 hover:text-white transition-colors h-[40px] w-[40px] flex items-center justify-center rounded-lg hover:bg-white/5 shrink-0">
+            <button id="file-upload-btn" type="button" class="p-2 text-gray-400 hover:text-white transition-colors h-[40px] w-[40px] flex items-center justify-center rounded-lg hover:bg-white/5 shrink-0">
                 <i class="fas fa-paperclip"></i>
             </button>
             <input type="file" id="file-upload" class="hidden" multiple>
-            
             <textarea id="message-input" rows="1" class="w-full bg-transparent text-white placeholder-gray-500 text-sm p-2 outline-none resize-none max-h-32 overflow-y-auto leading-relaxed" placeholder="Ask To Dardcor..."></textarea>
-            
             <button id="mic-btn" type="button" class="p-2 text-gray-400 hover:text-white transition-colors h-[40px] w-[40px] flex items-center justify-center rounded-lg hover:bg-white/5 shrink-0">
                 <i class="fas fa-microphone"></i>
             </button>
-
             <button id="send-btn" class="p-2 bg-purple-900 hover:bg-purple-800 text-white rounded-lg transition-colors h-[40px] w-[40px] flex items-center justify-center shadow-lg shadow-purple-900/20 shrink-0">
                 <i id="send-icon" class="fas fa-paper-plane text-xs"></i>
             </button>
         </div>
         <div class="text-center mt-2 text-[10px] text-gray-500">Dardcor AI dapat membuat kesalahan. Cek info penting.</div>
     </div>
-    
     <div id="drop-zone" class="absolute inset-0 bg-purple-950/90 hidden items-center justify-center rounded-t-xl z-50 backdrop-blur-sm border-2 border-purple-900 border-dashed m-4">
         <div class="text-center">
             <i class="fas fa-cloud-upload-alt text-4xl text-white mb-2"></i>

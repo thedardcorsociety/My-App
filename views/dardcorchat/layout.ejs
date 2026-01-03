@@ -18,11 +18,12 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/xml.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/css.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/php.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/sql.min.js"></script>
     
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
-    <script>mermaid.initialize({ startOnLoad: false, theme: 'dark' });</script>
+    <script>mermaid.initialize({ startOnLoad: false, theme: 'dark', securityLevel: 'loose' });</script>
     
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
@@ -33,54 +34,40 @@
         html, body { height: 100dvh; width: 100vw; margin: 0; padding: 0; overflow: hidden; background-color: var(--bg-dark); color: #e2e8f0; font-family: sans-serif; position: fixed; inset: 0; overscroll-behavior: none; }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         
-        .markdown-body { 
-            font-size: 0.9rem; line-height: 1.6; width: 100% !important; max-width: 100% !important; min-width: 0 !important; 
-            overflow-x: hidden !important; overflow-wrap: break-word !important; word-break: break-word !important; box-sizing: border-box !important;
-        }
+        .markdown-body { font-size: 0.9rem; line-height: 1.6; width: 100% !important; max-width: 100% !important; min-width: 0 !important; overflow-x: hidden !important; overflow-wrap: break-word !important; word-break: break-word !important; box-sizing: border-box !important; }
         .markdown-body > * { max-width: 100% !important; box-sizing: border-box !important; }
         .markdown-body p { margin-bottom: 0.8em; }
-        .markdown-body h1, .markdown-body h2 { font-weight: 700; color: #fff; margin-top: 1em; margin-bottom: 0.5em; }
+        
+        .markdown-body h1, .markdown-body h2, .markdown-body h3, .markdown-body h4 { font-weight: 700; color: #fff; margin-top: 1em; margin-bottom: 0.5em; border-bottom: none !important; }
+        .markdown-body hr { display: none !important; border: none !important; } 
         .markdown-body a { color: #a855f7; text-decoration: underline; }
         
-        .markdown-body table { 
-            display: block !important; width: 100% !important; overflow-x: auto !important; margin: 1em 0; 
-            background-color: transparent !important; border-radius: 8px; 
-            border: 1px solid #581c87 !important; 
-            border-collapse: collapse; 
-        }
-        .markdown-body th { 
-            background-color: rgba(59, 7, 100, 0.5) !important; 
-            color: #fff; font-weight: bold; text-align: left; padding: 10px; 
-            border-bottom: 2px solid #581c87 !important; 
-            font-size: 0.85rem; white-space: nowrap; 
-        }
-        .markdown-body td { 
-            padding: 8px 10px; 
-            border-bottom: 1px solid #581c87 !important; 
-            color: #d1d5db; font-size: 0.85rem; 
-        }
+        .markdown-body ul { list-style: none !important; padding-left: 1em; margin-bottom: 1em; }
+        .markdown-body ul li { position: relative; padding-left: 1.2em; margin-bottom: 0.4em; }
+        .markdown-body ul li::before { content: "-"; position: absolute; left: 0; top: 0; color: #d1d5db; font-weight: bold; }
+        .markdown-body ol { list-style-type: decimal; padding-left: 1.5em; margin-bottom: 1em; }
         
-        .terminal-container { 
-            background: #000000 !important; border: 1px solid #333; border-radius: 6px; margin: 10px 0; font-family: 'Consolas', 'Monaco', monospace; 
-            width: 100% !important; max-width: 100% !important; display: flex; flex-direction: column; overflow: hidden !important; 
-        }
-        .terminal-head { 
-            display: flex; justify-content: space-between; align-items: center; background: #0a0a0a; 
-            padding: 2px 8px; 
-            border-bottom: 1px solid #333; height: 28px; 
-            flex-shrink: 0; 
-        }
+        .markdown-body table { display: block !important; width: 100% !important; overflow-x: auto !important; margin: 1em 0; background-color: transparent !important; border-spacing: 0; border-collapse: collapse !important; border: 1px solid #7e22ce !important; }
+        .markdown-body th, .markdown-body td { padding: 10px 14px; border: 1px solid #7e22ce !important; color: #d1d5db; font-size: 0.85rem; min-width: 120px; }
+        .markdown-body th { background-color: rgba(126, 34, 206, 0.25) !important; color: #fff; font-weight: bold; text-align: left; border-bottom: 2px solid #7e22ce !important; }
+
+        .terminal-container { background: #000000 !important; border: 1px solid #581c87 !important; border-radius: 6px; margin: 16px 0; font-family: 'Consolas', 'Monaco', monospace; width: 100% !important; max-width: 100% !important; display: flex; flex-direction: column; overflow: hidden !important; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .terminal-head { display: flex; justify-content: space-between; align-items: center; background: #0f0f15 !important; padding: 6px 12px; border-bottom: 1px solid #581c87 !important; height: 36px; flex-shrink: 0; }
         .terminal-code { padding: 0; width: 100% !important; background: #000000 !important; overflow-x: auto !important; display: block; }
-        .terminal-code pre { margin: 0; padding: 0; width: 100%; }
-        .terminal-code code { padding: 12px 16px !important; display: block; background: transparent !important; font-size: 13px; line-height: 1.5; font-family: 'Consolas', monospace; white-space: pre; }
+        .terminal-code pre { margin: 0; padding: 0; width: 100%; background: transparent !important; }
+        .terminal-code code { padding: 14px 18px !important; display: block; background: transparent !important; font-size: 13px; line-height: 1.55; font-family: 'Consolas', monospace; white-space: pre; color: #e5e7eb; }
         
-        .cmd-btn { display: flex; align-items: center; gap: 4px; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; outline: none; }
-        .btn-preview { background-color: #1e3a8a; color: white; } 
-        .btn-preview:hover { background-color: #172554; }
-        .btn-diagram { background-color: #581c87; color: white; } 
-        .btn-diagram:hover { background-color: #3b0764; }
-        .btn-copy { background-color: transparent; color: #666; }
-        .btn-copy:hover { color: white; }
+        .hljs-keyword, .hljs-selector-tag, .hljs-built_in, .hljs-name, .hljs-tag { color: #c678dd !important; font-weight: bold; }
+        .hljs-string, .hljs-title, .hljs-section, .hljs-attribute, .hljs-literal, .hljs-template-tag, .hljs-template-variable, .hljs-type, .hljs-addition { color: #98c379 !important; }
+        .hljs-comment, .hljs-quote, .hljs-deletion, .hljs-meta { color: #7f848e !important; font-style: italic; }
+        .hljs-number, .hljs-regexp, .hljs-symbol, .hljs-bullet, .hljs-link { color: #d19a66 !important; }
+        .hljs-function, .hljs-title.function_ { color: #61afef !important; }
+        .hljs-variable, .hljs-template-variable { color: #e06c75 !important; }
+
+        .cmd-btn { display: flex; align-items: center; gap: 5px; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; outline: none; }
+        .btn-preview { background-color: #1e3a8a; color: white; } .btn-preview:hover { background-color: #172554; }
+        .btn-diagram { background-color: #581c87; color: white; } .btn-diagram:hover { background-color: #3b0764; }
+        .btn-copy { background-color: rgba(255,255,255,0.1); color: #aaa; } .btn-copy:hover { background-color: rgba(255,255,255,0.2); color: white; }
         
         .loader { width: 18px; height: 18px; border: 2px solid rgba(88, 28, 135, 0.3); border-top-color: #581c87; border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -97,116 +84,36 @@
         #sidebar, #main-content { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         #chat-container { overscroll-behavior-y: contain; scroll-behavior: smooth; }
 
-        #message-list .chat-content-box {
-            background-color: transparent !important;
-            background-image: none !important;
-        }
-
-        #message-list .justify-end .chat-content-box, 
-        #message-list .justify-end .bg-purple-600 {
-            border: 1px solid rgba(88, 28, 135, 0.8) !important;
-            box-shadow: 0 0 15px rgba(59, 7, 100, 0.2) !important;
-            color: white !important;
-            border-bottom-right-radius: 0.125rem !important;
-            background-color: transparent !important;
-        }
-
-        #message-list .justify-start .chat-content-box,
-        #message-list .justify-start .bg-\[\#1e1e2e\] {
-            border: none !important;
-            box-shadow: none !important;
-            color: #e5e7eb !important;
-            background-color: transparent !important;
-            padding-left: 0 !important;
-        }
-
-        #message-list button.bg-\[\#1c1c2e\], 
-        #message-list button.border-white\/5,
-        #message-list button.px-3 {
-            background-color: transparent !important;
-            border: none !important;
-            box-shadow: none !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            font-size: 10px !important;
-            color: #6b7280 !important;
-            opacity: 0.7;
-        }
-        #message-list button:hover {
-            color: white !important;
-            opacity: 1;
-        }
+        #message-list .chat-content-box { background-color: transparent !important; background-image: none !important; }
+        #message-list .justify-end .chat-content-box { border: 1px solid rgba(88, 28, 135, 0.8) !important; box-shadow: 0 0 15px rgba(59, 7, 100, 0.2) !important; color: white !important; border-bottom-right-radius: 0.125rem !important; background-color: transparent !important; }
+        #message-list .justify-start .chat-content-box { border: none !important; box-shadow: none !important; color: #e5e7eb !important; background-color: transparent !important; padding-left: 0 !important; padding-top: 0 !important; border-radius: 0 !important; width: 100%; }
         
-        #message-list .flex.items-center.gap-2.mt-2.px-1 {
-            column-gap: 1rem !important;
-            margin-top: 0.25rem !important;
-            padding-left: 0.5rem !important;
-        }
-        
+        #message-list .justify-start .message-bubble-container .chat-content-box > div.whitespace-pre-wrap,
+        #message-list .justify-start .message-bubble-container .chat-content-box .markdown-body { padding-left: 0 !important; padding-top: 10px; }
+
+        .message-bubble-container .relative.rounded-xl.overflow-hidden.border { border: none !important; background: transparent !important; box-shadow: none !important; }
+        .message-bubble-container img { border-radius: 6px !important; display: block; }
+
+        #message-list button.bg-\[\#1c1c2e\] { background-color: transparent !important; border: none !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important; font-size: 10px !important; color: #6b7280 !important; opacity: 0.7; }
+        #message-list button:hover { color: white !important; opacity: 1; }
+        #message-list .flex.items-center.gap-2.mt-2.px-1 { column-gap: 1rem !important; margin-top: 0.25rem !important; padding-left: 0.5rem !important; }
         .safe-pb { padding-bottom: env(safe-area-inset-bottom); }
     </style>
 </head>
 <body class="flex bg-[#0b0c15]">
-    <script>
-        window.SERVER_DATA = { currentConversationId: "<%= activeConversationId || '' %>", toolType: "<%= typeof toolType !== 'undefined' ? toolType : 'basic' %>" };
-        window.closePreview = function() {
-            document.getElementById('diagram-overlay').classList.add('hidden');
-            setTimeout(() => { document.getElementById('diagram-frame').src = 'about:blank'; }, 300);
-        }
-        
-        window.alertTimeout = null;
-        window.showNavbarAlert = function(message, type = 'info') {
-            const alertEl = document.getElementById('navbar-alert');
-            const textEl = document.getElementById('navbar-alert-text');
-            const iconEl = document.getElementById('navbar-alert-icon');
-            
-            if (!alertEl || !textEl || !iconEl) return;
-
-            alertEl.className = "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-4 py-1.5 rounded-full border shadow-[0_0_15px_rgba(0,0,0,0.5)] flex items-center gap-2 transition-all duration-300 transform z-[9999] backdrop-blur-md";
-
-            if(type === 'success') {
-                alertEl.classList.add('bg-green-900/90', 'border-green-800/50');
-                iconEl.className = "fas fa-check-circle text-green-400 text-xs";
-            } else if (type === 'error') {
-                alertEl.classList.add('bg-red-900/90', 'border-red-800/50');
-                iconEl.className = "fas fa-exclamation-circle text-red-400 text-xs";
-            } else {
-                alertEl.classList.add('bg-[#1c1c2e]/90', 'border-purple-900/50');
-                iconEl.className = "fas fa-info-circle text-purple-400 text-xs";
-            }
-
-            textEl.innerText = message;
-            alertEl.classList.remove('opacity-0', 'pointer-events-none', 'scale-90');
-            alertEl.classList.add('opacity-100', 'scale-100');
-
-            if (window.alertTimeout) clearTimeout(window.alertTimeout);
-            window.alertTimeout = setTimeout(() => {
-                alertEl.classList.remove('opacity-100', 'scale-100');
-                alertEl.classList.add('opacity-0', 'pointer-events-none', 'scale-90');
-            }, 3000);
-        }
-    </script>
     <div id="mobile-overlay" class="fixed inset-0 bg-black/80 z-[150] hidden lg:hidden backdrop-blur-sm transition-opacity" onclick="toggleSidebar()"></div>
     <div id="diagram-overlay" class="fixed inset-0 z-[10000] hidden bg-[#0b0c15]">
-        <button onclick="closePreview()" class="absolute top-2 right-2 z-[10001] text-gray-400 hover:text-white bg-black/50 hover:bg-black/80 w-8 h-8 flex items-center justify-center rounded-full backdrop-blur-sm transition-all border border-white/10 shadow-lg">
-            <i class="fas fa-times text-sm"></i>
-        </button>
+        <button onclick="closePreview()" class="absolute top-2 right-2 z-[10001] text-gray-400 hover:text-white bg-black/50 hover:bg-black/80 w-8 h-8 flex items-center justify-center rounded-full backdrop-blur-sm transition-all border border-white/10 shadow-lg"><i class="fas fa-times text-sm"></i></button>
         <iframe id="diagram-frame" class="w-full h-full border-none bg-white"></iframe>
     </div>
     <aside id="sidebar" class="fixed inset-y-0 left-0 w-72 bg-[#13131f] border-r border-white/10 flex flex-col z-[200] transform -translate-x-full lg:translate-x-0 h-full shadow-2xl safe-pl transition-transform duration-300">
         <div class="h-16 shrink-0 flex items-center px-4 border-b border-white/10 bg-[#13131f] relative">
-            <span class="font-bold text-lg text-white flex items-center gap-3">
-                <img src="/logo.png" class="w-7 h-7 rounded-full shadow-lg"> Dardcor AI
-            </span>
-             <button onclick="toggleSidebar()" class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors z-[10000] p-2">
-                <i class="fas fa-times text-lg"></i>
-            </button>
+            <span class="font-bold text-lg text-white flex items-center gap-3"><img src="/logo.png" class="w-7 h-7 rounded-full shadow-lg"> Dardcor AI</span>
+             <button onclick="toggleSidebar()" class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors z-[10000] p-2"><i class="fas fa-times text-lg"></i></button>
         </div>
         <div class="flex-1 overflow-y-auto p-2 scrollbar-hide">
             <div id="current-new-chat-item" onclick="createNewChat()" class="chat-item group relative flex items-center px-3 py-2.5 rounded-lg cursor-pointer w-full transition-all text-gray-400 border border-purple-900 bg-white/5 hover:bg-white/10">
-                <div class="flex-1 min-w-0 flex items-center pointer-events-none">
-                    <i class="fas fa-plus mr-3 text-sm"></i><span class="text-xs font-bold uppercase tracking-wider">New Chat</span>
-                </div>
+                <div class="flex-1 min-w-0 flex items-center pointer-events-none"><i class="fas fa-plus mr-3 text-sm"></i><span class="text-xs font-bold uppercase tracking-wider">New Chat</span></div>
             </div>
             <div class="px-1 mb-4 mt-4">
                  <div class="text-[9px] text-gray-500 font-bold uppercase tracking-widest px-2 mb-2">Tools</div>
@@ -222,10 +129,7 @@
                 if (conversationList && conversationList.length > 0 && activeConversationId) { const exists = conversationList.some(c => c.id === activeConversationId);
                 if (exists) isNewChatActive = false; } %>
                 <div id="new-chat-highlight-target" onclick="createNewChat()" class="chat-item group relative flex items-center px-3 py-2.5 rounded-lg cursor-pointer w-full transition-all <%= isNewChatActive ? 'bg-[#202336] text-white border-l-2 border-purple-900' : 'text-gray-400 border-l-2 border-transparent hover:bg-white/5' %>">
-                    <div class="flex-1 min-w-0 flex items-center pointer-events-none">
-                        <i class="fas fa-message text-xs mr-3 w-4 text-center opacity-70"></i>
-                        <span class="text-xs truncate">Percakapan Baru</span>
-                    </div>
+                    <div class="flex-1 min-w-0 flex items-center pointer-events-none"><i class="fas fa-message text-xs mr-3 w-4 text-center opacity-70"></i><span class="text-xs truncate">Percakapan Baru</span></div>
                 </div>
                 <% if (conversationList) { conversationList.forEach(chat => { %>
                      <div id="chat-item-<%= chat.id %>" onclick="loadChat('<%= chat.id %>')" class="chat-item group relative flex items-center px-3 py-2.5 rounded-lg cursor-pointer w-full transition-all <%= chat.id === activeConversationId ? 'bg-[#202336] text-white border-l-2 border-purple-900' : 'text-gray-400 border-l-2 border-transparent hover:bg-white/5' %>">
@@ -234,9 +138,7 @@
                             <span id="title-<%= chat.id %>" class="text-xs truncate"><%= chat.title ? chat.title.substring(0, 25) : 'Percakapan' %></span>
                             <input type="hidden" id="raw-title-<%= chat.id %>" value="<%= chat.title %>">
                         </div>
-                        <button onclick="event.stopPropagation(); toggleMenu(event, 'menu-<%= chat.id %>')" class="options-btn absolute right-2 z-20 w-6 h-6 flex items-center justify-center text-gray-400 hover:text-white transition-opacity bg-transparent outline-none focus:outline-none <%= chat.id === activeConversationId ? 'opacity-100' : 'opacity-0 group-hover:opacity-100' %>">
-                            <i class="fas fa-ellipsis-v text-[10px]"></i>
-                        </button>
+                        <button onclick="event.stopPropagation(); toggleMenu(event, 'menu-<%= chat.id %>')" class="options-btn absolute right-2 z-20 w-6 h-6 flex items-center justify-center text-gray-400 hover:text-white transition-opacity bg-transparent outline-none focus:outline-none <%= chat.id === activeConversationId ? 'opacity-100' : 'opacity-0 group-hover:opacity-100' %>"><i class="fas fa-ellipsis-v text-[10px]"></i></button>
                         <div id="menu-<%= chat.id %>" class="hidden absolute right-2 top-8 w-32 bg-[#2a2d3d] border border-gray-600 rounded-lg shadow-xl z-30 py-1" onclick="event.stopPropagation()">
                             <button onclick="openRenameModal('<%= chat.id %>')" class="w-full text-left px-3 py-2 text-xs hover:bg-white/10 text-gray-300 flex gap-2 items-center"><i class="fas fa-edit"></i> Edit</button>
                             <button onclick="openDeleteModal('<%= chat.id %>')" class="w-full text-left px-3 py-2 text-xs text-red-400 hover:bg-white/10 flex gap-2 items-center"><i class="fas fa-trash"></i> Hapus</button>
@@ -246,40 +148,27 @@
             </div>
         </div>
         <div class="p-4 border-t border-white/10 bg-[#0e0f19] flex justify-between items-center">
-             <a href="/dardcorchat/profile" class="flex items-center gap-3">
-                <img src="<%= user.profile_image || 'https://ui-avatars.com/api/?name=' + user.username %>" class="w-8 h-8 rounded-full bg-gray-700 object-cover">
-                <div class="text-xs font-bold text-white truncate w-24"><%= user.username %></div>
-            </a>
+             <a href="/dardcorchat/profile" class="flex items-center gap-3"><img src="<%= user.profile_image || 'https://ui-avatars.com/api/?name=' + user.username %>" class="w-8 h-8 rounded-full bg-gray-700 object-cover"><div class="text-xs font-bold text-white truncate w-24"><%= user.username %></div></a>
             <a href="/dardcor-logout" class="text-gray-500 hover:text-red-400"><i class="fas fa-power-off"></i></a>
         </div>
     </aside>
     <main id="main-content" class="absolute inset-0 right-0 h-[100dvh] bg-[#0b0c15] lg:left-72 w-full flex flex-col overflow-hidden">
         <header class="h-16 shrink-0 flex items-center justify-between px-4 border-b border-white/5 bg-[#0b0c15]/90 backdrop-blur-md z-40 relative">
             <div class="flex items-center">
-                <button onclick="toggleSidebar()" class="text-gray-400 hover:text-white p-2 rounded-lg hover:bg-white/10 transition-colors mr-3 flex items-center justify-center w-10 h-10 lg:hidden z-50">
-                    <i class="fas fa-bars text-xl"></i>
-                </button>
-                <button onclick="toggleSidebar()" class="text-gray-400 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-colors mr-3 hidden lg:flex items-center justify-center">
-                    <i class="fas fa-bars text-lg"></i>
-                </button>
+                <button onclick="toggleSidebar()" class="text-gray-400 hover:text-white p-2 rounded-lg hover:bg-white/10 transition-colors mr-3 flex items-center justify-center w-10 h-10 lg:hidden z-50"><i class="fas fa-bars text-xl"></i></button>
+                <button onclick="toggleSidebar()" class="text-gray-400 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-colors mr-3 hidden lg:flex items-center justify-center"><i class="fas fa-bars text-lg"></i></button>
             </div>
-            
             <div id="navbar-alert" class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-4 py-1.5 bg-[#1c1c2e] border border-purple-900/30 rounded-full shadow-lg flex items-center gap-2 transition-all duration-300 opacity-0 pointer-events-none transform scale-90 z-[9999]">
-                <i id="navbar-alert-icon" class="fas fa-info-circle text-purple-400 text-xs"></i>
-                <span id="navbar-alert-text" class="text-xs font-bold text-gray-200 whitespace-nowrap">Notification</span>
+                <i id="navbar-alert-icon" class="fas fa-info-circle text-purple-400 text-xs"></i><span id="navbar-alert-text" class="text-xs font-bold text-gray-200 whitespace-nowrap">Notification</span>
             </div>
-
             <div class="flex items-center gap-2 ml-auto">
                 <div id="active-persona-container" class="hidden items-center gap-2 px-3 py-1.5 rounded-lg border border-purple-900/30 bg-purple-900/10 text-purple-300 text-xs font-medium cursor-pointer hover:bg-purple-900/20" onclick="openPersonaModal()" title="Persona Aktif">
-                    <i class="fas fa-user-astronaut"></i>
-                    <span id="active-persona-label" class="max-w-[100px] truncate">Default</span>
-                    <i class="fas fa-times text-gray-400 hover:text-red-400 ml-1" onclick="event.stopPropagation(); deselectPersona();"></i>
+                     <i class="fas fa-user-astronaut"></i><span id="active-persona-label" class="max-w-[100px] truncate">Default</span><i class="fas fa-times text-gray-400 hover:text-red-400 ml-1" onclick="event.stopPropagation(); deselectPersona();"></i>
                 </div>
                 <button id="refresh-chat-btn" class="w-9 h-9 flex items-center justify-center rounded-lg border border-purple-900/30 bg-purple-900/10 text-purple-400 hover:bg-purple-900/20 hover:text-white transition-all"><i id="refresh-icon" class="fas fa-sync-alt text-xs"></i></button>
                 <div class="relative">
                     <button id="model-dropdown-btn" class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-purple-900/50 bg-[#151024] text-purple-400 text-xs font-medium hover:bg-purple-900/20 hover:text-white h-[36px] w-auto whitespace-nowrap transition-colors">
-                        <span id="tool-label" class="block truncate"><%= toolType === 'dark' ? 'Dark Model' : (toolType === 'pro' ? 'Pro Model' : 'Basic Model') %></span> 
-                        <i class="fas fa-chevron-down text-[10px] ml-1 flex-shrink-0" id="tools-chevron"></i>
+                        <span id="tool-label" class="block truncate"><%= toolType === 'dark' ? 'Dark Model' : (toolType === 'pro' ? 'Pro Model' : 'Basic Model') %></span><i class="fas fa-chevron-down text-[10px] ml-1 flex-shrink-0" id="tools-chevron"></i>
                      </button>
                     <div id="tools-menu" class="hidden absolute right-0 top-full mt-1 w-max flex flex-col bg-[#151024] border border-purple-900/50 rounded-lg shadow-2xl z-[9999] overflow-hidden backdrop-blur-sm p-1">
                         <button data-model="basic" class="model-select-btn w-full text-left px-4 py-2 text-xs font-bold text-gray-300 hover:text-white hover:bg-purple-900/50 rounded-md transition-all whitespace-nowrap">Basic Model</button>
@@ -315,6 +204,12 @@
         </div>
     </div>
 
+    <script>
+         window.SERVER_DATA = { 
+            currentConversationId: "<%= activeConversationId || '' %>", 
+            toolType: "<%= typeof toolType !== 'undefined' ? toolType : 'basic' %>" 
+        };
+    </script>
     <script src="/js/dardcorai.js?v=<%= Date.now() %>"></script>
 </body>
 </html>
