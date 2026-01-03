@@ -29,7 +29,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const toolsChevron = document.getElementById('tools-chevron');
     const toolLabel = document.getElementById('tool-label');
 
-    // --- MARKED RENDERER SETUP ---
     if (typeof marked !== 'undefined') {
         const renderer = new marked.Renderer();
         renderer.code = function(code, language) {
@@ -66,6 +65,15 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </div>`;
         };
+        
+        const originalLink = renderer.link;
+        renderer.link = function(href, title, text) {
+            let safeHref = href;
+            if (!safeHref || safeHref === 'undefined' || safeHref === 'null') {
+                return text; 
+            }
+            return `<a href="${safeHref}" target="_blank" class="text-purple-500 hover:underline" title="${title || ''}">${text}</a>`;
+        };
 
         marked.setOptions({ renderer: renderer, gfm: true, breaks: true, sanitize: false });
     }
@@ -90,18 +98,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function applyMinimalistStyle() {
         if (!messageList) return;
-        const allButtons = messageList.getElementsByTagName('button');
-        for (let btn of allButtons) {
-            if ((btn.innerText.includes('Salin') || btn.innerText.includes('Dengar')) && !btn.classList.contains('cmd-btn')) {
-                btn.className = "text-[10px] font-medium bg-transparent border-none p-0 mr-4 opacity-70 hover:opacity-100 flex items-center gap-1.5 transition-colors text-gray-500 hover:text-white";
-                if (btn.parentElement && btn.parentElement.className.includes('bg-')) {
-                    btn.parentElement.className = "flex items-center gap-4 mt-1 px-2 select-none transition-opacity";
-                }
-            }
-        }
     }
-    applyMinimalistStyle();
-
+    
     function getFileIconClass(mimetype, filename) {
         if (!mimetype) mimetype = "";
         if (!filename) filename = "";
@@ -187,7 +185,34 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('dragleave', (e) => { if (e.relatedTarget === null || e.relatedTarget === document.documentElement) { if (dropZone) { dropZone.classList.add('hidden'); dropZone.classList.remove('flex'); } } });
     window.addEventListener('drop', (e) => { e.preventDefault(); if (dropZone) { dropZone.classList.add('hidden'); dropZone.classList.remove('flex'); } handleFiles(e.dataTransfer.files); });
 
-    // --- TOOL DELETE HANDLERS ---
+    window.showNavbarAlert = function(message, type = 'info') {
+        const alertBox = document.getElementById('navbar-alert');
+        const alertText = document.getElementById('navbar-alert-text');
+        const alertIcon = document.getElementById('navbar-alert-icon');
+        
+        if (alertBox && alertText && alertIcon) {
+            alertText.innerText = message;
+            alertBox.classList.remove('opacity-0', 'pointer-events-none', 'scale-90');
+            alertBox.classList.add('opacity-100', 'scale-100');
+            
+            if (type === 'success') {
+                alertBox.className = "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-4 py-1.5 bg-green-900/80 border border-green-500/30 rounded-full shadow-lg flex items-center gap-2 transition-all duration-300 opacity-100 transform scale-100 z-[9999]";
+                alertIcon.className = "fas fa-check-circle text-green-400 text-xs";
+            } else if (type === 'error') {
+                alertBox.className = "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-4 py-1.5 bg-red-900/80 border border-red-500/30 rounded-full shadow-lg flex items-center gap-2 transition-all duration-300 opacity-100 transform scale-100 z-[9999]";
+                alertIcon.className = "fas fa-exclamation-circle text-red-400 text-xs";
+            } else {
+                alertBox.className = "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-4 py-1.5 bg-[#1c1c2e] border border-purple-900/30 rounded-full shadow-lg flex items-center gap-2 transition-all duration-300 opacity-100 transform scale-100 z-[9999]";
+                alertIcon.className = "fas fa-info-circle text-purple-400 text-xs";
+            }
+
+            setTimeout(() => {
+                alertBox.classList.add('opacity-0', 'pointer-events-none', 'scale-90');
+                alertBox.classList.remove('opacity-100', 'scale-100');
+            }, 3000);
+        }
+    };
+
     window.requestToolDelete = function(msg, action) { 
         const modal = document.getElementById('tool-delete-modal'); 
         const text = document.getElementById('tool-delete-text'); 
@@ -205,7 +230,6 @@ document.addEventListener('DOMContentLoaded', () => {
         pendingToolDelete = null; 
     };
 
-    // --- BUTTON HELPERS FOR SAFE HTML STRINGS ---
     window.askDeletePersona = function(id) {
         window.requestToolDelete('Hapus persona ini?', async () => {
             try {
@@ -255,7 +279,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-
     if (modelBtn) {
         modelBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); if (toolsMenu) toolsMenu.classList.toggle('hidden'); if (toolsChevron) toolsChevron.classList.toggle('rotate-180'); });
     }
@@ -269,6 +292,13 @@ document.addEventListener('DOMContentLoaded', () => {
     window.setModel = function(type) { currentToolType = type; localStorage.setItem('dardcor_selected_model', type); updateModelUI(type); if (toolsMenu) toolsMenu.classList.add('hidden'); if (toolsChevron) toolsChevron.classList.remove('rotate-180'); window.showNavbarAlert(`Model diubah ke ${type === 'dark' ? 'Dark' : (type === 'pro' ? 'Pro' : 'Basic')}`, 'info'); };
     if (chatContainer) { chatContainer.addEventListener('scroll', () => { const threshold = 50; const position = chatContainer.scrollTop + chatContainer.clientHeight; const height = chatContainer.scrollHeight; userIsScrolling = (height - position > threshold); }); }
     function renderEmptyState() { if (!messageList) return; messageList.innerHTML = ` <div id="empty-state" class="flex flex-col items-center justify-center text-gray-500 opacity-50 select-none"> <div class="w-20 h-20 bg-gray-800/50 rounded-full flex items-center justify-center mb-6 overflow-hidden border border-gray-700 shadow-2xl bg-black"> <img src="/logo.png" class="w-full h-full object-cover"> </div> <p class="text-lg font-medium text-gray-400 text-center">Apa yang bisa saya bantu?</p> </div>`; messageList.className = "w-full max-w-3xl mx-auto flex flex-col h-full items-center justify-center pb-4"; }
+
+    function linkify(text) {
+        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        return text.replace(urlRegex, function(url) {
+            return '<a href="' + url + '" target="_blank" class="text-purple-500 hover:underline">' + url + '</a>';
+        });
+    }
 
     function appendMessage(role, text, files = []) {
         if (!messageList) return null;
@@ -289,7 +319,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 const filename = f.name || f.filename || 'Unknown File';
                 const isImageMime = mimetype.startsWith('image/');
                 
-                // --- PERBAIKAN LOGIKA IMAGE URL ---
                 let imgUrl = null;
                 if (isImageMime) {
                     if (f instanceof File) {
@@ -300,11 +329,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         imgUrl = f.path;
                     }
                 }
-                // ---------------------------------
 
                 if (imgUrl) {
-                    fileHtml += `<div class="relative rounded-xl overflow-hidden border border-purple-900/40 shadow-lg group transition-transform hover:scale-105">
-                                    <img src="${imgUrl}" alt="${filename}" class="max-w-[240px] max-h-[240px] object-cover block bg-[#0f0f15]" loading="lazy">
+                    fileHtml += `<div class="relative rounded-xl overflow-hidden border border-purple-900/40 shadow-lg group transition-transform hover:scale-105 bg-[#0f0f15] min-w-[100px] min-h-[100px]">
+                                    <img src="${imgUrl}" alt="${filename}" class="max-w-[240px] max-h-[240px] object-cover block" loading="lazy" 
+                                    onerror="this.onerror=null; this.src='https://placehold.co/200x200/1e1e2e/FFF?text=Image+Expired'; this.style.opacity='0.5';">
                                  </div>`;
                 } else {
                     const iconClass = getFileIconClass(mimetype, filename);
@@ -324,16 +353,52 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const bubbleClass = role === 'user' ? 'bg-transparent border border-purple-900/60 text-white shadow-[0_0_15px_rgba(59,7,100,0.2)] rounded-br-sm' : 'bg-transparent border-none text-gray-200 rounded-bl-sm';
         let contentHtml = '';
-        if (role === 'user') { contentHtml = `<div class="whitespace-pre-wrap break-words user-text">${escapeHtml(text)}</div>`; } 
-        else {
+        
+        if (role === 'user') { 
+            contentHtml = `<div class="whitespace-pre-wrap break-words user-text">${linkify(escapeHtml(text))}</div>`; 
+            
+            div.innerHTML = `
+                <div class="flex flex-col items-end max-w-[85%] min-w-0">
+                    ${fileHtml}
+                    <div class="chat-content-box relative rounded-2xl px-5 py-3.5 shadow-md text-sm ${bubbleClass} w-fit min-w-0 max-w-full overflow-hidden leading-7">
+                        ${contentHtml}
+                    </div>
+                    <div class="mt-1 flex justify-end">
+                        <button onclick="copyMessageBubble(this)" class="text-[10px] font-medium bg-transparent border-none p-0 opacity-70 hover:opacity-100 flex items-center gap-1.5 transition-colors text-gray-500 hover:text-white" title="Salin">
+                            <i class="fas fa-copy"></i> Salin
+                        </button>
+                    </div>
+                </div>`;
+                
+        } else {
             if (text !== '...loading_placeholder...' && typeof marked !== 'undefined') { contentHtml = `<textarea class="hidden raw-message-content">${text}</textarea><div class="overflow-guard w-full min-w-0 max-w-full"><div class="markdown-body w-full max-w-full overflow-hidden break-words">${marked.parse(text)}</div></div>`; } 
             else { contentHtml = `<textarea class="hidden raw-message-content">${text}</textarea><div class="overflow-guard w-full min-w-0 max-w-full"><div class="markdown-body w-full max-w-full overflow-hidden break-words"></div></div>`; }
+            
+            let contentLoading = `<div class="flex items-center gap-3 bg-transparent border border-white/5 px-4 py-3.5 rounded-2xl rounded-bl-sm shadow-md"><div class="loader"></div><span class="text-xs text-purple-400 font-medium animate-pulse">Sedang berpikir...</span></div>`;
+            
+            let actionButtons = `
+                <div class="flex items-center gap-3 mt-1 ml-2 select-none opacity-50 hover:opacity-100 transition-opacity">
+                    <button onclick="copyMessageBubble(this)" class="text-[10px] font-medium bg-transparent border-none p-0 mr-2 opacity-70 hover:opacity-100 flex items-center gap-1.5 transition-colors text-gray-500 hover:text-white" title="Salin">
+                        <i class="fas fa-copy"></i> Salin
+                    </button>
+                    <button onclick="speakMessage(this)" class="text-[10px] font-medium bg-transparent border-none p-0 mr-2 opacity-70 hover:opacity-100 flex items-center gap-1.5 transition-colors text-gray-500 hover:text-white" title="Dengarkan">
+                        <i class="fas fa-volume-up"></i> Dengar
+                    </button>
+                </div>`;
+
+            if (text === '...loading_placeholder...') { 
+                div.innerHTML = `<div class="flex flex-col items-start max-w-[85%] min-w-0">${contentLoading}</div>`; 
+            } else { 
+                div.innerHTML = `
+                    <div class="flex flex-col items-start max-w-[85%] min-w-0">
+                        ${fileHtml}
+                        <div class="chat-content-box relative rounded-2xl rounded-bl-none px-4 py-3 shadow-md text-sm ${bubbleClass} w-fit min-w-0 max-w-full overflow-hidden leading-7">
+                            ${contentHtml}
+                        </div>
+                        ${actionButtons}
+                    </div>`; 
+            }
         }
-        let contentLoading = `<div class="flex items-center gap-3 bg-transparent border border-white/5 px-4 py-3.5 rounded-2xl rounded-bl-sm shadow-md"><div class="loader"></div><span class="text-xs text-purple-400 font-medium animate-pulse">Sedang berpikir...</span></div>`;
-        let actionButtons = `<div class="flex items-center gap-4 mt-1 px-2 select-none opacity-50 hover:opacity-100 transition-opacity"><button onclick="copyMessageBubble(this)" class="text-[10px] font-medium bg-transparent border-none p-0 mr-4 opacity-70 hover:opacity-100 flex items-center gap-1.5 transition-colors text-gray-500 hover:text-white" title="Salin"><i class="fas fa-copy"></i> Salin</button>${role !== 'user' ? `<button onclick="speakMessage(this)" class="text-[10px] font-medium bg-transparent border-none p-0 mr-4 opacity-70 hover:opacity-100 flex items-center gap-1.5 transition-colors text-gray-500 hover:text-white" title="Dengarkan"><i class="fas fa-volume-up"></i> Dengar</button>` : ''}</div>`;
-        
-        if (text === '...loading_placeholder...') { div.innerHTML = `<div class="flex flex-col items-start max-w-[85%] min-w-0">${contentLoading}</div>`; } 
-        else { div.innerHTML = `<div class="flex flex-col ${role === 'user' ? 'items-end' : 'items-start'} max-w-[85%] min-w-0">${fileHtml}<div class="chat-content-box relative rounded-2xl px-5 py-3.5 shadow-md text-sm ${bubbleClass} w-fit min-w-0 max-w-full overflow-hidden leading-7">${contentHtml}</div>${actionButtons}</div>`; }
         
         messageList.appendChild(div);
         if (role === 'bot' && text !== '...loading_placeholder...') {
@@ -359,7 +424,27 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok) throw new Error("Server Error");
             if (loaderDiv) loaderDiv.remove();
             const botDiv = document.createElement('div'); botDiv.className = "flex w-full justify-start message-bubble-container group min-w-0";
-            botDiv.innerHTML = `<div class="flex flex-col items-start max-w-[85%] min-w-0"><div class="chat-content-box relative rounded-2xl px-5 py-3.5 shadow-md text-sm bg-transparent border-none text-gray-200 rounded-bl-sm w-fit min-w-0 max-w-full overflow-hidden leading-7"><div class="overflow-guard w-full min-w-0 max-w-full"><div class="markdown-body w-full max-w-full overflow-hidden break-words"></div></div></div><div class="flex items-center gap-4 mt-1 px-2 select-none opacity-50 hover:opacity-100 transition-opacity"><button onclick="copyMessageBubble(this)" class="text-[10px] font-medium bg-transparent border-none p-0 mr-4 opacity-70 hover:opacity-100 flex items-center gap-1.5 transition-colors text-gray-500 hover:text-white" title="Salin"><i class="fas fa-copy"></i> Salin</button><button onclick="speakMessage(this)" class="text-[10px] font-medium bg-transparent border-none p-0 mr-4 opacity-70 hover:opacity-100 flex items-center gap-1.5 transition-colors text-gray-500 hover:text-white" title="Dengarkan"><i class="fas fa-volume-up"></i> Dengar</button></div></div>`;
+            
+            const actionButtons = `
+                <div class="flex items-center gap-3 mt-1 ml-2 select-none opacity-50 hover:opacity-100 transition-opacity">
+                    <button onclick="copyMessageBubble(this)" class="text-[10px] font-medium bg-transparent border-none p-0 mr-2 opacity-70 hover:opacity-100 flex items-center gap-1.5 transition-colors text-gray-500 hover:text-white" title="Salin">
+                        <i class="fas fa-copy"></i> Salin
+                    </button>
+                    <button onclick="speakMessage(this)" class="text-[10px] font-medium bg-transparent border-none p-0 mr-2 opacity-70 hover:opacity-100 flex items-center gap-1.5 transition-colors text-gray-500 hover:text-white" title="Dengarkan">
+                        <i class="fas fa-volume-up"></i> Dengar
+                    </button>
+                </div>`;
+
+            botDiv.innerHTML = `
+                <div class="flex flex-col items-start max-w-[85%] min-w-0">
+                    <div class="chat-content-box relative rounded-2xl rounded-bl-none px-4 py-3 shadow-md text-sm bg-transparent border-none text-gray-200 rounded-bl-sm w-fit min-w-0 max-w-full overflow-hidden leading-7">
+                        <div class="overflow-guard w-full min-w-0 max-w-full">
+                            <div class="markdown-body w-full max-w-full overflow-hidden break-words"></div>
+                        </div>
+                    </div>
+                    ${actionButtons}
+                </div>`;
+
             if (messageList) messageList.appendChild(botDiv);
             const botContent = botDiv.querySelector('.markdown-body'); const reader = response.body.getReader(); const decoder = new TextDecoder(); let fullText = ""; let buffer = ""; let isStreaming = true; let lastUpdate = 0;
             const render = (timestamp) => {
@@ -387,7 +472,37 @@ document.addEventListener('DOMContentLoaded', () => {
     window.closeModal = function(id) { const modal = document.getElementById(id); if (modal) modal.classList.remove('active'); };
     window.closeModals = function() { document.querySelectorAll('.modal').forEach(m => m.classList.remove('active')); };
     window.submitRename = async function() { const input = document.getElementById('rename-input'); const newTitle = input ? input.value : ''; if (!newTitle || !chatToEdit) return; try { const res = await fetch('/dardcorchat/ai/rename-chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ conversationId: chatToEdit, newTitle }) }); if (res.ok) { const titleEl = document.getElementById(`title-${chatToEdit}`); const rawInput = document.getElementById(`raw-title-${chatToEdit}`); if (titleEl) titleEl.innerText = newTitle.length > 25 ? newTitle.substring(0, 25) + '...' : newTitle; if (rawInput) rawInput.value = newTitle; window.showNavbarAlert('Nama percakapan diperbarui', 'success'); closeModal('rename-modal'); } else { window.showNavbarAlert('Gagal mengubah nama', 'error'); } } catch (e) { console.error(e); window.showNavbarAlert('Terjadi kesalahan sistem', 'error'); } };
-    window.submitDelete = async function() { if (!chatToDelete) return; try { const res = await fetch('/dardcorchat/ai/delete-chat-history', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ conversationId: chatToDelete }) }); if (res.ok) { if (serverData.currentConversationId === chatToDelete) { window.location.href = '/dardcorchat/dardcor-ai'; } else { const item = document.getElementById(`chat-item-${chatToDelete}`); if (item) item.remove(); window.showNavbarAlert('Percakapan dihapus', 'success'); closeModal('delete-modal'); } } else { window.showNavbarAlert('Gagal menghapus percakapan', 'error'); } } catch (e) { console.error(e); window.showNavbarAlert('Terjadi kesalahan sistem', 'error'); } };
+    
+    window.submitDelete = async function() { 
+        if (!chatToDelete) return; 
+        try { 
+            const res = await fetch('/dardcorchat/ai/delete-chat-history', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ conversationId: chatToDelete }) 
+            }); 
+            if (res.ok) { 
+                const item = document.getElementById(`chat-item-${chatToDelete}`); 
+                if (item) item.remove(); 
+                
+                if (serverData.currentConversationId === chatToDelete) {
+                    serverData.currentConversationId = '';
+                    messageList.innerHTML = '';
+                    renderEmptyState();
+                    window.history.pushState(null, '', '/dardcorchat/dardcor-ai');
+                }
+                
+                window.showNavbarAlert('Percakapan dihapus', 'success'); 
+                closeModal('delete-modal'); 
+            } else { 
+                window.showNavbarAlert('Gagal menghapus percakapan', 'error'); 
+            } 
+        } catch (e) { 
+            console.error(e); 
+            window.showNavbarAlert('Terjadi kesalahan sistem', 'error'); 
+        } 
+    };
+
     window.updateActiveChatUI = function(id) { const historyItems = document.querySelectorAll('[id^="chat-item-"], #new-chat-highlight-target'); historyItems.forEach(el => { el.classList.remove('bg-[#202336]', 'text-white', 'border-purple-900', 'border-l-2'); el.classList.add('text-gray-400', 'border-l-2', 'border-transparent', 'hover:bg-white/5'); const btn = el.querySelector('.options-btn'); if (btn) { btn.classList.remove('opacity-100'); btn.classList.add('opacity-0', 'group-hover:opacity-100'); } }); let activeEl = document.getElementById(`chat-item-${id}`); if (!activeEl) activeEl = document.getElementById('new-chat-highlight-target'); if (activeEl) { activeEl.classList.remove('text-gray-400', 'border-transparent', 'hover:bg-white/5'); activeEl.classList.add('bg-[#202336]', 'text-white', 'border-purple-900'); const btn = activeEl.querySelector('.options-btn'); if (btn) { btn.classList.remove('opacity-0', 'group-hover:opacity-100'); btn.classList.add('opacity-100'); } } document.querySelectorAll('[id^="menu-"]').forEach(el => el.classList.add('hidden')); };
     window.createNewChat = async function() { try { const res = await fetch('/dardcorchat/ai/new-chat', { method: 'POST' }); const data = await res.json(); if (data.success) { const newId = data.redirectUrl.split('/').pop(); loadChat(newId); serverData.currentConversationId = newId; window.showNavbarAlert('Percakapan baru dibuat', 'success'); } } catch (e) { console.error(e); window.showNavbarAlert('Gagal membuat chat baru', 'error'); } };
     window.loadChat = async function(id) { if (isChatLoading) return; isChatLoading = true; window.closeSidebarIfMobile(); window.updateActiveChatUI(id); try { const res = await fetch(`/api/chat/${id}`); const data = await res.json(); if (data.success && messageList) { serverData.currentConversationId = id; messageList.innerHTML = ''; if (!data.history || data.history.length === 0) { renderEmptyState(); } else { messageList.className = "w-full max-w-3xl mx-auto flex flex-col gap-6 pt-4 pb-4"; data.history.forEach(msg => appendMessage(msg.role, msg.message, msg.file_metadata)); setTimeout(() => { initHighlight(); scrollToBottom(true); applyMinimalistStyle(); }, 100); } window.history.pushState({ id: id }, '', `/dardcorchat/dardcor-ai/${id}`); } else { window.showNavbarAlert('Gagal memuat riwayat chat', 'error'); } } catch (e) { console.error(e); window.showNavbarAlert('Koneksi terputus', 'error'); } finally { isChatLoading = false; } };
@@ -395,82 +510,17 @@ document.addEventListener('DOMContentLoaded', () => {
     function loadVoices() { return new Promise((resolve) => { let voices = window.speechSynthesis.getVoices(); if (voices.length > 0) resolve(voices); else window.speechSynthesis.onvoiceschanged = () => resolve(window.speechSynthesis.getVoices()); }); }
     window.speakMessage = async function(btn) { const bubbleContainer = btn.closest('.message-bubble-container'); if (!bubbleContainer) return; const contentBox = bubbleContainer.querySelector('.chat-content-box'); const textToRead = contentBox.innerText; if (window.speechSynthesis.speaking) { window.speechSynthesis.cancel(); if (currentUtterance === textToRead) { currentUtterance = null; btn.innerHTML = `<i class="fas fa-volume-up"></i> Dengar`; return; } } const voices = await loadVoices(); const utterance = new SpeechSynthesisUtterance(textToRead); const idVoice = voices.find(v => v.lang.includes('id') || v.lang.includes('ID')); if (idVoice) utterance.voice = idVoice; utterance.lang = 'id-ID'; utterance.rate = 1; currentUtterance = textToRead; btn.innerHTML = `<i class="fas fa-stop text-red-400"></i> Stop`; utterance.onend = () => { btn.innerHTML = `<i class="fas fa-volume-up"></i> Dengar`; currentUtterance = null; }; window.speechSynthesis.speak(utterance); };
     window.openPersonaModal = function() { window.closeModals(); const modal = document.getElementById('persona-modal'); if (modal) { modal.classList.add('active'); fetchPersonas(); } };
-    
-    // --- UPDATED FETCH PERSONAS (SAFE BUTTONS) ---
-    async function fetchPersonas() { 
-        try { 
-            const res = await fetch('/api/personas'); 
-            const data = await res.json(); 
-            const list = document.getElementById('persona-list'); 
-            if (list) { 
-                list.innerHTML = ''; 
-                if (data.success && data.data) { 
-                    data.data.forEach(p => { 
-                        const isActive = selectedPersonaId === p.id; 
-                        const div = document.createElement('div'); 
-                        div.className = `flex justify-between items-center p-2 rounded bg-[#151520] border ${isActive ? 'border-purple-900 ring-1 ring-purple-900' : 'border-white/10'} hover:border-purple-900/50 transition`; 
-                        div.innerHTML = `<div class="cursor-pointer flex-1" onclick="selectPersona('${p.id}', '${p.name}', this)">
-                                            <div class="font-bold text-xs text-white flex items-center gap-2">${p.name}${isActive ? '<i class="fas fa-check-circle text-purple-600"></i>' : ''}</div>
-                                            <div class="text-[10px] text-gray-400 truncate w-48">${p.instruction}</div>
-                                         </div>
-                                         <button onclick="askDeletePersona('${p.id}')" class="text-red-400 hover:text-red-300 ml-2 p-1"><i class="fas fa-trash"></i></button>`; 
-                        list.appendChild(div); 
-                    }); 
-                } 
-            } 
-        } catch (e) { console.error(e); } 
-    }
-
-    window.addPersona = async function() { const nameInput = document.getElementById('new-persona-name'); const instInput = document.getElementById('new-persona-inst'); if (!nameInput || !instInput) return; const name = nameInput.value; const instruction = instInput.value; if (!name || !instruction) return; try { const res = await fetch('/api/personas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, instruction }) }); const result = await res.json(); if (result.success && result.data) { selectPersona(result.data.id, result.data.name); window.showNavbarAlert('Persona berhasil dibuat', 'success'); } nameInput.value = ''; instInput.value = ''; fetchPersonas(); } catch (e) { console.error(e); window.showNavbarAlert('Gagal membuat persona', 'error'); } };
+    async function fetchPersonas() { try { const res = await fetch('/api/personas'); const data = await res.json(); const list = document.getElementById('persona-list'); if (list) { list.innerHTML = ''; if (data.success && data.data) { data.data.forEach(p => { const isActive = selectedPersonaId === p.id; const div = document.createElement('div'); div.className = `flex justify-between items-center p-2 rounded bg-[#151520] border ${isActive ? 'border-purple-900 ring-1 ring-purple-900' : 'border-white/10'} hover:border-purple-900/50 transition`; div.innerHTML = `<div class="cursor-pointer flex-1" onclick="selectPersona('${p.id}', '${p.name}', this)"><div class="font-bold text-xs text-white flex items-center gap-2">${p.name}${isActive ? '<i class="fas fa-check-circle text-purple-600"></i>' : ''}</div><div class="text-[10px] text-gray-400 truncate w-48">${p.instruction}</div></div><button onclick="askDeletePersona('${p.id}')" class="text-red-400 hover:text-red-300 ml-2 p-1"><i class="fas fa-trash"></i></button>`; list.appendChild(div); }); } } } catch (e) { console.error(e); } }
+    window.addPersona = async function() { const nameInput = document.getElementById('new-persona-name'); const instInput = document.getElementById('new-persona-inst'); if (!nameInput || !instInput) return; const name = nameInput.value; const instruction = instInput.value; if (!name || !instruction) return; try { const res = await fetch('/api/personas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, instruction }) }); const result = await res.json(); if (result.success && result.data) { selectPersona(result.data.id, result.data.name); window.showNavbarAlert('Persona berhasil dibuat', 'success'); window.closeModals(); } nameInput.value = ''; instInput.value = ''; fetchPersonas(); } catch (e) { console.error(e); window.showNavbarAlert('Gagal membuat persona', 'error'); } };
     window.selectPersona = function(id, name, el) { selectedPersonaId = id; selectedPersonaName = name; localStorage.setItem('activePersonaId', id); localStorage.setItem('activePersonaName', name); updatePersonaUI(); window.showNavbarAlert(`Persona diaktifkan: ${name}`, 'info'); const modal = document.getElementById('persona-modal'); if (modal && modal.classList.contains('active')) fetchPersonas(); };
     window.deselectPersona = function() { selectedPersonaId = null; selectedPersonaName = null; localStorage.removeItem('activePersonaId'); localStorage.removeItem('activePersonaName'); updatePersonaUI(); window.showNavbarAlert('Persona dinonaktifkan', 'info'); const modal = document.getElementById('persona-modal'); if (modal && modal.classList.contains('active')) fetchPersonas(); };
     function updatePersonaUI() { const indicator = document.getElementById('active-persona-container'); const label = document.getElementById('active-persona-label'); if (selectedPersonaId && selectedPersonaName) { if (indicator) { indicator.classList.remove('hidden'); indicator.classList.add('flex'); } if (label) label.innerText = selectedPersonaName; } else { if (indicator) { indicator.classList.add('hidden'); indicator.classList.remove('flex'); } } }
     window.openVaultModal = function() { window.closeModals(); const modal = document.getElementById('vault-modal'); if (modal) { modal.classList.add('active'); fetchVault(); } };
-    
-    // --- UPDATED FETCH VAULT (SAFE BUTTONS) ---
-    async function fetchVault() { 
-        try { 
-            const res = await fetch('/api/vault'); 
-            const data = await res.json(); 
-            const list = document.getElementById('vault-list'); 
-            if (list) { 
-                list.innerHTML = ''; 
-                if (data.success && data.data) { 
-                    data.data.forEach(v => { 
-                        list.innerHTML += `<div class="flex justify-between items-center p-2 rounded bg-[#151520] border border-white/10 mb-1">
-                                            <div class="text-xs text-white font-bold truncate w-64">${v.title}</div>
-                                            <button onclick="askDeleteVault('${v.id}')" class="text-red-400 hover:text-red-300"><i class="fas fa-trash"></i></button>
-                                           </div>`; 
-                    }); 
-                } 
-            } 
-        } catch (e) { console.error(e); } 
-    }
-
-    window.addVault = async function() { const titleInput = document.getElementById('new-vault-title'); const contentInput = document.getElementById('new-vault-content'); if (!titleInput || !contentInput) return; const title = titleInput.value; const content = contentInput.value; if (!title || !content) return; try { await fetch('/api/vault', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title, content }) }); titleInput.value = ''; contentInput.value = ''; window.showNavbarAlert('Dokumen disimpan ke Vault', 'success'); fetchVault(); } catch (e) { console.error(e); window.showNavbarAlert('Gagal menyimpan dokumen', 'error'); } };
+    async function fetchVault() { try { const res = await fetch('/api/vault'); const data = await res.json(); const list = document.getElementById('vault-list'); if (list) { list.innerHTML = ''; if (data.success && data.data) { data.data.forEach(v => { list.innerHTML += `<div class="flex justify-between items-center p-2 rounded bg-[#151520] border border-white/10 mb-1"><div class="text-xs text-white font-bold truncate w-64">${v.title}</div><button onclick="askDeleteVault('${v.id}')" class="text-red-400 hover:text-red-300"><i class="fas fa-trash"></i></button></div>`; }); } } } catch (e) { console.error(e); } }
+    window.addVault = async function() { const titleInput = document.getElementById('new-vault-title'); const contentInput = document.getElementById('new-vault-content'); if (!titleInput || !contentInput) return; const title = titleInput.value; const content = contentInput.value; if (!title || !content) return; try { await fetch('/api/vault', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title, content }) }); titleInput.value = ''; contentInput.value = ''; window.showNavbarAlert('Dokumen disimpan ke Vault', 'success'); window.closeModals(); fetchVault(); } catch (e) { console.error(e); window.showNavbarAlert('Gagal menyimpan dokumen', 'error'); } };
     window.openMemoryModal = function() { window.closeModals(); const modal = document.getElementById('memory-modal'); if (modal) { modal.classList.add('active'); fetchMemories(); } };
-    
-    // --- UPDATED FETCH MEMORIES (SAFE BUTTONS) ---
-    async function fetchMemories() { 
-        try { 
-            const res = await fetch('/api/memories'); 
-            const data = await res.json(); 
-            const list = document.getElementById('memory-list'); 
-            if (list) { 
-                list.innerHTML = ''; 
-                if (data.success && data.data) { 
-                    data.data.forEach(m => { 
-                        list.innerHTML += `<div class="flex justify-between items-center p-2 rounded bg-[#151520] border border-white/10 mb-1">
-                                            <div class="text-xs text-white truncate w-64">${m.fact}</div>
-                                            <button onclick="askDeleteMemory('${m.id}')" class="text-red-400 hover:text-red-300"><i class="fas fa-trash"></i></button>
-                                           </div>`; 
-                    }); 
-                } 
-            } 
-        } catch (e) { console.error(e); } 
-    }
-
-    window.addMemory = async function() { const input = document.getElementById('new-memory'); if (!input) return; const fact = input.value; if (!fact) return; try { await fetch('/api/memories', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fact }) }); input.value = ''; window.showNavbarAlert('Memori baru ditambahkan', 'success'); fetchMemories(); } catch (e) { console.error(e); window.showNavbarAlert('Gagal menambah memori', 'error'); } };
+    async function fetchMemories() { try { const res = await fetch('/api/memories'); const data = await res.json(); const list = document.getElementById('memory-list'); if (list) { list.innerHTML = ''; if (data.success && data.data) { data.data.forEach(m => { list.innerHTML += `<div class="flex justify-between items-center p-2 rounded bg-[#151520] border border-white/10 mb-1"><div class="text-xs text-white truncate w-64">${m.fact}</div><button onclick="askDeleteMemory('${m.id}')" class="text-red-400 hover:text-red-300"><i class="fas fa-trash"></i></button></div>`; }); } } } catch (e) { console.error(e); } }
+    window.addMemory = async function() { const input = document.getElementById('new-memory'); if (!input) return; const fact = input.value; if (!fact) return; try { await fetch('/api/memories', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fact }) }); input.value = ''; window.showNavbarAlert('Memori baru ditambahkan', 'success'); window.closeModals(); fetchMemories(); } catch (e) { console.error(e); window.showNavbarAlert('Gagal menambah memori', 'error'); } };
     window.previewCode = async function(btn) { const container = btn.closest('.terminal-container'); if (!container) return; const rawCodeEl = container.querySelector('.raw-code'); if (!rawCodeEl) return; const rawCode = rawCodeEl.value.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&"); const original = btn.innerHTML; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; btn.disabled = true; try { const res = await fetch('/dardcorchat/ai/store-preview', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: rawCode }) }); const data = await res.json(); if (data.success) { const overlay = document.getElementById('diagram-overlay'); const frame = document.getElementById('diagram-frame'); if (frame) frame.src = `/dardcorchat/dardcor-ai/preview/${data.previewId}`; if (overlay) overlay.classList.remove('hidden'); } else { window.showNavbarAlert('Gagal memuat preview', 'error'); } } catch (e) { console.error(e); window.showNavbarAlert('Error sistem preview', 'error'); } finally { btn.innerHTML = original; btn.disabled = false; } };
     window.previewDiagram = async function(btn) { const container = btn.closest('.terminal-container'); if (!container) return; const rawCodeEl = container.querySelector('.raw-code'); if (!rawCodeEl) return; let rawCode = rawCodeEl.value.replace(/```mermaid/g, '').replace(/```/g, '').trim().replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&").replace(/&quot;/g, '"'); const original = btn.innerHTML; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; btn.disabled = true; try { const res = await fetch('/dardcorchat/ai/store-preview', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: rawCode, type: 'diagram' }) }); const data = await res.json(); if (data.success) { const overlay = document.getElementById('diagram-overlay'); const frame = document.getElementById('diagram-frame'); if (frame) frame.src = `/dardcorchat/dardcor-ai/diagram/${data.previewId}`; if (overlay) overlay.classList.remove('hidden'); } else { window.showNavbarAlert('Gagal memuat diagram', 'error'); } } catch (e) { console.error(e); window.showNavbarAlert('Error sistem diagram', 'error'); } finally { btn.innerHTML = original; btn.disabled = false; } };
     window.copyCode = function(btn) { const container = btn.closest('.terminal-container'); if (!container) return; const rawCodeEl = container.querySelector('.raw-code'); if (!rawCodeEl) return; const code = rawCodeEl.value.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&"); navigator.clipboard.writeText(code).then(() => { const origin = btn.innerHTML; btn.innerHTML = '<i class="fas fa-check"></i>'; setTimeout(() => btn.innerHTML = origin, 2000); window.showNavbarAlert('Kode disalin', 'success'); }); };

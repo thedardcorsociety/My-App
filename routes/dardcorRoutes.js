@@ -14,6 +14,7 @@ const cheerio = require('cheerio');
 const axios = require('axios');
 const mammoth = require('mammoth');
 const xlsx = require('xlsx');
+const path = require('path');
 
 const upload = multer({ limits: { fileSize: 50 * 1024 * 1024 } }); 
 const transporter = nodemailer.createTransport({ service: 'gmail', auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS } });
@@ -256,6 +257,32 @@ router.get('/api/chat/:conversationId', checkUserAuth, async (req, res) => {
     const userId = req.session.userAccount.id; 
     try { 
         const { data: history } = await supabase.from('history_chat').select('*').eq('conversation_id', req.params.conversationId).eq('user_id', userId).order('created_at', { ascending: true }); 
+
+        if (history && history.length > 0) {
+            await Promise.all(history.map(async (msg) => {
+                if (msg.file_metadata && Array.isArray(msg.file_metadata)) {
+                    const updatedFiles = await Promise.all(msg.file_metadata.map(async (file) => {
+                        if (file.storage_path) {
+                            try {
+                                const { data: signedData } = await supabase
+                                    .storage
+                                    .from('chat-attachments')
+                                    .createSignedUrl(file.storage_path, 3600);
+                                
+                                if (signedData && signedData.signedUrl) {
+                                    file.url = signedData.signedUrl;
+                                    file.path = signedData.signedUrl; 
+                                    return file;
+                                }
+                            } catch (e) {}
+                        }
+                        return file;
+                    }));
+                    msg.file_metadata = updatedFiles;
+                }
+            }));
+        }
+
         req.session.currentConversationId = req.params.conversationId; 
         req.session.save(); 
         res.json({ success: true, history: history || [] }); 
@@ -388,9 +415,16 @@ router.post('/dardcorchat/ai/chat-stream', checkUserAuth, uploadMiddleware, asyn
                 const mime = file.mimetype;
                 const originalName = file.originalname;
                 const cleanName = originalName.replace(/[^a-zA-Z0-9.]/g, '-');
-                const fileExt = cleanName.split('.').pop() || 'bin';
-                const fileNamePath = `${userId}/${Date.now()}-${uuidv4()}.${fileExt}`;
-                const meta = { filename: originalName, size: file.size, mimetype: mime, path: null, url: null };
+                const fileExt = path.extname(originalName).toLowerCase();
+                const fileNamePath = `${userId}/${Date.now()}-${uuidv4()}${fileExt}`;
+                const meta = { 
+                    filename: originalName, 
+                    size: file.size, 
+                    mimetype: mime, 
+                    path: null, 
+                    url: null,
+                    storage_path: fileNamePath 
+                };
 
                 try {
                     const { error: uploadError } = await supabase.storage
@@ -398,15 +432,17 @@ router.post('/dardcorchat/ai/chat-stream', checkUserAuth, uploadMiddleware, asyn
                         .upload(fileNamePath, file.buffer, { contentType: mime, upsert: false });
 
                     if (!uploadError) {
-                        const { data: urlData } = supabase.storage.from('chat-attachments').getPublicUrl(fileNamePath);
-                        if (urlData && urlData.publicUrl) {
-                            meta.path = urlData.publicUrl; 
-                            meta.url = urlData.publicUrl;
+                        const { data: signedData } = await supabase.storage.from('chat-attachments').createSignedUrl(fileNamePath, 3600);
+                        if (signedData && signedData.signedUrl) {
+                            meta.path = signedData.signedUrl; 
+                            meta.url = signedData.signedUrl;
                         }
                     }
                 } catch (err) { }
 
                 fileMetadata.push(meta);
+
+                const codeExtensions = ['.js', '.jsx', '.ts', '.tsx', '.py', '.java', '.c', '.cpp', '.h', '.cs', '.php', '.html', '.css', '.json', '.xml', '.sql', '.md', '.txt', '.env', '.yml', '.yaml', '.ini', '.log', '.sh', '.bat', '.ps1'];
 
                 if (mime.startsWith('image/') || mime.startsWith('video/') || mime.startsWith('audio/') || mime === 'application/pdf') {
                     geminiFiles.push(file);
@@ -414,8 +450,10 @@ router.post('/dardcorchat/ai/chat-stream', checkUserAuth, uploadMiddleware, asyn
                     try { const result = await mammoth.extractRawText({ buffer: file.buffer }); fileTextContext += `\n[DOKUMEN WORD: ${originalName}]\n${result.value}\n`; } catch (e) {}
                 } else if (mime.includes('spreadsheet') || mime.includes('excel')) {
                     try { const workbook = xlsx.read(file.buffer, { type: 'buffer' }); const sheetName = workbook.SheetNames[0]; const csv = xlsx.utils.sheet_to_csv(workbook.Sheets[sheetName]); fileTextContext += `\n[DATA EXCEL: ${originalName}]\n${csv}\n`; } catch (e) {}
+                } else if (codeExtensions.includes(fileExt) || mime.startsWith('text/') || mime === 'application/json' || mime === 'application/javascript') {
+                    fileTextContext += `\n[FILE KODE/TEKS: ${originalName}]\n${file.buffer.toString('utf-8')}\n`;
                 } else {
-                    fileTextContext += `\n[FILE TEKS: ${originalName}]\n${file.buffer.toString('utf-8')}\n`;
+                    fileTextContext += `\n[FILE LAINNYA: ${originalName}]\n(Konten biner tidak ditampilkan, namun file telah diunggah)\n`;
                 }
             }
         }
