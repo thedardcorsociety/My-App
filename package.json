@@ -32,6 +32,7 @@
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^6.10.1",
     "openai": "^6.15.0",
+    "pdf-parse": "^2.2.4",
     "pdf2json": "^4.0.0",
     "uuid": "^9.0.1",
     "xlsx": "^0.18.5",

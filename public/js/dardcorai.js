@@ -68,11 +68,11 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const originalLink = renderer.link;
         renderer.link = function(href, title, text) {
-            let safeHref = href;
-            if (!safeHref || safeHref === 'undefined' || safeHref === 'null') {
+            let finalHref = href || title || text;
+            if (!finalHref || finalHref === 'undefined' || finalHref === 'null') {
                 return text; 
             }
-            return `<a href="${safeHref}" target="_blank" class="text-purple-500 hover:underline" title="${title || ''}">${text}</a>`;
+            return `<a href="${finalHref}" target="_blank" class="text-purple-500 hover:underline" title="${title || ''}">${text}</a>`;
         };
 
         marked.setOptions({ renderer: renderer, gfm: true, breaks: true, sanitize: false });
@@ -358,7 +358,7 @@ document.addEventListener('DOMContentLoaded', () => {
             contentHtml = `<div class="whitespace-pre-wrap break-words user-text">${linkify(escapeHtml(text))}</div>`; 
             
             div.innerHTML = `
-                <div class="flex flex-col items-end max-w-[85%] min-w-0">
+                <div class="flex flex-col items-end max-w-[92%] min-w-0">
                     ${fileHtml}
                     <div class="chat-content-box relative rounded-2xl px-5 py-3.5 shadow-md text-sm ${bubbleClass} w-fit min-w-0 max-w-full overflow-hidden leading-7">
                         ${contentHtml}
@@ -387,10 +387,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>`;
 
             if (text === '...loading_placeholder...') { 
-                div.innerHTML = `<div class="flex flex-col items-start max-w-[85%] min-w-0">${contentLoading}</div>`; 
+                div.innerHTML = `<div class="flex flex-col items-start max-w-[92%] min-w-0">${contentLoading}</div>`; 
             } else { 
                 div.innerHTML = `
-                    <div class="flex flex-col items-start max-w-[85%] min-w-0">
+                    <div class="flex flex-col items-start max-w-[92%] min-w-0">
                         ${fileHtml}
                         <div class="chat-content-box relative rounded-2xl rounded-bl-none px-4 py-3 shadow-md text-sm ${bubbleClass} w-fit min-w-0 max-w-full overflow-hidden leading-7">
                             ${contentHtml}
@@ -436,7 +436,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>`;
 
             botDiv.innerHTML = `
-                <div class="flex flex-col items-start max-w-[85%] min-w-0">
+                <div class="flex flex-col items-start max-w-[92%] min-w-0">
                     <div class="chat-content-box relative rounded-2xl rounded-bl-none px-4 py-3 shadow-md text-sm bg-transparent border-none text-gray-200 rounded-bl-sm w-fit min-w-0 max-w-full overflow-hidden leading-7">
                         <div class="overflow-guard w-full min-w-0 max-w-full">
                             <div class="markdown-body w-full max-w-full overflow-hidden break-words"></div>

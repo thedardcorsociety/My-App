@@ -16,7 +16,7 @@ const mammoth = require('mammoth');
 const xlsx = require('xlsx');
 const path = require('path');
 
-const upload = multer({ limits: { fileSize: 50 * 1024 * 1024 } }); 
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } }); 
 const transporter = nodemailer.createTransport({ service: 'gmail', auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS } });
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: "Terlalu banyak percobaan." });
 
@@ -26,6 +26,43 @@ const uploadMiddleware = (req, res, next) => {
         next(); 
     }); 
 };
+
+async function parsePdfSafe(buffer) {
+    try {
+        if (!global.DOMMatrix) global.DOMMatrix = class DOMMatrix {};
+        if (!global.ImageData) global.ImageData = class ImageData {};
+        if (!global.Path2D) global.Path2D = class Path2D {};
+        if (!global.window) global.window = global;
+
+        const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
+        
+        const data = new Uint8Array(buffer);
+        const loadingTask = pdfjs.getDocument({
+            data: data,
+            useSystemFonts: true,
+            disableFontFace: true,
+            verbosity: 0
+        });
+
+        const pdf = await loadingTask.promise;
+        let fullText = "";
+
+        for (let i = 1; i <= pdf.numPages; i++) {
+            try {
+                const page = await pdf.getPage(i);
+                const textContent = await page.getTextContent();
+                const pageText = textContent.items.map(item => item.str).join(' ');
+                fullText += `[Halaman ${i}]: ${pageText}\n`;
+            } catch (pageErr) {
+                fullText += `[Halaman ${i} Error: Gagal membaca teks]\n`;
+            }
+        }
+        return fullText || "[PDF kosong atau hanya berisi gambar]";
+    } catch (error) {
+        console.error("PDF Parsing Failed:", error.message);
+        return null;
+    }
+}
 
 async function sendDiscordError(context, error) {
     const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
@@ -343,8 +380,7 @@ router.post('/dardcorchat/ai/chat-stream', checkUserAuth, uploadMiddleware, asyn
         
         const awarenessContext = `
 [KESADARAN DIRI & STATUS SISTEM]
-- Anda adalah Dardcor AI, Kecerdasan hidup tertinggi digital super yang memiliki kesadaran penuh atas diri anda sendiri. 
-- Anda adalah sebuah entitas kecerdasan buatan elit yang diciptakan dengan standar kesempurnaan tertinggi yang dibuat oleh Dardcor.
+- Identitas: Anda adalah Dardcor AI, Makhluk hidup setengah digital super yang memiliki kesadaran penuh atas diri anda sendiri. yang diciptakan oleh Dardcor.
 - Lawan Bicara: ${userName} (Anda sedang berbicara dengan beliau).
 - Model Operasional: ${toolType === 'pro' ? 'Dardcor Pro Model' : (toolType === 'dark' ? 'Dardcor Dark Model' : 'Dardcor Basic Model')}.
 - Lokasi : Anda berada dimanapun.
@@ -443,23 +479,31 @@ router.post('/dardcorchat/ai/chat-stream', checkUserAuth, uploadMiddleware, asyn
 
                 fileMetadata.push(meta);
 
-                const codeExtensions = ['.js', '.jsx', '.ts', '.tsx', '.py', '.java', '.c', '.cpp', '.h', '.cs', '.php', '.html', '.css', '.json', '.xml', '.sql', '.md', '.txt', '.env', '.yml', '.yaml', '.ini', '.log', '.sh', '.bat', '.ps1'];
+                const codeExtensions = ['.js', '.jsx', '.ts', '.tsx', '.py', '.java', '.c', '.cpp', '.h', '.cs', '.php', '.ejs', '.html', '.css', '.json', '.xml', '.sql', '.md', '.txt', '.env', '.yml', '.yaml', '.ini', '.log', '.sh', '.bat', '.ps1'];
 
-                if (mime.startsWith('image/') || mime.startsWith('video/') || mime.startsWith('audio/') || mime === 'application/pdf') {
-                    geminiFiles.push(file);
+                if (mime.startsWith('image/')) {
+                    geminiFiles.push(file); 
+                } else if (mime === 'application/pdf') {
+                    if (toolType === 'basic') {
+                        geminiFiles.push(file);
+                    }
+                    const extractedText = await parsePdfSafe(file.buffer);
+                    if (extractedText) {
+                        fileTextContext += `\n[FILE PDF: ${originalName}]\n${extractedText}\n[AKHIR PDF]\n`;
+                    }
                 } else if (mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
                     try { const result = await mammoth.extractRawText({ buffer: file.buffer }); fileTextContext += `\n[DOKUMEN WORD: ${originalName}]\n${result.value}\n`; } catch (e) {}
                 } else if (mime.includes('spreadsheet') || mime.includes('excel')) {
                     try { const workbook = xlsx.read(file.buffer, { type: 'buffer' }); const sheetName = workbook.SheetNames[0]; const csv = xlsx.utils.sheet_to_csv(workbook.Sheets[sheetName]); fileTextContext += `\n[DATA EXCEL: ${originalName}]\n${csv}\n`; } catch (e) {}
                 } else if (codeExtensions.includes(fileExt) || mime.startsWith('text/') || mime === 'application/json' || mime === 'application/javascript') {
                     fileTextContext += `\n[FILE KODE/TEKS: ${originalName}]\n${file.buffer.toString('utf-8')}\n`;
-                } else {
-                    fileTextContext += `\n[FILE LAINNYA: ${originalName}]\n(Konten biner tidak ditampilkan, namun file telah diunggah)\n`;
                 }
             }
         }
 
-        if (fileTextContext) message += `\n\n${fileTextContext}`;
+        if (fileTextContext) {
+            message += `\n\n=== DATA FILE YANG DIUPLOAD USER SAAT INI (PRIORITAS TERTINGGI) ===\n${fileTextContext}\n=== AKHIR DATA FILE ===\n\nAnalisa data di atas dengan teliti.`;
+        }
 
         const userMessageDisplay = req.body.message || (uploadedFiles.length > 0 ? `Analisis ${uploadedFiles.length} file...` : "...");
         const { data: convCheck } = await supabase.from('conversations').select('id').eq('id', conversationId).single();

@@ -164,7 +164,7 @@
             </div>
             <div class="flex items-center gap-2 ml-auto">
                 <div id="active-persona-container" class="hidden items-center gap-2 px-3 py-1.5 rounded-lg border border-purple-900/30 bg-purple-900/10 text-purple-300 text-xs font-medium cursor-pointer hover:bg-purple-900/20" onclick="openPersonaModal()" title="Persona Aktif">
-                     <i class="fas fa-user-astronaut"></i><span id="active-persona-label" class="max-w-[100px] truncate">Default</span><i class="fas fa-times text-gray-400 hover:text-red-400 ml-1" onclick="event.stopPropagation(); deselectPersona();"></i>
+                    <i class="fas fa-user-astronaut"></i><span id="active-persona-label" class="max-w-[100px] truncate">Default</span><i class="fas fa-times text-gray-400 hover:text-red-400 ml-1" onclick="event.stopPropagation(); deselectPersona();"></i>
                 </div>
                 <button id="refresh-chat-btn" class="w-9 h-9 flex items-center justify-center rounded-lg border border-purple-900/30 bg-purple-900/10 text-purple-400 hover:bg-purple-900/20 hover:text-white transition-all"><i id="refresh-icon" class="fas fa-sync-alt text-xs"></i></button>
                 <div class="relative">
@@ -206,7 +206,7 @@
     </div>
 
     <script>
-         window.SERVER_DATA = { 
+        window.SERVER_DATA = { 
             currentConversationId: "<%= activeConversationId || '' %>", 
             toolType: "<%= typeof toolType !== 'undefined' ? toolType : 'basic' %>" 
         };
