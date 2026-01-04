@@ -29,8 +29,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const toolsChevron = document.getElementById('tools-chevron');
     const toolLabel = document.getElementById('tool-label');
 
+    // --- KONFIGURASI MARKED (BAGIAN KRUSIAL) ---
     if (typeof marked !== 'undefined') {
         const renderer = new marked.Renderer();
+        
+        // 1. Code Block Renderer
         renderer.code = function(code, language) {
             let validCode = (typeof code === 'string' ? code : code.text);
             let lang = (language || '').toLowerCase().trim().split(/\s+/)[0] || 'text';
@@ -66,17 +69,44 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>`;
         };
         
-        const originalLink = renderer.link;
+        // 2. LINK RENDERER (PERBAIKAN UTAMA [object Object] & undefined)
         renderer.link = function(href, title, text) {
-            let finalHref = href || title || text;
-            if (!finalHref || finalHref === 'undefined' || finalHref === 'null') {
-                return text; 
+            let cleanHref = href;
+            let cleanTitle = title;
+            let cleanText = text;
+
+            // DETEKSI: Apakah Marked mengirim Object (Token) alih-alih String?
+            if (typeof href === 'object' && href !== null) {
+                // Bongkar object tersebut
+                const token = href;
+                cleanHref = token.href || token.original || '';
+                cleanTitle = token.title || '';
+                cleanText = token.text || token.raw || '';
             }
-            return `<a href="${finalHref}" target="_blank" class="text-purple-500 hover:underline" title="${title || ''}">${text}</a>`;
+
+            // FALLBACK 1: Jika href masih null/undefined
+            if (!cleanHref) cleanHref = cleanText;
+
+            // FALLBACK 2: Jika text masih null/undefined/kosong
+            if (!cleanText || cleanText === 'undefined' || cleanText.trim() === '') {
+                cleanText = cleanHref;
+            }
+
+            // Pastikan URL valid string untuk ditampilkan
+            if (typeof cleanHref !== 'string') cleanHref = '';
+            if (typeof cleanText !== 'string') cleanText = String(cleanHref);
+
+            return `<a href="${cleanHref}" target="_blank" class="text-purple-500 hover:text-purple-300 hover:underline font-bold transition-colors break-all" title="${cleanTitle || ''}">${cleanText}</a>`;
         };
 
-        marked.setOptions({ renderer: renderer, gfm: true, breaks: true, sanitize: false });
+        marked.setOptions({ 
+            renderer: renderer, 
+            gfm: true, // Github Flavored Markdown (Auto-link URL aktif)
+            breaks: true, 
+            sanitize: false 
+        });
     }
+    // --- END KONFIGURASI MARKED ---
 
     const refreshBtn = document.getElementById('refresh-chat-btn');
     if (refreshBtn) {
@@ -296,7 +326,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function linkify(text) {
         const urlRegex = /(https?:\/\/[^\s]+)/g;
         return text.replace(urlRegex, function(url) {
-            return '<a href="' + url + '" target="_blank" class="text-purple-500 hover:underline">' + url + '</a>';
+            return '<a href="' + url + '" target="_blank" class="text-purple-500 hover:underline break-all">' + url + '</a>';
         });
     }
 
@@ -355,6 +385,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let contentHtml = '';
         
         if (role === 'user') { 
+            // User message is plain text
             contentHtml = `<div class="whitespace-pre-wrap break-words user-text">${linkify(escapeHtml(text))}</div>`; 
             
             div.innerHTML = `
@@ -371,8 +402,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>`;
                 
         } else {
-            if (text !== '...loading_placeholder...' && typeof marked !== 'undefined') { contentHtml = `<textarea class="hidden raw-message-content">${text}</textarea><div class="overflow-guard w-full min-w-0 max-w-full"><div class="markdown-body w-full max-w-full overflow-hidden break-words">${marked.parse(text)}</div></div>`; } 
-            else { contentHtml = `<textarea class="hidden raw-message-content">${text}</textarea><div class="overflow-guard w-full min-w-0 max-w-full"><div class="markdown-body w-full max-w-full overflow-hidden break-words"></div></div>`; }
+            // Bot message: Marked with GFM enabled will auto-link raw URLs safely.
+            // We do NOT use custom regex to avoid breaking the markdown structure.
+            
+            if (text !== '...loading_placeholder...' && typeof marked !== 'undefined') { 
+                contentHtml = `<textarea class="hidden raw-message-content">${text}</textarea><div class="overflow-guard w-full min-w-0 max-w-full"><div class="markdown-body w-full max-w-full overflow-hidden break-words">${marked.parse(text)}</div></div>`; 
+            } else { 
+                contentHtml = `<textarea class="hidden raw-message-content">${text}</textarea><div class="overflow-guard w-full min-w-0 max-w-full"><div class="markdown-body w-full max-w-full overflow-hidden break-words"></div></div>`; 
+            }
             
             let contentLoading = `<div class="flex items-center gap-3 bg-transparent border border-white/5 px-4 py-3.5 rounded-2xl rounded-bl-sm shadow-md"><div class="loader"></div><span class="text-xs text-purple-400 font-medium animate-pulse">Sedang berpikir...</span></div>`;
             
@@ -449,12 +486,36 @@ document.addEventListener('DOMContentLoaded', () => {
             const botContent = botDiv.querySelector('.markdown-body'); const reader = response.body.getReader(); const decoder = new TextDecoder(); let fullText = ""; let buffer = ""; let isStreaming = true; let lastUpdate = 0;
             const render = (timestamp) => {
                 if (!isStreaming) return; if (timestamp - lastUpdate < 50) { requestAnimationFrame(render); return; } lastUpdate = timestamp;
-                let formatted = fullText; const thinkMatch = fullText.match(/<think>([\s\S]*?)<\/think>/); if (thinkMatch) { const clean = thinkMatch[1].trim().replace(/\n/g, '<br>'); formatted = fullText.replace(/<think>[\s\S]*?<\/think>/, `<details class="mb-4 bg-transparent border border-white/10 rounded-lg overflow-hidden group"><summary class="flex items-center gap-2 px-3 py-2 cursor-pointer bg-white/5 hover:bg-white/10 text-xs font-mono text-gray-400 select-none"><i class="fas fa-brain text-purple-500"></i><span>Thinking</span><i class="fas fa-chevron-down ml-auto transition-transform group-open:rotate-180"></i></summary><div class="p-3 text-xs text-gray-400 font-mono border-t border-white/10 bg-black/20 leading-relaxed italic">${clean}</div></details>`); }
-                if (botContent) { if (typeof marked !== 'undefined') botContent.innerHTML = marked.parse(formatted); else botContent.innerText = formatted; if (window.renderMathInElement) renderMathInElement(botContent, { delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }], throwOnError: false }); if (typeof hljs !== 'undefined') botContent.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el)); } if (!userIsScrolling) scrollToBottom(); requestAnimationFrame(render);
+                let formatted = fullText; 
+                
+                // Handle Thinking Blocks
+                const thinkMatch = fullText.match(/<think>([\s\S]*?)<\/think>/); 
+                if (thinkMatch) { 
+                    const clean = thinkMatch[1].trim().replace(/\n/g, '<br>'); 
+                    formatted = fullText.replace(/<think>[\s\S]*?<\/think>/, `<details class="mb-4 bg-transparent border border-white/10 rounded-lg overflow-hidden group"><summary class="flex items-center gap-2 px-3 py-2 cursor-pointer bg-white/5 hover:bg-white/10 text-xs font-mono text-gray-400 select-none"><i class="fas fa-brain text-purple-500"></i><span>Thinking</span><i class="fas fa-chevron-down ml-auto transition-transform group-open:rotate-180"></i></summary><div class="p-3 text-xs text-gray-400 font-mono border-t border-white/10 bg-black/20 leading-relaxed italic">${clean}</div></details>`); 
+                }
+                
+                // Pass text directly to Marked. GFM enabled will handle links properly.
+                // We removed the ensureMarkdownLinks regex because it causes conflict with [object Object].
+
+                if (botContent) { 
+                    if (typeof marked !== 'undefined') botContent.innerHTML = marked.parse(formatted); 
+                    else botContent.innerText = formatted; 
+                    
+                    if (window.renderMathInElement) renderMathInElement(botContent, { delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }], throwOnError: false }); 
+                    if (typeof hljs !== 'undefined') botContent.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el)); 
+                } 
+                if (!userIsScrolling) scrollToBottom(); requestAnimationFrame(render);
             };
             requestAnimationFrame(render);
             while (true) { const { done, value } = await reader.read(); if (done) break; buffer += decoder.decode(value, { stream: true }); const lines = buffer.split('\n\n'); buffer = lines.pop(); for (const line of lines) { if (line.startsWith('data: ')) { try { const json = JSON.parse(line.replace('data: ', '')); if (json.chunk) fullText += json.chunk; } catch (e) {} } } }
-            isStreaming = false; let formatted = fullText; const thinkMatch = fullText.match(/<think>([\s\S]*?)<\/think>/); if (thinkMatch) formatted = fullText.replace(/<think>[\s\S]*?<\/think>/, `<details class="mb-4 bg-transparent border border-white/10 rounded-lg overflow-hidden group"><summary class="flex items-center gap-2 px-3 py-2 cursor-pointer bg-white/5 hover:bg-white/10 text-xs font-mono text-gray-400 select-none"><i class="fas fa-brain text-purple-500"></i><span>Thinking</span><i class="fas fa-chevron-down ml-auto transition-transform group-open:rotate-180"></i></summary><div class="p-3 text-xs text-gray-400 font-mono border-t border-white/10 bg-black/20 leading-relaxed italic">${thinkMatch[1].trim().replace(/\n/g, '<br>')}</div></details>`);
+            isStreaming = false; 
+            
+            // Final Render
+            let formatted = fullText; 
+            const thinkMatch = fullText.match(/<think>([\s\S]*?)<\/think>/); 
+            if (thinkMatch) formatted = fullText.replace(/<think>[\s\S]*?<\/think>/, `<details class="mb-4 bg-transparent border border-white/10 rounded-lg overflow-hidden group"><summary class="flex items-center gap-2 px-3 py-2 cursor-pointer bg-white/5 hover:bg-white/10 text-xs font-mono text-gray-400 select-none"><i class="fas fa-brain text-purple-500"></i><span>Thinking</span><i class="fas fa-chevron-down ml-auto transition-transform group-open:rotate-180"></i></summary><div class="p-3 text-xs text-gray-400 font-mono border-t border-white/10 bg-black/20 leading-relaxed italic">${thinkMatch[1].trim().replace(/\n/g, '<br>')}</div></details>`);
+            
             if (botContent) { if (typeof marked !== 'undefined') botContent.innerHTML = marked.parse(formatted); else botContent.innerText = formatted; if (window.renderMathInElement) renderMathInElement(botContent, { delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }], throwOnError: false }); if (typeof hljs !== 'undefined') botContent.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el)); } if (!userIsScrolling) scrollToBottom(true);
         } catch (e) { const indicator = document.getElementById('loading-indicator'); if (indicator) indicator.remove(); window.showNavbarAlert('Gagal mengirim pesan', 'error'); scrollToBottom(true); } finally { isSending = false; abortController = null; if (sendIcon) sendIcon.classList.replace('fa-stop', 'fa-paper-plane'); }
     }
