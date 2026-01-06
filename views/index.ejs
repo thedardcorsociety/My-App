@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#0b0c15">
+    <meta name="theme-color" content="#050508">
     
     <title>Dardcor AI</title>
     <link rel="icon" href="/logo.png">
@@ -18,6 +18,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
     <link rel="stylesheet" href="/css/tailwind.css">
     <link rel="stylesheet" href="/vendor/fontawesome/css/all.min.css">
     <link rel="stylesheet" href="/css/atom-one-dark.min.css">
@@ -33,7 +34,9 @@
             overflow: hidden;
             position: fixed;
             inset: 0;
-            background-color: #0b0c15;
+            background-color: #050508;
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
         .h-dvh {
             height: 100dvh;
@@ -57,32 +60,83 @@
         .safe-pr {
             padding-right: env(safe-area-inset-right);
         }
+        
+        @keyframes orbit-1 {
+            0% { transform: rotate3d(1, 1, 1, 0deg); }
+            100% { transform: rotate3d(1, 1, 1, 360deg); }
+        }
+        @keyframes orbit-2 {
+            0% { transform: rotate3d(1, -1, 1, 0deg); }
+            100% { transform: rotate3d(1, -1, 1, 360deg); }
+        }
+        @keyframes orbit-3 {
+            0% { transform: rotate3d(-1, 1, 1, 0deg); }
+            100% { transform: rotate3d(-1, 1, 1, 360deg); }
+        }
+        @keyframes orbit-4 {
+            0% { transform: rotate3d(1, 1, -1, 0deg); }
+            100% { transform: rotate3d(1, 1, -1, 360deg); }
+        }
+        @keyframes orbit-5 {
+            0% { transform: rotate3d(0, 1, 1, 0deg); }
+            100% { transform: rotate3d(0, 1, 1, 360deg); }
+        }
+        @keyframes orbit-6 {
+            0% { transform: rotate3d(1, 0, 0, 0deg); }
+            100% { transform: rotate3d(1, 0, 0, 360deg); }
+        }
+        @keyframes star-twinkle {
+            0%, 100% { opacity: 0.3; transform: scale(0.5); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        .animate-orbit-1 { animation: orbit-1 6s linear infinite; }
+        .animate-orbit-2 { animation: orbit-2 7s linear infinite; }
+        .animate-orbit-3 { animation: orbit-3 8s linear infinite; }
+        .animate-orbit-4 { animation: orbit-4 9s linear infinite; }
+        .animate-orbit-5 { animation: orbit-5 10s linear infinite; }
+        .animate-orbit-6 { animation: orbit-6 11s linear infinite; }
+        .animate-star { animation: star-twinkle 3s ease-in-out infinite; }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+        }
     </style>
 </head>
 
-<body class="bg-[#0b0c15] text-white font-sans h-dvh flex overflow-hidden">
-    <div id="overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 hidden z-40 backdrop-blur-sm transition-opacity duration-300 lg:hidden"></div>
+<body class="bg-[#050508] text-white font-sans h-dvh flex overflow-hidden">
+    <div id="overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/80 hidden z-40 backdrop-blur-sm transition-opacity duration-300 lg:hidden"></div>
 
-    <aside id="sidebar" class="fixed inset-y-0 left-0 w-72 bg-[#13131f] border-r border-purple-900/30 flex flex-col transform -translate-x-full z-50 transition-transform duration-300 safe-pl">
-        <div class="h-16 shrink-0 flex items-center justify-between px-4 border-b border-purple-900/30 safe-pt">
-            <span class="font-bold tracking-wider text-purple-500 text-base">Dardcor <span class="text-white">AI</span></span>
+    <aside id="sidebar" class="fixed inset-y-0 left-0 w-72 bg-[#0a0a12] border-r border-purple-900/20 flex flex-col transform -translate-x-full z-50 transition-transform duration-300 safe-pl shadow-2xl shadow-purple-900/10">
+        <div class="h-16 shrink-0 flex items-center justify-between px-4 border-b border-purple-900/20 safe-pt">
+            <span class="font-bold tracking-wider text-purple-400 text-base">Dardcor <span class="text-white">AI</span></span>
             <button onclick="toggleSidebar()" class="text-gray-400 p-2 hover:text-white transition-colors">
                 <i class="fas fa-times"></i>
             </button>
         </div>
 
         <div class="flex-1 flex flex-col items-center justify-center text-center opacity-60 px-4">
-            <i class="fas fa-lock text-4xl text-gray-600 mb-3"></i>
-            <p class="text-sm text-gray-500 leading-relaxed">Silakan login untuk melihat<br>riwayat percakapan.</p>
+            <i class="fas fa-galaxy text-4xl text-purple-800 mb-3"></i>
+            <p class="text-sm text-gray-500 leading-relaxed">Silakan login untuk melihat<br>riwayat percakapan semesta.</p>
         </div>
 
-        <div class="h-16 flex items-center justify-center border-t border-purple-900/30 bg-[#0e0f19] safe-pb shrink-0">
-            <span class="text-xs text-gray-600 font-medium">Dardcor AI v2.5</span>
+        <div class="h-16 flex items-center justify-center border-t border-purple-900/20 bg-[#08080c] safe-pb shrink-0">
+            <span class="text-xs text-purple-500/50 font-medium">Dardcor AI v2.5 Cosmic</span>
         </div>
     </aside>
 
-    <main id="content" class="flex-1 flex flex-col min-w-0 bg-[#0b0c15] safe-pr transition-all duration-300">
-        <header class="h-16 shrink-0 flex items-center px-4 md:px-6 border-b border-purple-900/30 safe-pt bg-[#0b0c15] z-30 justify-between">
+    <main id="content" class="flex-1 flex flex-col min-w-0 bg-[#050508] safe-pr transition-all duration-300 relative h-full">
+        <div class="absolute inset-0 pointer-events-none overflow-hidden">
+            <div class="star w-0.5 h-0.5 top-10 left-20 animate-star" style="animation-delay: 0s;"></div>
+            <div class="star w-1 h-1 top-1/4 right-1/4 animate-star" style="animation-delay: 1s;"></div>
+            <div class="star w-0.5 h-0.5 bottom-1/3 left-1/3 animate-star" style="animation-delay: 2s;"></div>
+            <div class="star w-1 h-1 top-20 right-10 animate-star" style="animation-delay: 1.5s;"></div>
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] md:w-[500px] md:h-[500px] bg-purple-900/10 rounded-full blur-[80px] md:blur-[100px] pointer-events-none"></div>
+        </div>
+
+        <header class="h-16 shrink-0 flex items-center px-4 md:px-6 border-b border-purple-900/20 safe-pt bg-[#050508]/80 backdrop-blur-md z-30 justify-between sticky top-0">
             <div class="flex items-center gap-3">
                 <button onclick="toggleSidebar()" class="text-gray-400 p-2 hover:text-white transition-colors">
                     <i class="fas fa-bars"></i>
@@ -90,39 +144,74 @@
             </div>
 
             <div class="flex items-center gap-2 md:gap-3">
-                <a href="/dardcor" class="px-4 py-2 text-sm bg-violet-600 hover:bg-violet-700 rounded-lg shadow-lg shadow-violet-600/20 whitespace-nowrap transition-colors duration-200">Login</a>
-                <a href="/register" class="px-4 py-2 text-sm border border-gray-700 hover:border-gray-600 rounded-lg text-gray-300 hover:text-white hover:bg-gray-800/50 whitespace-nowrap transition-colors duration-200">Register</a>
+                <a href="/dardcor" class="px-3 py-2 text-xs md:text-sm bg-purple-700 hover:bg-purple-600 rounded-lg shadow-[0_0_15px_rgba(126,34,206,0.3)] whitespace-nowrap transition-all duration-200 font-medium border border-purple-500/30">Login</a>
+                <a href="/register" class="px-3 py-2 text-xs md:text-sm border border-purple-800/50 hover:border-purple-600 rounded-lg text-purple-200 hover:text-white hover:bg-purple-900/20 whitespace-nowrap transition-colors duration-200">Register</a>
+                
+                <button id="pwa-install-btn" class="flex px-3 py-2 items-center justify-center rounded-lg border border-purple-800/50 text-purple-200 hover:text-white hover:bg-purple-900/20 hover:border-purple-500 transition-all duration-200 text-xs md:text-sm font-medium">
+                    Download
+                </button>
             </div>
         </header>
 
-        <section class="flex-1 overflow-y-auto scrollbar-hide">
-            <div class="max-w-4xl mx-auto px-4 py-10 flex flex-col items-center justify-center min-h-full">
-                <div class="w-24 h-24 rounded-full overflow-hidden border border-gray-700 bg-black shadow-xl mb-6 relative">
-                    <div class="absolute inset-0 bg-purple-500/20 blur-lg"></div>
-                    <img src="/logo.png" alt="Dardcor AI Logo" class="relative z-10 w-full h-full object-cover">
+        <section class="flex-1 overflow-y-auto scrollbar-hide relative z-10 flex flex-col items-center justify-center pt-8 md:pt-16">
+            <div class="w-full max-w-4xl mx-auto px-4 flex flex-col items-center justify-center pb-8">
+                
+                <div class="relative w-48 h-48 md:w-56 md:h-56 flex items-center justify-center mb-6 md:mb-8 perspective-[1000px]">
+                    <div class="absolute inset-0 bg-purple-900/20 rounded-full blur-3xl animate-pulse"></div>
+                    
+                    <div class="absolute w-[110%] h-[110%] rounded-full border border-purple-500/60 shadow-[0_0_15px_rgba(168,85,247,0.3)] animate-orbit-1 border-t-transparent border-l-transparent"></div>
+                    <div class="absolute w-[110%] h-[110%] rounded-full border border-fuchsia-500/50 shadow-[0_0_15px_rgba(217,70,239,0.3)] animate-orbit-2 border-b-transparent border-r-transparent"></div>
+                    <div class="absolute w-[110%] h-[110%] rounded-full border border-violet-500/50 animate-orbit-3 border-t-transparent border-r-transparent"></div>
+                    <div class="absolute w-[110%] h-[110%] rounded-full border border-indigo-500/40 animate-orbit-4 border-b-transparent border-l-transparent"></div>
+                    <div class="absolute w-[110%] h-[110%] rounded-full border border-pink-500/40 animate-orbit-5 border-l-transparent border-r-transparent"></div>
+                    <div class="absolute w-[110%] h-[110%] rounded-full border border-cyan-500/40 animate-orbit-6 border-t-transparent border-b-transparent"></div>
+
+                    <div class="w-24 h-24 md:w-28 md:h-28 rounded-full overflow-hidden border-2 border-purple-400/20 bg-[#050508] relative z-10 shadow-[0_0_40px_rgba(147,51,234,0.3)]">
+                        <div class="absolute inset-0 bg-gradient-to-b from-purple-900/30 via-transparent to-black z-10"></div>
+                        <img src="/logo.png" alt="Logo" class="relative w-full h-full object-cover opacity-90">
+                    </div>
                 </div>
-                <h2 class="text-2xl font-bold mb-2 text-center">Selamat Datang di Dardcor AI</h2>
-                <p class="text-sm text-gray-400 text-center max-w-md px-4 leading-relaxed">Login untuk mulai ngobrol dengan AI tercerdas.</p>
+
+                <h2 class="text-3xl md:text-5xl font-bold mb-2 text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-200 via-white to-purple-400 drop-shadow-[0_0_10px_rgba(168,85,247,0.5)]">Dardcor AI</h2>
+                <p class="text-sm md:text-base text-purple-300/60 text-center max-w-xs md:max-w-md px-4 leading-relaxed font-light tracking-wide">Jelajahi kecerdasan buatan tanpa batas</p>
             </div>
         </section>
 
-        <footer class="shrink-0 px-4 pt-4 pb-8 lg:pb-12 safe-pb">
+        <footer class="shrink-0 px-4 pt-0 pb-2 md:pb-4 safe-pb relative z-20 w-full">
             <div class="max-w-3xl mx-auto">
-                <form class="bg-[#13131f] border border-gray-700/50 rounded-2xl flex items-end p-1.5 lg:p-2 opacity-70 cursor-not-allowed">
-                    <div class="p-2 lg:p-3 text-gray-600 flex items-center justify-center shrink-0">
-                        <i class="fas fa-paperclip text-lg"></i>
-                    </div>
+                <div class="bg-[#0e0e14] border border-purple-900/40 rounded-[1.5rem] p-3 shadow-[0_0_25px_rgba(88,28,135,0.15)] relative flex flex-col">
+                    
                     <textarea 
-                        disabled 
+                        disabled
                         rows="1" 
-                        class="flex-1 bg-transparent resize-none outline-none text-gray-500 px-2 py-2 lg:py-3 text-base placeholder:text-gray-600"
-                        placeholder="Silakan login untuk mengirim pesan..."
+                        class="w-full bg-transparent resize-none outline-none text-purple-100 text-sm md:text-base placeholder:text-purple-500/40 px-1 mb-2 font-light cursor-not-allowed"
+                        placeholder="Ask To Dardcor..."
+                        style="min-height: 24px;"
                     ></textarea>
-                    <button disabled class="p-2 lg:p-3 text-gray-600 cursor-not-allowed flex items-center justify-center shrink-0">
-                        <i class="fas fa-paper-plane text-lg"></i>
-                    </button>
-                </form>
-                <p class="text-center text-xs text-gray-600 mt-3">AI dapat membuat kesalahan. Cek info penting.</p>
+                    
+                    <div class="flex justify-between items-center">
+                        <div class="flex gap-2">
+                            <button disabled class="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-purple-800/30 bg-purple-900/10 text-[11px] md:text-xs font-medium text-purple-400/70 cursor-not-allowed">
+                                <i class="fas fa-brain text-[10px]"></i>
+                                <span>Deep Think</span>
+                            </button>
+                            <button disabled class="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-purple-800/30 bg-purple-900/10 text-[11px] md:text-xs font-medium text-purple-400/70 cursor-not-allowed">
+                                <i class="fas fa-globe text-[10px]"></i>
+                                <span>Search</span>
+                            </button>
+                        </div>
+
+                        <div class="flex items-center gap-3">
+                            <button disabled class="text-purple-500/40 cursor-not-allowed hover:text-purple-400">
+                                <i class="fas fa-paperclip text-lg"></i>
+                            </button>
+                            <button disabled class="w-8 h-8 rounded-full bg-purple-900/20 border border-purple-800/30 flex items-center justify-center text-purple-400/50 cursor-not-allowed">
+                                <i class="fas fa-arrow-up text-sm"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <p class="text-center text-[10px] text-purple-500/30 mt-2">Dardcor AI dapat membuat kesalahan. Cek info penting.</p>
             </div>
         </footer>
     </main>
@@ -131,6 +220,8 @@
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('overlay');
         const content = document.getElementById('content');
+        const pwaBtn = document.getElementById('pwa-install-btn');
+        let deferredPrompt;
 
         function toggleSidebar() {
             const isMobile = window.innerWidth < 1024;
@@ -156,6 +247,19 @@
         window.addEventListener('resize', () => {
             if (window.innerWidth >= 1024) {
                 overlay.classList.add('hidden');
+            }
+        });
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+        });
+
+        pwaBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                deferredPrompt = null;
             }
         });
 
