@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let loadingTimeout = null;
     let isDeepThinkEnabled = false;
     let isSearchEnabled = false;
+    let recognition = null;
 
     const chatContainer = document.getElementById('chat-container');
     const messageInput = document.getElementById('message-input');
@@ -65,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const escapedCode = validCode.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-            return `<div class="terminal-container" style="background-color: #000000 !important; border: 1px solid #333; margin: 10px 0;">
+            return `<div class="terminal-container" style="background-color: #000000 !important; border: 1px solid #333; margin: 10px 0; max-width: 100%;">
                         <div class="terminal-head" style="height: 30px; padding: 0 10px; background-color: #000000 !important; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #333;">
                             <div class="text-[10px] font-bold text-gray-400 uppercase flex items-center"><i class="fas fa-code mr-2"></i> ${lang}</div>
                             <div class="terminal-actions flex gap-2">
@@ -244,6 +245,51 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    if (micBtn) {
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.lang = 'id-ID';
+            recognition.continuous = false;
+            recognition.interimResults = false;
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                if (messageInput) {
+                    messageInput.value += (messageInput.value ? ' ' : '') + transcript;
+                    messageInput.style.height = 'auto';
+                    messageInput.style.height = Math.min(messageInput.scrollHeight, 120) + 'px';
+                }
+                micBtn.classList.remove('text-red-500', 'animate-pulse');
+                micBtn.classList.add('text-purple-500/40');
+            };
+
+            recognition.onerror = () => {
+                micBtn.classList.remove('text-red-500', 'animate-pulse');
+                micBtn.classList.add('text-purple-500/40');
+                window.showNavbarAlert('Gagal mengenali suara', 'error');
+            };
+
+            recognition.onend = () => {
+                micBtn.classList.remove('text-red-500', 'animate-pulse');
+                micBtn.classList.add('text-purple-500/40');
+            };
+
+            micBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (micBtn.classList.contains('text-red-500')) {
+                    recognition.stop();
+                } else {
+                    recognition.start();
+                    micBtn.classList.remove('text-purple-500/40');
+                    micBtn.classList.add('text-red-500', 'animate-pulse');
+                }
+            });
+        } else {
+            micBtn.style.display = 'none';
+        }
+    }
+
     if (modelBtn) {
         modelBtn.addEventListener('click', (e) => { 
             e.preventDefault(); e.stopPropagation(); 
@@ -281,7 +327,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (chatContainer) {
         chatContainer.addEventListener('scroll', () => {
-            const threshold = 50;
+            const threshold = 150;
             const position = chatContainer.scrollTop + chatContainer.clientHeight;
             const height = chatContainer.scrollHeight;
             userIsScrolling = (height - position > threshold);
