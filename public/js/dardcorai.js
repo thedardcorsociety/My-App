@@ -43,6 +43,49 @@ document.addEventListener('DOMContentLoaded', () => {
     const deepThinkBtn = document.getElementById('deep-think-btn');
     const searchBtn = document.getElementById('search-btn');
 
+    function injectEditButtonsOnLoad() {
+        const userBubbles = document.querySelectorAll('.message-bubble-container');
+        userBubbles.forEach(container => {
+            if (container.classList.contains('justify-end')) {
+                let actionDiv = container.querySelector('.flex.items-center.gap-3');
+                
+                if (!actionDiv) {
+                    actionDiv = document.createElement('div');
+                    actionDiv.className = "flex items-center gap-3 mt-1 px-1 select-none opacity-50 group-hover:opacity-100 transition-opacity";
+                    const flexCol = container.querySelector('.flex.flex-col');
+                    if (flexCol) flexCol.appendChild(actionDiv);
+                }
+
+                if (!actionDiv.querySelector('button[title="Edit Pesan"]')) {
+                    const editBtn = document.createElement('button');
+                    editBtn.onclick = function() { window.editMessage(this); };
+                    editBtn.className = "text-[10px] font-medium bg-transparent border-none p-0 text-gray-500 hover:text-white flex items-center gap-1.5 transition-colors";
+                    editBtn.title = "Edit Pesan";
+                    editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit';
+                    
+                    if (actionDiv.firstChild) {
+                        actionDiv.insertBefore(editBtn, actionDiv.firstChild);
+                    } else {
+                        actionDiv.appendChild(editBtn);
+                    }
+                }
+
+                if (!actionDiv.querySelector('button[title="Salin Pesan"]')) {
+                    const copyBtn = document.createElement('button');
+                    copyBtn.onclick = function() { window.copyMessageBubble(this); };
+                    copyBtn.className = "text-[10px] font-medium bg-transparent border-none p-0 text-gray-500 hover:text-white flex items-center gap-1.5 transition-colors";
+                    copyBtn.title = "Salin Pesan";
+                    copyBtn.innerHTML = '<i class="fas fa-copy"></i> Salin';
+                    actionDiv.appendChild(copyBtn);
+                }
+            }
+        });
+    }
+    
+    setTimeout(injectEditButtonsOnLoad, 100);
+    setTimeout(injectEditButtonsOnLoad, 500);
+    setTimeout(injectEditButtonsOnLoad, 1000);
+
     if (typeof marked !== 'undefined') {
         const renderer = new marked.Renderer();
         
@@ -82,7 +125,14 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         
         renderer.link = function(href, title, text) {
-            return `<a href="${href}" target="_blank" class="text-purple-500 hover:text-purple-300 hover:underline font-bold transition-colors break-all" title="${title || ''}">${text}</a>`;
+            let finalUrl = href || '#';
+            let finalText = text;
+            
+            if (!finalText || finalText === '[object Object]' || typeof finalText === 'object') {
+                finalText = finalUrl;
+            }
+
+            return `<a href="${finalUrl}" target="_blank" class="text-purple-500 hover:text-purple-300 hover:underline font-bold transition-colors break-all" title="${title || ''}">${finalText}</a>`;
         };
 
         marked.setOptions({ 
@@ -444,6 +494,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 icon.className = 'fas fa-check text-green-400';
                 setTimeout(() => { icon.className = originalClass; }, 2000);
             });
+        }
+    };
+
+    window.editMessage = function(btn) {
+        const container = btn.closest('.message-bubble-container');
+        const textDiv = container.querySelector('.user-text');
+        if (textDiv && messageInput) {
+            messageInput.value = textDiv.innerText;
+            messageInput.style.height = 'auto';
+            messageInput.style.height = Math.min(messageInput.scrollHeight, 120) + 'px';
+            messageInput.focus();
         }
     };
 
@@ -823,7 +884,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         let contentHtml = '';
         if (role === 'user') {
-            contentHtml = `<div class="whitespace-pre-wrap break-words user-text">${text.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" class="text-purple-500 hover:underline break-all">$1</a>')}</div>`;
+            contentHtml = `<div class="whitespace-pre-wrap break-words user-text">${text.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" class="text-purple-500 hover:text-purple-300 hover:underline break-all">$1</a>')}</div>`;
         } else {
             let processedText = text;
             const thinkMatch = text.match(/<think>([\s\S]*?)<\/think>/);
@@ -834,7 +895,12 @@ document.addEventListener('DOMContentLoaded', () => {
             contentHtml = `<div class="markdown-body w-full max-w-full overflow-hidden break-words">${typeof marked !== 'undefined' ? marked.parse(processedText) : processedText}</div>`;
         }
 
-        const actions = `<div class="flex items-center gap-3 mt-1 px-1 select-none opacity-50 group-hover:opacity-100 transition-opacity"><button onclick="window.copyMessageBubble(this)" class="text-[10px] font-medium bg-transparent border-none p-0 text-gray-500 hover:text-white flex items-center gap-1.5 transition-colors" title="Salin"><i class="fas fa-copy"></i> Salin</button><button onclick="window.speakMessage(this)" class="text-[10px] font-medium bg-transparent border-none p-0 text-gray-500 hover:text-white flex items-center gap-1.5 transition-colors" title="Dengarkan"><i class="fas fa-volume-up"></i> Dengar</button></div>`;
+        let actions = '';
+        if (role === 'user') {
+            actions = `<div class="flex items-center gap-3 mt-1 px-1 select-none opacity-50 group-hover:opacity-100 transition-opacity"><button onclick="window.editMessage(this)" class="text-[10px] font-medium bg-transparent border-none p-0 text-gray-500 hover:text-white flex items-center gap-1.5 transition-colors" title="Edit Pesan"><i class="fas fa-edit"></i> Edit</button><button onclick="window.copyMessageBubble(this)" class="text-[10px] font-medium bg-transparent border-none p-0 text-gray-500 hover:text-white flex items-center gap-1.5 transition-colors" title="Salin Pesan"><i class="fas fa-copy"></i> Salin</button></div>`;
+        } else {
+            actions = `<div class="flex items-center gap-3 mt-1 px-1 select-none opacity-50 group-hover:opacity-100 transition-opacity"><button onclick="window.copyMessageBubble(this)" class="text-[10px] font-medium bg-transparent border-none p-0 text-gray-500 hover:text-white flex items-center gap-1.5 transition-colors" title="Salin"><i class="fas fa-copy"></i> Salin</button><button onclick="window.speakMessage(this)" class="text-[10px] font-medium bg-transparent border-none p-0 text-gray-500 hover:text-white flex items-center gap-1.5 transition-colors" title="Dengarkan"><i class="fas fa-volume-up"></i> Dengar</button></div>`;
+        }
 
         div.innerHTML = `<div class="flex flex-col ${role === 'user' ? 'items-end' : 'items-start'} w-full max-w-full min-w-0">${fileHtml}<div class="chat-content-box relative rounded-2xl px-5 py-3.5 shadow-md text-sm ${bubbleClass} w-fit min-w-0 max-w-full overflow-hidden leading-7">${contentHtml}</div>${actions}</div>`;
         
@@ -850,7 +916,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function linkify(text) {
         const urlRegex = /(https?:\/\/[^\s]+)/g;
         return text.replace(urlRegex, function(url) {
-            return '<a href="' + url + '" target="_blank" class="text-purple-500 hover:underline break-all">' + url + '</a>';
+            return '<a href="' + url + '" target="_blank" class="text-purple-500 hover:text-purple-300 hover:underline break-all">' + url + '</a>';
         });
     }
 
