@@ -4,6 +4,9 @@
 # File Environment Variables (Sangat penting untuk keamanan!)
 .env
 
+#framework
+framework.txt
+
 #database
 db.sql
 

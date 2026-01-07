@@ -1,43 +1,62 @@
 <% if (chatHistory && chatHistory.length > 0) { %>
-    <div id="message-list" class="w-full flex flex-col gap-6 mt-auto pb-4">
-        <% chatHistory.forEach(msg => { %>
-            <div class="flex w-full <%= msg.role === 'user' ? 'justify-end' : 'justify-start' %> message-bubble-container group min-w-0">
-                <div class="flex flex-col <%= msg.role === 'user' ? 'items-end' : 'items-start' %> max-w-[92%] md:max-w-[82%] min-w-0">
-                    
-                    <% if (msg.file_metadata && msg.file_metadata.length > 0) { %>
-                        <div class="flex flex-wrap gap-2 mb-2 <%= msg.role === 'user' ? 'justify-end' : 'justify-start' %> w-full">
-                            <% msg.file_metadata.forEach(f => { %>
-                                <div class="text-[10px] flex items-center gap-2 bg-[#1c1c2e] px-3 py-1.5 rounded-lg border border-white/10 text-gray-300 max-w-full shadow-sm">
-                                    <i class="fas fa-file text-purple-400"></i> <span class="truncate"><%= f.filename %></span>
-                                </div>
-                            <% }) %>
+    <% chatHistory.forEach(msg => { %>
+        <div class="flex w-full <%= msg.role === 'user' ? 'justify-end' : 'justify-start' %> message-bubble-container group min-w-0">
+            <div class="flex flex-col <%= msg.role === 'user' ? 'items-end' : 'items-start' %> w-full max-w-full min-w-0">
+                
+                <% if (msg.file_metadata && msg.file_metadata.length > 0) { %>
+                    <div class="flex flex-wrap gap-2 mb-2 <%= msg.role === 'user' ? 'justify-end' : 'justify-start' %> w-full">
+                        <% msg.file_metadata.forEach(f => { %>
+                            <div class="text-[10px] flex items-center gap-2 bg-[#0e0e14] px-3 py-1.5 rounded-lg border border-purple-900/30 text-gray-300 max-w-full shadow-sm hover:border-purple-500/50 transition-colors cursor-default">
+                                <i class="fas fa-file text-purple-400"></i> <span class="truncate"><%= f.filename %></span>
+                            </div>
+                        <% }) %>
+                    </div>
+                <% } %>
+
+                <div class="chat-content-box relative rounded-2xl px-5 py-3.5 shadow-md text-sm <%= msg.role === 'user' ? 'bg-transparent border border-purple-600/50 text-white rounded-br-sm shadow-[0_0_15px_rgba(147,51,234,0.15)]' : 'bg-transparent text-gray-200 rounded-bl-sm border-none' %> w-fit min-w-0 max-w-full overflow-hidden leading-7">
+                    <% if (msg.role === 'user') { %>
+                        <div class="whitespace-pre-wrap break-words user-text"><%= msg.message %></div>
+                    <% } else { %>
+                        <textarea class="hidden raw-message-content"><%= msg.message %></textarea>
+                        <div class="overflow-guard w-full min-w-0 max-w-full">
+                            <div class="markdown-body w-full max-w-full overflow-x-auto break-words"></div>
                         </div>
                     <% } %>
-
-                    <div class="chat-content-box relative rounded-2xl px-5 py-3.5 shadow-md text-sm <%= msg.role === 'user' ? 'bg-purple-600 text-white rounded-br-sm' : 'bg-[#1e1e2e] text-gray-200 rounded-bl-sm border border-white/5' %> w-fit min-w-0 max-w-full overflow-hidden leading-7">
-                        <% if (msg.role === 'user') { %>
-                            <div class="whitespace-pre-wrap break-words user-text"><%= msg.message %></div>
-                        <% } else { %>
-                            <textarea class="hidden raw-message-content"><%= msg.message %></textarea>
-                            <div class="markdown-body w-full max-w-full overflow-x-auto break-words"></div>
-                        <% } %>
-                    </div>
-
-                    <div class="flex items-center gap-2 mt-2 px-1 select-none">
-                        <button onclick="copyMessageBubble(this)" class="text-gray-500 hover:text-white transition-colors flex items-center gap-1.5 bg-[#1c1c2e] border border-white/5 px-3 py-1.5 rounded-lg hover:bg-white/10 shadow-sm group active:scale-95" title="Salin">
-                            <i class="fas fa-copy text-xs"></i> <span class="text-[10px] font-medium">Salin</span>
-                        </button>
-                        <% if (msg.role !== 'user') { %>
-                            <button onclick="speakMessage(this)" class="text-gray-500 hover:text-white transition-colors flex items-center gap-1.5 bg-[#1c1c2e] border border-white/5 px-3 py-1.5 rounded-lg hover:bg-white/10 shadow-sm group active:scale-95" title="Dengarkan">
-                                <i class="fas fa-volume-up text-xs"></i> <span class="text-[10px] font-medium">Dengar</span>
-                            </button>
-                        <% } %>
-                    </div>
-
                 </div>
+
+                <div class="flex items-center gap-3 mt-1 px-1 select-none opacity-50 group-hover:opacity-100 transition-opacity">
+                    <button onclick="window.copyMessageBubble(this)" class="text-[10px] font-medium bg-transparent border-none p-0 text-gray-500 hover:text-white flex items-center gap-1.5 transition-colors" title="Salin Pesan">
+                        <i class="fas fa-copy"></i> Salin
+                    </button>
+                    <% if (msg.role !== 'user') { %>
+                        <button onclick="window.speakMessage(this)" class="text-[10px] font-medium bg-transparent border-none p-0 text-gray-500 hover:text-white flex items-center gap-1.5 transition-colors" title="Dengarkan Pesan">
+                            <i class="fas fa-volume-up"></i> Dengar
+                        </button>
+                    <% } %>
+                </div>
+
             </div>
-        <% }) %>
-    </div>
+        </div>
+    <% }) %>
 <% } else { %>
-    <div id="message-list" class="w-full h-full flex flex-col items-center justify-center pointer-events-none pb-4"></div>
+    <div id="empty-state" class="flex flex-col items-center justify-center min-h-[50vh] w-full">
+        <div class="relative w-48 h-48 md:w-56 md:h-56 flex items-center justify-center mb-6 md:mb-8 perspective-[1000px]">
+            <div class="absolute inset-0 bg-purple-900/20 rounded-full blur-3xl animate-pulse"></div>
+            
+            <div class="absolute w-[110%] h-[110%] rounded-full border border-purple-500/60 shadow-[0_0_15px_rgba(168,85,247,0.3)] animate-orbit-1 border-t-transparent border-l-transparent"></div>
+            <div class="absolute w-[110%] h-[110%] rounded-full border border-fuchsia-500/50 shadow-[0_0_15px_rgba(217,70,239,0.3)] animate-orbit-2 border-b-transparent border-r-transparent"></div>
+            <div class="absolute w-[110%] h-[110%] rounded-full border border-violet-500/50 animate-orbit-3 border-t-transparent border-r-transparent"></div>
+            <div class="absolute w-[110%] h-[110%] rounded-full border border-indigo-500/40 animate-orbit-4 border-b-transparent border-l-transparent"></div>
+            <div class="absolute w-[110%] h-[110%] rounded-full border border-pink-500/40 animate-orbit-5 border-l-transparent border-r-transparent"></div>
+            <div class="absolute w-[110%] h-[110%] rounded-full border border-cyan-500/40 animate-orbit-6 border-t-transparent border-b-transparent"></div>
+
+            <div class="w-24 h-24 md:w-28 md:h-28 rounded-full overflow-hidden border-2 border-purple-400/20 bg-[#050508] relative z-10 shadow-[0_0_40px_rgba(147,51,234,0.3)]">
+                <div class="absolute inset-0 bg-gradient-to-b from-purple-900/30 via-transparent to-black z-10"></div>
+                <img src="/logo.png" alt="Logo" class="relative w-full h-full object-cover opacity-90">
+            </div>
+        </div>
+
+        <h2 class="text-3xl md:text-5xl font-bold mb-2 text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-200 via-white to-purple-400 drop-shadow-[0_0_10px_rgba(168,85,247,0.5)]">Dardcor AI</h2>
+        <p class="text-sm md:text-base text-purple-300/60 text-center max-w-xs md:max-w-md px-4 leading-relaxed font-light tracking-wide">Jelajahi kecerdasan buatan tanpa batas</p>
+    </div>
 <% } %>

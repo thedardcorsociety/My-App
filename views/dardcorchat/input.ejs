@@ -1,22 +1,44 @@
-<div class="relative z-50 safe-pb">
+<div class="relative z-40 safe-pb">
     <div class="w-full max-w-3xl mx-auto px-4 pb-4 relative">
-        <div id="file-preview-container" class="flex flex-wrap gap-2 mb-2 hidden"></div>
-        <div class="relative flex items-end gap-2 bg-[#13131f] border border-gray-700 rounded-xl p-2 shadow-lg focus-within:border-purple-900 transition-colors z-20">
-            <button id="file-upload-btn" type="button" class="p-2 text-gray-400 hover:text-white transition-colors h-[40px] w-[40px] flex items-center justify-center rounded-lg hover:bg-white/5 shrink-0">
-                <i class="fas fa-paperclip"></i>
-            </button>
-            <input type="file" id="file-upload" class="hidden" multiple>
-            <textarea id="message-input" rows="1" class="w-full bg-transparent text-white placeholder-gray-500 text-sm p-2 outline-none resize-none max-h-32 overflow-y-auto leading-relaxed" placeholder="Ask To Dardcor..."></textarea>
-            <button id="mic-btn" type="button" class="p-2 text-gray-400 hover:text-white transition-colors h-[40px] w-[40px] flex items-center justify-center rounded-lg hover:bg-white/5 shrink-0">
-                <i class="fas fa-microphone"></i>
-            </button>
-            <button id="send-btn" class="p-2 bg-purple-900 hover:bg-purple-800 text-white rounded-lg transition-colors h-[40px] w-[40px] flex items-center justify-center shadow-lg shadow-purple-900/20 shrink-0">
-                <i id="send-icon" class="fas fa-paper-plane text-xs"></i>
-            </button>
-        </div>
-        <div class="text-center mt-2 text-[10px] text-gray-500">Dardcor AI dapat membuat kesalahan. Cek info penting.</div>
         
-        <div id="drop-zone" class="absolute inset-0 top-0 left-4 right-4 bg-purple-950/90 hidden items-center justify-center rounded-xl z-50 backdrop-blur-sm border-2 border-purple-900 border-dashed h-full" style="bottom: 24px;">
+        <div id="file-preview-container" class="flex flex-wrap gap-2 mb-2 hidden pl-1"></div>
+        
+        <div class="bg-[#0e0e14] border border-purple-900/40 rounded-[1.5rem] p-3 shadow-[0_0_25px_rgba(88,28,135,0.15)] relative flex flex-col transition-colors focus-within:border-purple-700/60">
+            
+            <textarea id="message-input" rows="1" class="w-full bg-transparent resize-none outline-none text-purple-100 text-sm md:text-base placeholder:text-purple-500/40 px-2 mb-2 font-light max-h-32 overflow-y-auto leading-relaxed scrollbar-hide" placeholder="Ask To Dardcor..."></textarea>
+            
+            <div class="flex justify-between items-center mt-1">
+                <div class="flex gap-2">
+                    <button id="deep-think-btn" type="button" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-purple-800/30 bg-purple-900/10 text-[11px] md:text-xs font-medium text-purple-400 hover:text-white hover:bg-purple-900/30 transition-all cursor-pointer select-none">
+                        <i class="fas fa-brain text-[10px]"></i>
+                        <span>Deep Think</span>
+                    </button>
+                    <button id="search-btn" type="button" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-purple-800/30 bg-purple-900/10 text-[11px] md:text-xs font-medium text-purple-400 hover:text-white hover:bg-purple-900/30 transition-all cursor-pointer select-none">
+                        <i class="fas fa-globe text-[10px]"></i>
+                        <span>Search</span>
+                    </button>
+                </div>
+
+                <div class="flex items-center gap-3 pr-1">
+                    <button id="mic-btn" type="button" class="text-purple-500/40 hover:text-purple-300 transition-colors p-1 cursor-pointer" title="Voice Input">
+                        <i class="fas fa-microphone text-lg"></i>
+                    </button>
+
+                    <button id="file-upload-btn" type="button" class="text-purple-500/40 hover:text-purple-300 transition-colors p-1 cursor-pointer" title="Upload File">
+                        <i class="fas fa-paperclip text-lg"></i>
+                    </button>
+                    <input type="file" id="file-upload" class="hidden" multiple>
+
+                    <button id="send-btn" type="button" class="w-8 h-8 rounded-full bg-purple-900/20 border border-purple-800/30 flex items-center justify-center text-purple-400/80 hover:text-white hover:bg-purple-800 hover:border-purple-600 transition-all shadow-lg shadow-purple-900/10 cursor-pointer">
+                        <i id="send-icon" class="fas fa-paper-plane text-xs"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mt-2 text-[10px] text-purple-500/30">Dardcor AI dapat membuat kesalahan. Cek info penting.</div>
+        
+        <div id="drop-zone" class="absolute inset-0 top-0 left-4 right-4 bg-purple-950/90 hidden items-center justify-center rounded-[1.5rem] z-50 backdrop-blur-sm border-2 border-purple-900 border-dashed h-full" style="bottom: 24px;">
             <div class="text-center">
                 <i class="fas fa-cloud-upload-alt text-4xl text-white mb-2"></i>
                 <p class="text-white font-bold text-sm">Lepaskan file disini</p>
