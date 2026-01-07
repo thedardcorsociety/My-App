@@ -32,8 +32,6 @@ async function sendDiscordError(context, error) {
 }
 
 async function* handleChatStream(message, files, history, toolType, systemInstruction, contextData) {
-    const currentKey = getRotatedKey();
-
     const hasImages = files && files.some(f => f.mimetype.startsWith('image/'));
     
     let selectedModel = "xiaomi/mimo-v2-flash:free"; 
@@ -123,42 +121,64 @@ Diagram: Hanya menggunakan sintaks Mermaid yang valid dan dibungkus dalam blok k
 
     messages.push({ role: "user", content: userContent });
 
-    try {
-        const response = await axios({
-            method: 'post',
-            url: 'https://openrouter.ai/api/v1/chat/completions',
-            headers: {
-                'Authorization': `Bearer ${currentKey}`,
-                'HTTP-Referer': 'https://dardcor.com',
-                'X-Title': 'Dardcor AI',
-                'Content-Type': 'application/json'
-            },
-            data: {
-                model: selectedModel,
-                messages: messages,
-                stream: true
-            },
-            responseType: 'stream'
-        });
+    let attempt = 0;
+    const maxRetries = 5;
+    let success = false;
+    let lastError = null;
 
-        for await (const chunk of response.data) {
-            const lines = chunk.toString().split('\n').filter(line => line.trim() !== '');
-            for (const line of lines) {
-                if (line.includes('[DONE]')) return;
-                if (line.startsWith('data: ')) {
-                    try {
-                        const jsonStr = line.replace('data: ', '').trim();
-                        if (jsonStr === ': OPENROUTER PROCESSING') continue;
-                        const json = JSON.parse(jsonStr);
-                        if (json.choices?.[0]?.delta?.content) {
-                            yield { text: () => json.choices[0].delta.content };
-                        }
-                    } catch (e) {}
+    while (attempt < maxRetries && !success) {
+        try {
+            const currentKey = getRotatedKey();
+
+            const response = await axios({
+                method: 'post',
+                url: 'https://openrouter.ai/api/v1/chat/completions',
+                headers: {
+                    'Authorization': `Bearer ${currentKey}`,
+                    'HTTP-Referer': 'https://dardcor.com',
+                    'X-Title': 'Dardcor AI',
+                    'Content-Type': 'application/json'
+                },
+                data: {
+                    model: selectedModel,
+                    messages: messages,
+                    stream: true
+                },
+                responseType: 'stream',
+                timeout: 0
+            });
+
+            success = true;
+
+            for await (const chunk of response.data) {
+                const lines = chunk.toString().split('\n').filter(line => line.trim() !== '');
+                for (const line of lines) {
+                    if (line.includes('[DONE]')) return;
+                    if (line.startsWith('data: ')) {
+                        try {
+                            const jsonStr = line.replace('data: ', '').trim();
+                            if (jsonStr === ': OPENROUTER PROCESSING') continue;
+                            const json = JSON.parse(jsonStr);
+                            if (json.choices?.[0]?.delta?.content) {
+                                yield { text: () => json.choices[0].delta.content };
+                            }
+                        } catch (e) {}
+                    }
                 }
             }
+        } catch (error) {
+            lastError = error;
+            const status = error.response?.status;
+            if (status === 429 || status === 503 || status === 502 || status === 402) {
+                attempt++;
+            } else {
+                break;
+            }
         }
-    } catch (error) {
-        await sendDiscordError("Dark Model Execution", error);
+    }
+
+    if (!success) {
+        await sendDiscordError("Dark Model Final Failure", lastError);
         yield { text: () => "\n\n[System Error: Gagal memproses permintaan.]" };
     }
 }

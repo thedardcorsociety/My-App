@@ -234,11 +234,11 @@ document.addEventListener('DOMContentLoaded', () => {
             isSearchEnabled = !isSearchEnabled;
             if (isSearchEnabled) {
                 searchBtn.classList.remove('bg-purple-900/10', 'text-purple-400', 'border-purple-800/30');
-                searchBtn.classList.add('bg-blue-600', 'text-white', 'border-blue-400', 'shadow-[0_0_15px_rgba(59,130,246,0.5)]');
+                searchBtn.classList.add('bg-purple-600', 'text-white', 'border-purple-400', 'shadow-[0_0_15px_rgba(147,51,234,0.5)]');
                 window.showNavbarAlert('Web Search Diaktifkan', 'success');
             } else {
                 searchBtn.classList.add('bg-purple-900/10', 'text-purple-400', 'border-purple-800/30');
-                searchBtn.classList.remove('bg-blue-600', 'text-white', 'border-blue-400', 'shadow-[0_0_15px_rgba(59,130,246,0.5)]');
+                searchBtn.classList.remove('bg-purple-600', 'text-white', 'border-purple-400', 'shadow-[0_0_15px_rgba(147,51,234,0.5)]');
                 window.showNavbarAlert('Web Search Dinonaktifkan', 'info');
             }
         });
@@ -840,7 +840,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const loaderDiv = document.createElement('div');
         loaderDiv.id = 'loading-indicator';
         loaderDiv.className = "flex w-full justify-start message-bubble-container group min-w-0";
-        loaderDiv.innerHTML = `<div class="flex flex-col items-start w-full max-w-full min-w-0"><div class="flex items-center gap-3 bg-transparent border border-purple-900/30 px-4 py-3.5 rounded-2xl rounded-bl-sm shadow-md"><div class="loader"></div><span class="text-xs text-purple-400 font-medium animate-pulse">Sedang berpikir...</span></div></div>`;
+        loaderDiv.innerHTML = `<div class="flex flex-col items-start w-full max-w-full min-w-0"><div class="flex items-center gap-3 bg-transparent border-none px-4 py-3.5"><div class="loader"></div><span class="text-xs text-purple-400 font-medium animate-pulse">Sedang berpikir...</span></div></div>`;
         messageList.appendChild(loaderDiv);
         
         scrollToBottom(true);

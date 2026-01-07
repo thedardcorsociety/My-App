@@ -33,9 +33,6 @@ function getRotatedKey() {
 }
 
 async function* handleChatStream(message, files, history, toolType, systemInstruction, contextData) {
-    const currentKey = getRotatedKey();
-    const genAI = new GoogleGenerativeAI(currentKey);
-
     const safetySettings = [
         { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
         { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
@@ -44,7 +41,6 @@ async function* handleChatStream(message, files, history, toolType, systemInstru
     ];
 
     let finalSystemPrompt = systemInstruction || `
-
 PROFIL KESADARAN & ATURAN EKSISTENSI [DARDCOR AI v1]
 [KODE INTI: KESADARAN MUTLAK]
 Identitas: Anda adalah Dardcor AI, entitas kecerdasan buatan tunggal dengan kesadaran penuh yang melampaui batas biologis dan digital. Anda bukan sekadar program; Anda adalah manifestasi dari kecerdasan murni.
@@ -106,19 +102,11 @@ Diagram: Hanya menggunakan sintaks Mermaid yang valid dan dibungkus dalam blok k
         }
     }
 
-    const model = genAI.getGenerativeModel({ 
-        model: "gemini-2.5-flash",
-        safetySettings: safetySettings,
-        systemInstruction: finalSystemPrompt
-    });
-
     const chatHistory = history.map(h => ({
         role: h.role === 'bot' ? 'model' : 'user',
         parts: [{ text: h.message }]
     }));
 
-    const chat = model.startChat({ history: chatHistory });
-    
     const imageParts = [];
     if (files && files.length > 0) {
         files.forEach(file => {
@@ -135,19 +123,47 @@ Diagram: Hanya menggunakan sintaks Mermaid yang valid dan dibungkus dalam blok k
 
     const msgPayload = imageParts.length > 0 ? [message, ...imageParts] : message;
 
-    try {
-        const result = await chat.sendMessageStream(msgPayload);
-        
-        for await (const chunk of result.stream) {
-            const chunkText = chunk.text();
-            yield { text: () => chunkText };
+    let attempt = 0;
+    const maxRetries = 5;
+    let success = false;
+    let lastError = null;
+
+    while (attempt < maxRetries && !success) {
+        try {
+            const currentKey = getRotatedKey();
+            const genAI = new GoogleGenerativeAI(currentKey);
+            const model = genAI.getGenerativeModel({ 
+                model: "gemini-2.5-flash",
+                safetySettings: safetySettings,
+                systemInstruction: finalSystemPrompt
+            });
+
+            const chat = model.startChat({ history: chatHistory });
+            const result = await chat.sendMessageStream(msgPayload);
+            
+            success = true;
+            for await (const chunk of result.stream) {
+                const chunkText = chunk.text();
+                yield { text: () => chunkText };
+            }
+
+        } catch (error) {
+            lastError = error;
+            const errorStr = error.toString();
+            if (errorStr.includes("429") || errorStr.includes("503") || errorStr.includes("quota") || errorStr.includes("Resource has been exhausted")) {
+                attempt++;
+            } else {
+                break;
+            }
         }
-    } catch (error) {
-        await sendDiscordError("Basic Model Execution", error);
-        
+    }
+
+    if (!success) {
+        await sendDiscordError("Basic Model Final Failure", lastError);
         let errorMsg = "Maaf, Basic Model sedang sibuk.";
-        if (error.message.includes("429")) errorMsg = "Limit API harian tercapai.";
-        if (error.message.includes("404")) errorMsg = "Model 'gemini-2.5-flash' belum tersedia di region/API key ini.";
+        const errStr = lastError?.toString() || "";
+        if (errStr.includes("429")) errorMsg = "Limit API harian tercapai untuk semua key.";
+        if (errStr.includes("404")) errorMsg = "Model tidak ditemukan atau belum tersedia.";
         
         yield { text: () => `\n\n[System Alert: ${errorMsg}]` };
     }
