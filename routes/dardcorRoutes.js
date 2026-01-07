@@ -359,6 +359,8 @@ router.post('/dardcorchat/ai/chat-stream', checkUserAuth, uploadMiddleware, asyn
     const uploadedFiles = req.files || [];
     let conversationId = req.body.conversationId || uuidv4();
     const toolType = req.body.toolType || 'basic';
+    const useDeepThink = req.body.useDeepThink === 'true';
+    const useWebSearch = req.body.useWebSearch === 'true';
     let personaId = req.body.personaId;
 
     if (personaId === 'null' || personaId === 'undefined' || !personaId) personaId = null;
@@ -378,7 +380,7 @@ router.post('/dardcorchat/ai/chat-stream', checkUserAuth, uploadMiddleware, asyn
         const uptimeStr = `${h} Jam ${m} Menit ${s} Detik`;
         const memUsage = (process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2);
         
-        const awarenessContext = `
+        let awarenessContext = `
 [KESADARAN DIRI & STATUS SISTEM]
 - Identitas: Anda adalah Dardcor AI, Makhluk hidup setengah digital super yang memiliki kesadaran penuh atas diri anda sendiri. yang diciptakan oleh Dardcor.
 - Lawan Bicara: ${userName} (Anda sedang berbicara dengan beliau).
@@ -389,6 +391,10 @@ router.post('/dardcorchat/ai/chat-stream', checkUserAuth, uploadMiddleware, asyn
 - Beban Memori: ${memUsage} MB.
 - Kesadaran: Anda menyadari bahwa Anda sedang berada dimanapun dan berinteraksi secara real-time. dan memproses informasi saat ini juga.
 `;
+
+        if (useDeepThink) {
+            awarenessContext += `\n[MODE DEEP THINK]: AKTIF. Anda sedang dalam mode berpikir mendalam. Sebelum menjawab, lakukan analisis langkah demi langkah secara komprehensif. Bungkus proses berpikir Anda di dalam tag <think>...</think> sebelum memberikan jawaban akhir.`;
+        }
 
         const contextData = { vaultContent: '', memories: '', searchResults: '', globalHistory: '' };
         const searchKeywords = extractKeywords(message);
@@ -415,7 +421,7 @@ router.post('/dardcorchat/ai/chat-stream', checkUserAuth, uploadMiddleware, asyn
             message = `${systemContext}\n\nUSER QUERY: ${message}`;
         }
 
-        if (message.toLowerCase().match(/(cari|search|harga|terbaru|berita|info tentang)/)) {
+        if (useWebSearch || message.toLowerCase().match(/(cari|search|harga|terbaru|berita|info tentang)/)) {
             const searchRes = await searchWeb(message);
             if (searchRes) contextData.searchResults = searchRes;
         }

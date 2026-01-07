@@ -22,6 +22,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let userIsScrolling = false;
     let pendingToolDelete = null;
     let loadingTimeout = null;
+    let isDeepThinkEnabled = false;
+    let isSearchEnabled = false;
 
     const chatContainer = document.getElementById('chat-container');
     const messageInput = document.getElementById('message-input');
@@ -210,8 +212,37 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('dragleave', (e) => { if (e.relatedTarget === null || e.relatedTarget === document.documentElement) { if (dropZone) { dropZone.classList.add('hidden'); dropZone.classList.remove('flex'); } } });
     window.addEventListener('drop', (e) => { e.preventDefault(); if (dropZone) { dropZone.classList.add('hidden'); dropZone.classList.remove('flex'); } handleFiles(e.dataTransfer.files); });
 
-    if (deepThinkBtn) deepThinkBtn.addEventListener('click', () => window.showNavbarAlert('Fitur Deep Think akan segera hadir!', 'info'));
-    if (searchBtn) searchBtn.addEventListener('click', () => window.showNavbarAlert('Fitur Pencarian Web sedang dikembangkan', 'info'));
+    if (deepThinkBtn) {
+        deepThinkBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            isDeepThinkEnabled = !isDeepThinkEnabled;
+            if (isDeepThinkEnabled) {
+                deepThinkBtn.classList.remove('bg-purple-900/10', 'text-purple-400', 'border-purple-800/30');
+                deepThinkBtn.classList.add('bg-purple-600', 'text-white', 'border-purple-400', 'shadow-[0_0_15px_rgba(147,51,234,0.5)]');
+                window.showNavbarAlert('Deep Think Diaktifkan', 'success');
+            } else {
+                deepThinkBtn.classList.add('bg-purple-900/10', 'text-purple-400', 'border-purple-800/30');
+                deepThinkBtn.classList.remove('bg-purple-600', 'text-white', 'border-purple-400', 'shadow-[0_0_15px_rgba(147,51,234,0.5)]');
+                window.showNavbarAlert('Deep Think Dinonaktifkan', 'info');
+            }
+        });
+    }
+
+    if (searchBtn) {
+        searchBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            isSearchEnabled = !isSearchEnabled;
+            if (isSearchEnabled) {
+                searchBtn.classList.remove('bg-purple-900/10', 'text-purple-400', 'border-purple-800/30');
+                searchBtn.classList.add('bg-blue-600', 'text-white', 'border-blue-400', 'shadow-[0_0_15px_rgba(59,130,246,0.5)]');
+                window.showNavbarAlert('Web Search Diaktifkan', 'success');
+            } else {
+                searchBtn.classList.add('bg-purple-900/10', 'text-purple-400', 'border-purple-800/30');
+                searchBtn.classList.remove('bg-blue-600', 'text-white', 'border-blue-400', 'shadow-[0_0_15px_rgba(59,130,246,0.5)]');
+                window.showNavbarAlert('Web Search Dinonaktifkan', 'info');
+            }
+        });
+    }
 
     if (modelBtn) {
         modelBtn.addEventListener('click', (e) => { 
@@ -265,9 +296,9 @@ document.addEventListener('DOMContentLoaded', () => {
             alertText.innerText = message;
             alertBox.classList.remove('opacity-0', 'pointer-events-none', 'scale-90');
             alertBox.classList.add('opacity-100', 'scale-100');
-            if (type === 'success') { alertBox.className = "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-4 py-1.5 bg-green-900/80 border border-green-500/30 rounded-full shadow-lg flex items-center gap-2 transition-all duration-300 opacity-100 transform scale-100 z-[9999]"; alertIcon.className = "fas fa-check-circle text-green-400 text-xs"; } 
-            else if (type === 'error') { alertBox.className = "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-4 py-1.5 bg-red-900/80 border border-red-500/30 rounded-full shadow-lg flex items-center gap-2 transition-all duration-300 opacity-100 transform scale-100 z-[9999]"; alertIcon.className = "fas fa-exclamation-circle text-red-400 text-xs"; } 
-            else { alertBox.className = "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-4 py-1.5 bg-[#1c1c2e] border border-purple-900/30 rounded-full shadow-lg flex items-center gap-2 transition-all duration-300 opacity-100 transform scale-100 z-[9999]"; alertIcon.className = "fas fa-info-circle text-purple-400 text-xs"; }
+            if (type === 'success') { alertBox.className = "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-4 py-1.5 bg-green-900/80 border border-green-500/30 rounded-full shadow-lg flex items-center gap-2 transition-all duration-300 opacity-100 transform scale-100 z-[10000]"; alertIcon.className = "fas fa-check-circle text-green-400 text-xs"; } 
+            else if (type === 'error') { alertBox.className = "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-4 py-1.5 bg-red-900/80 border border-red-500/30 rounded-full shadow-lg flex items-center gap-2 transition-all duration-300 opacity-100 transform scale-100 z-[10000]"; alertIcon.className = "fas fa-exclamation-circle text-red-400 text-xs"; } 
+            else { alertBox.className = "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-4 py-1.5 bg-[#1c1c2e] border border-purple-900/30 rounded-full shadow-lg flex items-center gap-2 transition-all duration-300 opacity-100 transform scale-100 z-[10000]"; alertIcon.className = "fas fa-info-circle text-purple-400 text-xs"; }
             setTimeout(() => { alertBox.classList.add('opacity-0', 'pointer-events-none', 'scale-90'); alertBox.classList.remove('opacity-100', 'scale-100'); }, 3000);
         }
     };
@@ -398,42 +429,40 @@ document.addEventListener('DOMContentLoaded', () => {
         const newChatStatic = document.getElementById('current-new-chat-item');
         const newChatHistory = document.getElementById('new-chat-highlight-target');
 
-        if (!id || id === 'new' || id === serverData.currentConversationId) {
-             const isNew = (!id || id === 'new' || !document.getElementById(`chat-item-${id}`));
-             
-             if (isNew) {
-                [newChatStatic, newChatHistory].forEach(el => {
-                    if(el) {
-                        el.classList.remove('text-gray-400', 'border-transparent', 'hover:bg-white/5');
-                        el.classList.add('bg-[#202336]', 'text-white', 'border-purple-900', 'border-l-2');
-                        if(el.id === 'current-new-chat-item') el.classList.add('border-purple-900');
-                    }
-                });
-             } else {
-                 [newChatStatic, newChatHistory].forEach(el => {
-                    if(el) {
-                        el.classList.remove('bg-[#202336]', 'text-white', 'border-l-2');
-                        if (el.id === 'current-new-chat-item') {
-                            el.classList.add('text-gray-400', 'hover:bg-white/5', 'border-purple-900');
-                            el.classList.remove('border-transparent');
-                        } else {
-                            el.classList.remove('border-purple-900');
-                            el.classList.add('text-gray-400', 'border-l-2', 'border-transparent', 'hover:bg-white/5');
-                        }
-                    }
-                 });
-                 
-                const activeEl = document.getElementById(`chat-item-${id}`);
-                if (activeEl) {
-                    activeEl.classList.remove('text-gray-400', 'border-transparent', 'hover:bg-white/5');
-                    activeEl.classList.add('bg-[#202336]', 'text-white', 'border-purple-900', 'border-l-2');
-                    const btn = activeEl.querySelector('.options-btn');
-                    if (btn) {
-                        btn.classList.remove('opacity-0', 'group-hover:opacity-100');
-                        btn.classList.add('opacity-100');
-                    }
+        const activeEl = document.getElementById(`chat-item-${id}`);
+        const isNew = (!id || id === 'new' || !activeEl);
+
+        if (isNew) {
+            if(newChatStatic) {
+                newChatStatic.classList.add('bg-[#202336]', 'text-white', 'border-purple-900');
+                newChatStatic.classList.remove('text-gray-400', 'hover:bg-white/5', 'border-transparent'); 
+            }
+
+            if(newChatHistory) {
+                newChatHistory.classList.add('bg-[#202336]', 'text-white', 'border-purple-900', 'border-l-2');
+                newChatHistory.classList.remove('text-gray-400', 'border-transparent', 'hover:bg-white/5');
+            }
+        } else {
+            if (newChatStatic) {
+                newChatStatic.classList.remove('bg-[#202336]', 'text-white');
+                newChatStatic.classList.add('text-gray-400', 'hover:bg-white/5', 'border-purple-900'); 
+                newChatStatic.classList.remove('border-transparent');
+            }
+
+            if(newChatHistory) {
+                newChatHistory.classList.remove('bg-[#202336]', 'text-white', 'border-purple-900');
+                newChatHistory.classList.add('text-gray-400', 'border-l-2', 'border-transparent', 'hover:bg-white/5');
+            }
+
+            if (activeEl) {
+                activeEl.classList.remove('text-gray-400', 'border-transparent', 'hover:bg-white/5');
+                activeEl.classList.add('bg-[#202336]', 'text-white', 'border-purple-900', 'border-l-2');
+                const btn = activeEl.querySelector('.options-btn');
+                if (btn) {
+                    btn.classList.remove('opacity-0', 'group-hover:opacity-100');
+                    btn.classList.add('opacity-100');
                 }
-             }
+            }
         }
         document.querySelectorAll('[id^="menu-"]').forEach(el => el.classList.add('hidden'));
     };
@@ -823,6 +852,8 @@ document.addEventListener('DOMContentLoaded', () => {
         fd.append('message', msg);
         fd.append('conversationId', serverData.currentConversationId || '');
         fd.append('toolType', currentToolType);
+        fd.append('useDeepThink', isDeepThinkEnabled);
+        fd.append('useWebSearch', isSearchEnabled);
         const activeId = selectedPersonaId || localStorage.getItem('activePersonaId');
         if (activeId && activeId !== 'null') fd.append('personaId', activeId);
         selectedFiles.forEach(f => fd.append('file_attachment', f));

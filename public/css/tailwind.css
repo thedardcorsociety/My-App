@@ -1420,6 +1420,11 @@ video {
   border-color: rgb(147 51 234 / 0.5);
 }
 
+.border-purple-800 {
+  --tw-border-opacity: 1;
+  border-color: rgb(107 33 168 / var(--tw-border-opacity, 1));
+}
+
 .border-purple-800\/30 {
   border-color: rgb(107 33 168 / 0.3);
 }
@@ -1443,10 +1448,6 @@ video {
 
 .border-purple-900\/40 {
   border-color: rgb(88 28 135 / 0.4);
-}
-
-.border-purple-900\/50 {
-  border-color: rgb(88 28 135 / 0.5);
 }
 
 .border-red-500\/20 {
@@ -1501,16 +1502,6 @@ video {
   border-color: rgb(234 179 8 / 0.2);
 }
 
-.border-purple-700 {
-  --tw-border-opacity: 1;
-  border-color: rgb(126 34 206 / var(--tw-border-opacity, 1));
-}
-
-.border-purple-800 {
-  --tw-border-opacity: 1;
-  border-color: rgb(107 33 168 / var(--tw-border-opacity, 1));
-}
-
 .border-b-transparent {
   border-bottom-color: transparent;
 }
@@ -1551,11 +1542,6 @@ video {
   background-color: rgb(14 14 20 / var(--tw-bg-opacity, 1));
 }
 
-.bg-\[\#151024\] {
-  --tw-bg-opacity: 1;
-  background-color: rgb(21 16 36 / var(--tw-bg-opacity, 1));
-}
-
 .bg-\[\#1c1c2e\] {
   --tw-bg-opacity: 1;
   background-color: rgb(28 28 46 / var(--tw-bg-opacity, 1));
@@ -1574,6 +1560,11 @@ video {
 .bg-\[\#2a2d3d\] {
   --tw-bg-opacity: 1;
   background-color: rgb(42 45 61 / var(--tw-bg-opacity, 1));
+}
+
+.bg-\[\#2e1065\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(46 16 101 / var(--tw-bg-opacity, 1));
 }
 
 .bg-black\/50 {
@@ -1681,16 +1672,6 @@ video {
 .bg-yellow-600 {
   --tw-bg-opacity: 1;
   background-color: rgb(202 138 4 / var(--tw-bg-opacity, 1));
-}
-
-.bg-\[\#2e1065\] {
-  --tw-bg-opacity: 1;
-  background-color: rgb(46 16 101 / var(--tw-bg-opacity, 1));
-}
-
-.bg-\[\#581c87\] {
-  --tw-bg-opacity: 1;
-  background-color: rgb(88 28 135 / var(--tw-bg-opacity, 1));
 }
 
 .bg-gradient-to-b {
@@ -2534,16 +2515,17 @@ video {
   background-color: rgb(107 33 168 / var(--tw-bg-opacity, 1));
 }
 
+.hover\:bg-purple-900:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(88 28 135 / var(--tw-bg-opacity, 1));
+}
+
 .hover\:bg-purple-900\/20:hover {
   background-color: rgb(88 28 135 / 0.2);
 }
 
 .hover\:bg-purple-900\/30:hover {
   background-color: rgb(88 28 135 / 0.3);
-}
-
-.hover\:bg-purple-900\/50:hover {
-  background-color: rgb(88 28 135 / 0.5);
 }
 
 .hover\:bg-red-700:hover {
@@ -2567,11 +2549,6 @@ video {
 .hover\:bg-yellow-700:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(161 98 7 / var(--tw-bg-opacity, 1));
-}
-
-.hover\:bg-purple-900:hover {
-  --tw-bg-opacity: 1;
-  background-color: rgb(88 28 135 / var(--tw-bg-opacity, 1));
 }
 
 .hover\:from-violet-500:hover {

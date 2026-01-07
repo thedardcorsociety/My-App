@@ -135,13 +135,13 @@
              <button onclick="window.toggleSidebar()" class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors p-2"><i class="fas fa-times text-lg"></i></button>
         </div>
         <div class="flex-1 overflow-y-auto p-2 scrollbar-hide">
-            
+             
             <div id="current-new-chat-item" onclick="window.createNewChat()" class="static-new-chat-item group relative flex items-center px-3 py-2.5 rounded-lg cursor-pointer w-full transition-all text-gray-400 border border-purple-900 bg-white/5 hover:bg-white/10">
                 <div class="flex-1 min-w-0 flex items-center"><i class="fas fa-plus mr-3 text-sm"></i><span class="text-xs font-bold uppercase tracking-wider">New Chat</span></div>
             </div>
 
             <div class="px-1 mb-4 mt-4">
-                 <div class="text-[9px] text-gray-500 font-bold uppercase tracking-widest px-2 mb-2">Tools</div>
+                  <div class="text-[9px] text-gray-500 font-bold uppercase tracking-widest px-2 mb-2">Tools</div>
                 <div class="space-y-[2px]">
                     <div onclick="window.openPersonaModal()" class="flex items-center px-3 py-2 text-xs text-gray-400 hover:text-white hover:bg-white/5 rounded-lg cursor-pointer transition"><i class="fas fa-users w-5 text-blue-800"></i> Personas</div>
                     <div onclick="window.openVaultModal()" class="flex items-center px-3 py-2 text-xs text-gray-400 hover:text-white hover:bg-white/5 rounded-lg cursor-pointer transition"><i class="fas fa-archive w-5 text-emerald-800"></i> Vault</div>
@@ -149,7 +149,7 @@
                 </div>
             </div>
             <div class="text-[9px] text-gray-500 font-bold uppercase tracking-widest px-3 mb-2">Riwayat</div>
-            <div class="space-y-[1px] px-1">
+             <div class="space-y-[1px] px-1">
                 <% let isNewChatActive = true;
                    if (conversationList && conversationList.length > 0 && activeConversationId) { 
                        const exists = conversationList.some(c => c.id === activeConversationId);
@@ -158,10 +158,10 @@
                 <div id="new-chat-highlight-target" onclick="window.createNewChat()" class="chat-item group relative flex items-center px-3 py-2.5 rounded-lg cursor-pointer w-full transition-all <%= isNewChatActive ? 'bg-[#202336] text-white border-l-2 border-purple-900' : 'text-gray-400 border-l-2 border-transparent hover:bg-white/5' %>">
                     <div class="flex-1 min-w-0 flex items-center"><span class="text-xs truncate">Percakapan Baru</span></div>
                 </div>
-                <% if (conversationList) { conversationList.forEach(chat => { %>
+                 <% if (conversationList) { conversationList.forEach(chat => { %>
                      <div id="chat-item-<%= chat.id %>" onclick="window.loadChat('<%= chat.id %>')" class="chat-item group relative flex items-center px-3 py-2.5 rounded-lg cursor-pointer w-full transition-all <%= chat.id === activeConversationId ? 'bg-[#202336] text-white border-l-2 border-purple-900' : 'text-gray-400 border-l-2 border-transparent hover:bg-white/5' %>">
                         <div class="flex-1 min-w-0 flex items-center">
-                            <span id="title-<%= chat.id %>" class="text-xs truncate"><%= chat.title ? chat.title.substring(0, 25) : 'Percakapan' %></span>
+                             <span id="title-<%= chat.id %>" class="text-xs truncate"><%= chat.title ? chat.title.substring(0, 25) : 'Percakapan' %></span>
                             <input type="hidden" id="raw-title-<%= chat.id %>" value="<%= chat.title %>">
                         </div>
                         <button onclick="event.stopPropagation(); window.toggleMenu(event, 'menu-<%= chat.id %>')" class="options-btn absolute right-2 z-20 w-6 h-6 flex items-center justify-center text-gray-400 hover:text-white transition-opacity bg-transparent outline-none focus:outline-none <%= chat.id === activeConversationId ? 'opacity-100' : 'opacity-0 group-hover:opacity-100' %>"><i class="fas fa-ellipsis-v text-[10px]"></i></button>
@@ -170,7 +170,7 @@
                             <button onclick="window.openDeleteModal('<%= chat.id %>')" class="w-full text-left px-3 py-2 text-xs text-red-400 hover:bg-white/10 flex gap-2 items-center"><i class="fas fa-trash"></i> Hapus</button>
                         </div>
                     </div>
-                <% }) } %>
+                 <% }) } %>
             </div>
         </div>
         <div class="p-4 border-t border-white/10 bg-[#08080c] flex justify-between items-center">
@@ -182,7 +182,7 @@
     <main id="main-content" class="absolute inset-0 right-0 h-full bg-[#050508] lg:left-72 w-full lg:w-[calc(100%-18rem)] flex flex-col overflow-hidden">
         <div class="absolute inset-0 pointer-events-none overflow-hidden z-0">
             <div class="star w-0.5 h-0.5 top-10 left-20 animate-star" style="animation-delay: 0s;"></div>
-            <div class="star w-1 h-1 top-1/4 right-1/4 animate-star" style="animation-delay: 1s;"></div>
+             <div class="star w-1 h-1 top-1/4 right-1/4 animate-star" style="animation-delay: 1s;"></div>
             <div class="star w-0.5 h-0.5 bottom-1/3 left-1/3 animate-star" style="animation-delay: 2s;"></div>
             <div class="star w-1 h-1 top-20 right-10 animate-star" style="animation-delay: 1.5s;"></div>
             <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] md:w-[500px] md:h-[500px] bg-purple-900/10 rounded-full blur-[80px] md:blur-[100px] pointer-events-none"></div>
@@ -193,11 +193,11 @@
                 <button onclick="window.toggleSidebar()" class="text-gray-400 hover:text-white p-2 rounded-lg hover:bg-white/10 transition-colors mr-3 flex items-center justify-center w-10 h-10 lg:hidden z-50"><i class="fas fa-bars text-xl"></i></button>
                 <button onclick="window.toggleSidebar()" class="text-gray-400 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-colors mr-3 hidden lg:flex items-center justify-center"><i class="fas fa-bars text-lg"></i></button>
             </div>
-            <div id="navbar-alert" class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-4 py-1.5 bg-[#1c1c2e] border border-purple-900/30 rounded-full shadow-lg flex items-center gap-2 transition-all duration-300 opacity-0 pointer-events-none transform scale-90 z-[9999]">
+             <div id="navbar-alert" class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-4 py-1.5 bg-[#1c1c2e] border border-purple-900/30 rounded-full shadow-lg flex items-center gap-2 transition-all duration-300 opacity-0 pointer-events-none transform scale-90 z-[10000]">
                 <i id="navbar-alert-icon" class="fas fa-info-circle text-purple-400 text-xs"></i><span id="navbar-alert-text" class="text-xs font-bold text-gray-200 whitespace-nowrap">Notification</span>
             </div>
             <div class="flex items-center gap-2 ml-auto">
-                <div id="active-persona-container" class="hidden items-center gap-2 px-3 py-1.5 rounded-lg border border-purple-900/30 bg-purple-900/10 text-purple-300 text-xs font-medium cursor-pointer hover:bg-purple-900/20" onclick="window.openPersonaModal()" title="Persona Aktif">
+                 <div id="active-persona-container" class="hidden items-center gap-2 px-3 py-1.5 rounded-lg border border-purple-900/30 bg-purple-900/10 text-purple-300 text-xs font-medium cursor-pointer hover:bg-purple-900/20" onclick="window.openPersonaModal()" title="Persona Aktif">
                      <i class="fas fa-user-astronaut"></i><span id="active-persona-label" class="max-w-[100px] truncate">Default</span><i class="fas fa-times text-gray-400 hover:text-red-400 ml-1" onclick="event.stopPropagation(); window.deselectPersona();"></i>
                 </div>
                 <button id="refresh-chat-btn" class="w-9 h-9 flex items-center justify-center rounded-lg border border-purple-800 bg-[#2e1065] text-white hover:bg-purple-900 transition-all"><i id="refresh-icon" class="fas fa-sync-alt text-xs"></i></button>
@@ -205,7 +205,7 @@
                     <button id="model-dropdown-btn" class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-purple-800 bg-[#2e1065] text-white text-xs font-medium hover:bg-purple-900 h-[36px] w-auto whitespace-nowrap transition-colors">
                         <span id="tool-label" class="block truncate"><%= typeof toolType !== 'undefined' && toolType === 'dark' ? 'Dark Model' : (typeof toolType !== 'undefined' && toolType === 'pro' ? 'Pro Model' : 'Basic Model') %></span><i class="fas fa-chevron-down text-[10px] ml-1 flex-shrink-0" id="tools-chevron"></i>
                      </button>
-                    <div id="tools-menu" class="hidden absolute right-0 top-full mt-1 w-max flex flex-col bg-[#2e1065] border border-purple-800 rounded-lg shadow-2xl z-[9999] overflow-hidden backdrop-blur-sm p-1">
+                     <div id="tools-menu" class="hidden absolute right-0 top-full mt-1 w-max flex flex-col bg-[#2e1065] border border-purple-800 rounded-lg shadow-2xl z-[9999] overflow-hidden backdrop-blur-sm p-1">
                         <button data-model="basic" class="model-select-btn w-full text-left px-4 py-2 text-xs font-bold text-gray-300 hover:text-white hover:bg-purple-800 rounded-md transition-all whitespace-nowrap">Basic Model</button>
                         <button data-model="dark" class="model-select-btn w-full text-left px-4 py-2 text-xs font-bold text-gray-300 hover:text-white hover:bg-purple-800 rounded-md transition-all whitespace-nowrap">Dark Model</button>
                         <button data-model="pro" class="model-select-btn w-full text-left px-4 py-2 text-xs font-bold text-gray-300 hover:text-white hover:bg-purple-800 rounded-md transition-all whitespace-nowrap">Pro Model</button>
