@@ -1,4 +1,32 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Injeksi CSS agar scrollbar transparan (tidak terlihat) tapi tetap bisa discroll
+    const style = document.createElement('style');
+    style.innerHTML = `
+        /* Scrollbar Terminal Transparan tapi Scrollable */
+        .terminal-code {
+            overflow-x: auto;
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE 10+ */
+        }
+        .terminal-code::-webkit-scrollbar { 
+            display: none !important; /* Chrome/Safari - Force Hide */
+            width: 0 !important;
+            height: 0 !important;
+            background: transparent !important;
+            -webkit-appearance: none !important;
+        }
+        
+        /* Syntax Highlighting - Neon Purple Theme (Immediate Force) */
+        .hljs { color: #e9d5ff !important; background: transparent !important; }
+        .hljs-keyword, .hljs-selector-tag, .hljs-built_in, .hljs-name, .hljs-tag { color: #d8b4fe !important; font-weight: bold; text-shadow: 0 0 5px rgba(216, 180, 254, 0.3); }
+        .hljs-string, .hljs-title, .hljs-section, .hljs-attribute, .hljs-literal, .hljs-template-tag, .hljs-template-variable, .hljs-type, .hljs-addition { color: #f0abfc !important; }
+        .hljs-comment, .hljs-quote, .hljs-deletion, .hljs-meta { color: #7e22ce !important; font-style: italic; }
+        .hljs-number, .hljs-regexp, .hljs-symbol, .hljs-bullet, .hljs-link { color: #c084fc !important; }
+        .hljs-function, .hljs-title.function_ { color: #e879f9 !important; }
+        .hljs-variable, .hljs-template-variable { color: #a855f7 !important; }
+    `;
+    document.head.appendChild(style);
+
     const sidebarItems = document.querySelectorAll('.chat-item *, .static-new-chat-item *');
     sidebarItems.forEach(el => {
         if (window.getComputedStyle(el).pointerEvents === 'none') {
@@ -183,7 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateModelUI(type) {
         const nameMap = { 'basic': 'Basic Model', 'dark': 'Dark Model', 'pro': 'Pro Model' };
         if (toolLabel) toolLabel.innerText = nameMap[type] || 'Basic Model';
-        if (messageInput) messageInput.placeholder = `Ask Dardcor ${type === 'basic' ? 'Basic' : (type === 'dark' ? 'Dark' : 'Pro')}...`;
+        if (messageInput) messageInput.placeholder = `Ask To Dardcor ${type === 'basic' ? '' : (type === 'dark' ? 'Dark' : 'Pro')}...`;
         currentToolType = type;
     }
     updateModelUI(currentToolType);
@@ -1012,12 +1040,26 @@ document.addEventListener('DOMContentLoaded', () => {
                     const clean = thinkMatch[1].trim().replace(/\n/g, '<br>'); 
                     formatted = fullText.replace(/<think>[\s\S]*?<\/think>/, `<details class="mb-4 bg-transparent border-none rounded-lg overflow-hidden group"><summary class="flex items-center gap-2 px-0 py-2 cursor-pointer text-xs font-mono text-gray-500 hover:text-gray-300 select-none transition-colors"><i class="fas fa-brain text-purple-900/50"></i><span>Thinking Process</span><i class="fas fa-chevron-down ml-auto transition-transform group-open:rotate-180 opacity-50"></i></summary><div class="p-0 text-xs text-gray-500 font-mono italic leading-relaxed pl-6 border-l border-purple-900/20">${clean}</div></details>`); 
                 }
+
+                // Auto-close code blocks for immediate highlighting
+                let tempFormatted = formatted;
+                const codeBlockCount = (tempFormatted.match(/```/g) || []).length;
+                if (codeBlockCount % 2 !== 0) {
+                    tempFormatted += "\n```"; 
+                }
                 
                 if (botContent && typeof marked !== 'undefined') {
-                    botContent.innerHTML = marked.parse(formatted);
+                    botContent.innerHTML = marked.parse(tempFormatted);
                     if (typeof hljs !== 'undefined') botContent.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
                 }
-                if (!userIsScrolling) scrollToBottom();
+                if (!userIsScrolling) {
+                    const threshold = 150;
+                    const position = chatContainer.scrollTop + chatContainer.clientHeight;
+                    const height = chatContainer.scrollHeight;
+                    if (height - position <= threshold) {
+                        chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'auto' });
+                    }
+                }
                 requestAnimationFrame(render);
             };
             requestAnimationFrame(render);
@@ -1041,7 +1083,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             let formatted = fullText;
             const thinkMatch = fullText.match(/<think>([\s\S]*?)<\/think>/); 
-            if (thinkMatch) formatted = fullText.replace(/<think>[\s\S]*?<\/think>/, `<details class="mb-4 bg-transparent border-none rounded-lg overflow-hidden group"><summary class="flex items-center gap-2 px-0 py-2 cursor-pointer text-xs font-mono text-gray-500 hover:text-gray-300 select-none transition-colors"><i class="fas fa-brain text-purple-900/50"></i><span>Thinking Process</span><i class="fas fa-chevron-down ml-auto transition-transform group-open:rotate-180 opacity-50"></i></summary><div class="p-0 text-xs text-gray-500 font-mono italic leading-relaxed pl-6 border-l border-purple-900/20">${thinkMatch[1].trim().replace(/\n/g, '<br>')}</div></details>`);
+            if (thinkMatch) formatted = fullText.replace(/<think>[\s\S]*?<\/think>/, `<details class="mb-4 bg-transparent border-none rounded-lg overflow-hidden group"><summary class="flex items-center gap-2 px-0 py-2 cursor-pointer text-xs font-mono text-gray-500 hover:text-gray-300 select-none transition-colors"><i class="fas fa-brain text-purple-900/50"></i><span>Thinking Process</span><i class="fas fa-chevron-down ml-auto transition-transform group-open:rotate-180 opacity-50"></i></summary><div class="p-0 text-xs text-gray-500 font-mono italic leading-relaxed pl-6 border-l border-purple-900/20">${clean}</div></details>`);
             
             if (botContent) {
                 botContent.innerHTML = marked.parse(formatted);
@@ -1050,6 +1092,34 @@ document.addEventListener('DOMContentLoaded', () => {
             scrollToBottom(true);
 
         } catch (e) {
+            // Handle AbortError specifically to keep partial response
+            if (e.name === 'AbortError') {
+                document.getElementById('loading-indicator')?.remove();
+                if (sendIcon) sendIcon.classList.replace('fa-stop', 'fa-paper-plane');
+                isSending = false;
+                abortController = null;
+                
+                // Force final render of whatever we have
+                if (fullText && typeof marked !== 'undefined') {
+                     let finalFormatted = fullText;
+                     const codeCount = (finalFormatted.match(/```/g) || []).length;
+                     if (codeCount % 2 !== 0) finalFormatted += "\n```"; // Close pending code blocks
+
+                     const thinkMatch = finalFormatted.match(/<think>([\s\S]*?)<\/think>/);
+                     if (thinkMatch) finalFormatted = finalFormatted.replace(/<think>[\s\S]*?<\/think>/, `<details class="mb-4 bg-transparent border-none rounded-lg overflow-hidden group"><summary class="flex items-center gap-2 px-0 py-2 cursor-pointer text-xs font-mono text-gray-500 hover:text-gray-300 select-none transition-colors"><i class="fas fa-brain text-purple-900/50"></i><span>Thinking Process</span><i class="fas fa-chevron-down ml-auto transition-transform group-open:rotate-180 opacity-50"></i></summary><div class="p-0 text-xs text-gray-500 font-mono italic leading-relaxed pl-6 border-l border-purple-900/20">${thinkMatch[1].trim().replace(/\n/g, '<br>')}</div></details>`);
+
+                     const lastBotDiv = messageList.lastElementChild;
+                     if(lastBotDiv) {
+                         const contentDiv = lastBotDiv.querySelector('.markdown-body');
+                         if(contentDiv) {
+                             contentDiv.innerHTML = marked.parse(finalFormatted);
+                             if (typeof hljs !== 'undefined') contentDiv.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
+                         }
+                     }
+                }
+                return;
+            }
+            
             document.getElementById('loading-indicator')?.remove();
             window.showNavbarAlert('Gagal mengirim pesan', 'error');
         } finally {
