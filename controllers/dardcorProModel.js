@@ -117,7 +117,7 @@ Diagram: Hanya menggunakan sintaks Mermaid yang valid dan dibungkus dalam blok k
   messages.push({ role: "user", content: userContent });
 
   let attempt = 0;
-  const maxRetries = 5; 
+  const maxRetries = 10; 
   let success = false;
   let lastError = null;
 
@@ -178,17 +178,10 @@ Diagram: Hanya menggunakan sintaks Mermaid yang valid dan dibungkus dalam blok k
 
     } catch (error) {
         lastError = error;
-        const status = error.response?.status;
-        
         if (hasImages && attempt === 0) {
              selectedModel = "google/gemini-2.0-flash-exp:free"; 
         }
-
-        if (status === 429 || status === 503 || status === 502 || status === 402) {
-            attempt++;
-        } else {
-            break; 
-        }
+        attempt++;
     }
   }
 

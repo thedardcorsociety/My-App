@@ -351,6 +351,9 @@ router.post('/api/memories', checkUserAuth, async (req, res) => { try { await su
 router.delete('/api/memories/:id', checkUserAuth, async (req, res) => { try { await supabase.from('user_memories').delete().eq('id', req.params.id).eq('user_id', req.session.userAccount.id); res.json({ success: true }); } catch (e) { sendDiscordError("Delete Memory", e); res.status(500).json({ success: false }); } });
 
 router.post('/dardcorchat/ai/chat-stream', checkUserAuth, uploadMiddleware, async (req, res) => {
+    req.socket.setTimeout(0); 
+    req.setTimeout(0); 
+
     const userId = req.session.userAccount.id;
     const userName = req.session.userAccount.username || "Pengguna";
     let message = req.body.message ? req.body.message.trim() : "";

@@ -113,7 +113,7 @@ Diagram: Hanya menggunakan sintaks Mermaid yang valid dan dibungkus dalam blok k
     const msgPayload = imageParts.length > 0 ? [message, ...imageParts] : message;
 
     let attempt = 0;
-    const maxRetries = 5;
+    const maxRetries = 10;
     let success = false;
     let lastError = null;
 
