@@ -125,32 +125,25 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         
         renderer.link = function(href, title, text) {
-            let u, t, ti;
-
+            let u, t;
             if (typeof href === 'object' && href !== null) {
-                u = href.href;
-                t = href.text;
-                ti = href.title;
+                u = href.href || '';
+                t = href.text || u;
             } else {
-                u = href;
-                t = text;
-                ti = title;
+                u = href || '';
+                t = text || u;
             }
 
-            u = String(u || '').trim();
-            t = String(t || '').trim();
-            
-            if (t === '' || t === 'undefined' || t === 'null' || t.includes('[object Object]')) {
-                t = u;
-            }
-            if (u === '' && t.match(/^https?:\/\//)) {
-                u = t;
-            }
-            if (u === '') {
-                u = '#';
-            }
+            u = String(u).trim();
+            t = String(t).trim();
 
-            return `<a href="${u}" target="_blank" class="text-purple-500 hover:text-purple-300 hover:underline font-bold transition-colors break-all" title="${ti || ''}">${t}</a>`;
+            if (u.includes('[object Object]')) u = '';
+            if (t.includes('[object Object]')) t = u;
+            if (!u && t.match(/^https?:\/\//)) u = t;
+            if (!t && u) t = u;
+            if (!u) u = '#';
+
+            return `<a href="${u}" target="_blank" class="text-purple-500 hover:text-purple-300 hover:underline font-bold transition-colors break-all" title="${title || ''}">${t}</a>`;
         };
 
         marked.setOptions({ 
@@ -190,7 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateModelUI(type) {
         const nameMap = { 'basic': 'Basic Model', 'dark': 'Dark Model', 'pro': 'Pro Model' };
         if (toolLabel) toolLabel.innerText = nameMap[type] || 'Basic Model';
-        if (messageInput) messageInput.placeholder = `Ask To Dardcor ${type === 'basic' ? '' : (type === 'dark' ? 'Dark' : 'Pro')}...`;
+        if (messageInput) messageInput.placeholder = `Ask Dardcor ${type === 'basic' ? 'Basic' : (type === 'dark' ? 'Dark' : 'Pro')}...`;
         currentToolType = type;
     }
     updateModelUI(currentToolType);
@@ -1010,7 +1003,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const render = (timestamp) => {
                 if (!isStreaming) return;
-                if (timestamp - lastUpdate < 100) { requestAnimationFrame(render); return; }
+                if (timestamp - lastUpdate < 50) { requestAnimationFrame(render); return; }
                 lastUpdate = timestamp;
                 
                 let formatted = fullText;
@@ -1022,6 +1015,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 if (botContent && typeof marked !== 'undefined') {
                     botContent.innerHTML = marked.parse(formatted);
+                    if (typeof hljs !== 'undefined') botContent.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
                 }
                 if (!userIsScrolling) scrollToBottom();
                 requestAnimationFrame(render);

@@ -2,8 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="mobile-web-app-capable" content="yes">
@@ -110,11 +109,9 @@
     <div id="overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/80 hidden z-40 backdrop-blur-sm transition-opacity duration-300 lg:hidden"></div>
 
     <aside id="sidebar" class="fixed inset-y-0 left-0 w-72 bg-[#0a0a12] border-r border-purple-900/20 flex flex-col transform -translate-x-full z-50 transition-transform duration-300 safe-pl shadow-2xl shadow-purple-900/10">
-        <div class="h-16 shrink-0 flex items-center justify-between px-4 border-b border-purple-900/20 safe-pt">
-            <span class="font-bold tracking-wider text-purple-400 text-base">Dardcor <span class="text-white">AI</span></span>
-            <button onclick="toggleSidebar()" class="text-gray-400 p-2 hover:text-white transition-colors">
-                <i class="fas fa-times"></i>
-            </button>
+        <div class="h-16 shrink-0 flex items-center px-4 border-b border-white/10 bg-[#0a0a12] relative">
+            <span class="font-bold text-lg text-purple-400 flex items-center gap-3"><img src="/logo.png" class="w-7 h-7 rounded-full shadow-lg"> Dardcor <span class="text-white">AI</span></span>
+             <button onclick="toggleSidebar()" class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors p-2"><i class="fas fa-times text-lg"></i></button>
         </div>
 
         <div class="flex-1 flex flex-col items-center justify-center text-center opacity-60 px-4">
@@ -158,7 +155,6 @@
                 
                 <div class="relative w-48 h-48 md:w-56 md:h-56 flex items-center justify-center mb-6 md:mb-8 perspective-[1000px]">
                     <div class="absolute inset-0 bg-purple-900/20 rounded-full blur-3xl animate-pulse"></div>
-                    
                     <div class="absolute w-[110%] h-[110%] rounded-full border border-purple-500/60 shadow-[0_0_15px_rgba(168,85,247,0.3)] animate-orbit-1 border-t-transparent border-l-transparent"></div>
                     <div class="absolute w-[110%] h-[110%] rounded-full border border-fuchsia-500/50 shadow-[0_0_15px_rgba(217,70,239,0.3)] animate-orbit-2 border-b-transparent border-r-transparent"></div>
                     <div class="absolute w-[110%] h-[110%] rounded-full border border-violet-500/50 animate-orbit-3 border-t-transparent border-r-transparent"></div>
@@ -216,58 +212,6 @@
         </footer>
     </main>
 
-    <script>
-        const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('overlay');
-        const content = document.getElementById('content');
-        const pwaBtn = document.getElementById('pwa-install-btn');
-        let deferredPrompt;
-
-        function toggleSidebar() {
-            const isMobile = window.innerWidth < 1024;
-            const isClosed = sidebar.classList.contains('-translate-x-full');
-
-            if (isClosed) {
-                sidebar.classList.remove('-translate-x-full');
-                if (isMobile) {
-                    overlay.classList.remove('hidden');
-                } else {
-                    content.classList.add('lg:ml-72');
-                }
-            } else {
-                sidebar.classList.add('-translate-x-full');
-                if (isMobile) {
-                    overlay.classList.add('hidden');
-                } else {
-                    content.classList.remove('lg:ml-72');
-                }
-            }
-        }
-
-        window.addEventListener('resize', () => {
-            if (window.innerWidth >= 1024) {
-                overlay.classList.add('hidden');
-            }
-        });
-
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-        });
-
-        pwaBtn.addEventListener('click', async () => {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                deferredPrompt = null;
-            }
-        });
-
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js');
-            });
-        }
-    </script>
+    <script src="/js/index.js"></script>
 </body>
 </html>

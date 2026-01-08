@@ -66,17 +66,22 @@
         .markdown-body table { display: block; width: 100%; overflow-x: auto; margin: 1em 0; background-color: transparent !important; border-spacing: 0; border-collapse: collapse !important; border: 1px solid #7e22ce !important; }
         .markdown-body th, .markdown-body td { padding: 10px 14px; border: 1px solid #7e22ce !important; color: #d1d5db; font-size: 0.85rem; min-width: 120px; }
         .markdown-body th { background-color: rgba(126, 34, 206, 0.25) !important; color: #fff; font-weight: bold; text-align: left; border-bottom: 2px solid #7e22ce !important; }
-        .terminal-container { background: #000000 !important; border: 1px solid #333 !important; border-radius: 6px; margin: 16px 0; font-family: 'Consolas', 'Monaco', monospace; width: 100%; max-width: 100%; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
-        .terminal-head { display: flex; justify-content: space-between; align-items: center; background: #000000 !important; padding: 6px 12px; border-bottom: 1px solid #333 !important; height: 32px; flex-shrink: 0; }
-        .terminal-code { padding: 0; width: 100%; background: #000000 !important; overflow-x: auto; display: block; }
+        
+        /* Dark Purple Code Theme Overrides */
+        .terminal-container { background: #050508 !important; border: 1px solid #581c87 !important; border-radius: 6px; margin: 16px 0; font-family: 'Consolas', 'Monaco', monospace; width: 100%; max-width: 100%; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 4px 12px rgba(88, 28, 135, 0.3); }
+        .terminal-head { display: flex; justify-content: space-between; align-items: center; background: #0a0a12 !important; padding: 6px 12px; border-bottom: 1px solid #581c87 !important; height: 32px; flex-shrink: 0; }
+        .terminal-code { padding: 0; width: 100%; background: #050508 !important; overflow-x: auto; display: block; }
         .terminal-code pre { margin: 0; padding: 0; width: 100%; background: transparent !important; }
-        .terminal-code code { padding: 14px 18px !important; display: block; background: transparent !important; font-size: 13px; line-height: 1.55; font-family: 'Consolas', monospace; white-space: pre; color: #e6edf3; }
-        .hljs-keyword, .hljs-selector-tag, .hljs-built_in, .hljs-name, .hljs-tag { color: #ff7b72 !important; font-weight: bold; }
-        .hljs-string, .hljs-title, .hljs-section, .hljs-attribute, .hljs-literal, .hljs-template-tag, .hljs-template-variable, .hljs-type, .hljs-addition { color: #a5d6ff !important; }
-        .hljs-comment, .hljs-quote, .hljs-deletion, .hljs-meta { color: #8b949e !important; font-style: italic; }
-        .hljs-number, .hljs-regexp, .hljs-symbol, .hljs-bullet, .hljs-link { color: #79c0ff !important; }
-        .hljs-function, .hljs-title.function_ { color: #d2a8ff !important; }
-        .hljs-variable, .hljs-template-variable { color: #ffa657 !important; }
+        .terminal-code code { padding: 14px 18px !important; display: block; background: transparent !important; font-size: 13px; line-height: 1.55; font-family: 'Consolas', monospace; white-space: pre; color: #e9d5ff; } /* Light purple text */
+        
+        /* Purple Highlight.js Colors */
+        .hljs-keyword, .hljs-selector-tag, .hljs-built_in, .hljs-name, .hljs-tag { color: #d8b4fe !important; font-weight: bold; } /* Purple 300 */
+        .hljs-string, .hljs-title, .hljs-section, .hljs-attribute, .hljs-literal, .hljs-template-tag, .hljs-template-variable, .hljs-type, .hljs-addition { color: #f0abfc !important; } /* Fuchsia 300 */
+        .hljs-comment, .hljs-quote, .hljs-deletion, .hljs-meta { color: #7e22ce !important; font-style: italic; } /* Purple 700 */
+        .hljs-number, .hljs-regexp, .hljs-symbol, .hljs-bullet, .hljs-link { color: #c084fc !important; } /* Purple 400 */
+        .hljs-function, .hljs-title.function_ { color: #e879f9 !important; } /* Fuchsia 400 */
+        .hljs-variable, .hljs-template-variable { color: #a855f7 !important; } /* Purple 500 */
+        
         .cmd-btn { display: flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; outline: none; }
         .btn-preview { background-color: #581c87; color: white; } .btn-preview:hover { background-color: #3b0764; }
         .btn-diagram { background-color: #581c87; color: white; } .btn-diagram:hover { background-color: #3b0764; }
@@ -183,15 +188,15 @@
                 <div id="active-persona-container" class="hidden items-center gap-2 px-3 py-1.5 rounded-lg border border-purple-900/30 bg-purple-900/10 text-purple-300 text-xs font-medium cursor-pointer hover:bg-purple-900/20" onclick="window.openPersonaModal()" title="Persona Aktif">
                      <i class="fas fa-user-astronaut"></i><span id="active-persona-label" class="max-w-[100px] truncate">Default</span><i class="fas fa-times text-gray-400 hover:text-red-400 ml-1" onclick="event.stopPropagation(); window.deselectPersona();"></i>
                 </div>
-                <button id="refresh-chat-btn" class="w-9 h-9 flex items-center justify-center rounded-lg border border-purple-800 bg-[#2e1065] text-white hover:bg-purple-900 transition-all"><i id="refresh-icon" class="fas fa-sync-alt text-xs"></i></button>
+                <button id="refresh-chat-btn" class="w-9 h-9 flex items-center justify-center rounded-lg border border-purple-900 bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white transition-all"><i id="refresh-icon" class="fas fa-sync-alt text-xs"></i></button>
                 <div class="relative">
-                    <button id="model-dropdown-btn" class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-purple-800 bg-[#2e1065] text-white text-xs font-medium hover:bg-purple-900 h-[36px] w-auto whitespace-nowrap transition-colors">
+                    <button id="model-dropdown-btn" class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-purple-900 bg-white/5 text-gray-400 text-xs font-medium hover:bg-white/10 hover:text-white h-[36px] w-auto whitespace-nowrap transition-colors">
                         <span id="tool-label" class="block truncate"><%= typeof toolType !== 'undefined' && toolType === 'dark' ? 'Dark Model' : (typeof toolType !== 'undefined' && toolType === 'pro' ? 'Pro Model' : 'Basic Model') %></span><i class="fas fa-chevron-down text-[10px] ml-1 flex-shrink-0" id="tools-chevron"></i>
                      </button>
-                    <div id="tools-menu" class="hidden absolute right-0 top-full mt-1 w-max flex flex-col bg-[#2e1065] border border-purple-800 rounded-lg shadow-2xl z-[9999] overflow-hidden backdrop-blur-sm p-1">
-                        <button data-model="basic" class="model-select-btn w-full text-left px-4 py-2 text-xs font-bold text-gray-300 hover:text-white hover:bg-purple-800 rounded-md transition-all whitespace-nowrap">Basic Model</button>
-                        <button data-model="dark" class="model-select-btn w-full text-left px-4 py-2 text-xs font-bold text-gray-300 hover:text-white hover:bg-purple-800 rounded-md transition-all whitespace-nowrap">Dark Model</button>
-                        <button data-model="pro" class="model-select-btn w-full text-left px-4 py-2 text-xs font-bold text-gray-300 hover:text-white hover:bg-purple-800 rounded-md transition-all whitespace-nowrap">Pro Model</button>
+                    <div id="tools-menu" class="hidden absolute right-0 top-full mt-1 w-max flex flex-col bg-[#0a0a12] border border-purple-900 rounded-lg shadow-2xl z-[9999] overflow-hidden backdrop-blur-sm p-1">
+                        <button data-model="basic" class="model-select-btn w-full text-left px-4 py-2 text-xs font-bold text-gray-300 hover:text-white hover:bg-white/10 rounded-md transition-all whitespace-nowrap">Basic Model</button>
+                        <button data-model="dark" class="model-select-btn w-full text-left px-4 py-2 text-xs font-bold text-gray-300 hover:text-white hover:bg-white/10 rounded-md transition-all whitespace-nowrap">Dark Model</button>
+                        <button data-model="pro" class="model-select-btn w-full text-left px-4 py-2 text-xs font-bold text-gray-300 hover:text-white hover:bg-white/10 rounded-md transition-all whitespace-nowrap">Pro Model</button>
                     </div>
                 </div>
             </div>

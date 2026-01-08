@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#0b0c15">
+    <meta name="theme-color" content="#050508">
     
     <title>Dardcor AI</title>
     <link rel="icon" href="/logo.png">
@@ -17,7 +17,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    
+
     <link rel="stylesheet" href="/css/tailwind.css">
     <link rel="stylesheet" href="/vendor/fontawesome/css/all.min.css">
     <link rel="stylesheet" href="/css/atom-one-dark.min.css">
@@ -33,9 +33,9 @@
             overflow: hidden;
             position: fixed;
             inset: 0;
-            background-color: #0b0c15;
-            font-family: 'Poppins', sans-serif;
-            color: white;
+            background-color: #050508;
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
         
         .scroll-container {
@@ -43,81 +43,85 @@
             width: 100%;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
 
-        .glass-panel {
-            background: rgba(19, 19, 31, 0.6);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(139, 92, 246, 0.1);
+        .error-card {
+            background: rgba(10, 10, 18, 0.6);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(88, 28, 135, 0.3);
+            box-shadow: 0 0 40px rgba(88, 28, 135, 0.15);
+            animation: floatUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
-        @keyframes blob {
-            0% { transform: translate(0px, 0px) scale(1); }
-            33% { transform: translate(30px, -50px) scale(1.1); }
-            66% { transform: translate(-20px, 20px) scale(0.9); }
-            100% { transform: translate(0px, 0px) scale(1); }
-        }
-        .animate-blob { animation: blob 7s infinite; }
-        .animation-delay-2000 { animation-delay: 2s; }
-        .animation-delay-4000 { animation-delay: 4s; }
-        .text-glow { text-shadow: 0 0 30px rgba(167, 139, 250, 0.2); }
+        @keyframes floatUp { from { opacity: 0; transform: translateY(40px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        
+        @keyframes star-twinkle { 0%, 100% { opacity: 0.3; transform: scale(0.5); } 50% { opacity: 1; transform: scale(1.2); } }
+        .animate-star { animation: star-twinkle 3s ease-in-out infinite; }
+        .star { position: absolute; background: white; border-radius: 50%; }
+        
+        @keyframes orbit-1 { 0% { transform: rotate3d(1, 1, 1, 0deg); } 100% { transform: rotate3d(1, 1, 1, 360deg); } }
+        @keyframes orbit-2 { 0% { transform: rotate3d(1, -1, 1, 0deg); } 100% { transform: rotate3d(1, -1, 1, 360deg); } }
+        .animate-orbit-1 { animation: orbit-1 6s linear infinite; }
+        .animate-orbit-2 { animation: orbit-2 7s linear infinite; }
     </style>
 </head>
-<body>
+<body class="bg-[#050508] text-white font-sans h-dvh flex overflow-hidden relative">
 
-    <div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-600 rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-blob"></div>
-        <div class="absolute top-1/3 right-1/4 w-96 h-96 bg-violet-600 rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-blob animation-delay-2000"></div>
-        <div class="absolute -bottom-32 left-1/3 w-96 h-96 bg-fuchsia-600 rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-blob animation-delay-4000"></div>
+    <div class="absolute inset-0 pointer-events-none overflow-hidden z-0">
+        <div class="star w-0.5 h-0.5 top-10 left-20 animate-star" style="animation-delay: 0s;"></div>
+        <div class="star w-1 h-1 top-1/4 right-1/4 animate-star" style="animation-delay: 1s;"></div>
+        <div class="star w-0.5 h-0.5 bottom-1/3 left-1/3 animate-star" style="animation-delay: 2s;"></div>
+        <div class="star w-1 h-1 top-20 right-10 animate-star" style="animation-delay: 1.5s;"></div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-purple-900/10 rounded-full blur-[100px] pointer-events-none"></div>
     </div>
 
-    <div class="scroll-container relative z-10 selection:bg-purple-500/30">
-        <main class="w-full max-w-2xl px-6 text-center">
+    <div class="scroll-container flex items-center justify-center p-4 relative z-10">
+        <main class="w-full max-w-2xl px-6 text-center my-auto">
             
             <div class="mb-8 relative select-none">
-                <h1 class="text-[100px] md:text-[180px] font-black leading-none text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-fuchsia-500 to-purple-600 text-glow transform scale-105">
+                <div class="absolute -top-20 -left-20 w-40 h-40 bg-purple-600/20 rounded-full blur-3xl animate-orbit-1"></div>
+                <div class="absolute -bottom-20 -right-20 w-40 h-40 bg-fuchsia-600/20 rounded-full blur-3xl animate-orbit-2"></div>
+
+                <h1 class="text-[100px] md:text-[150px] font-black leading-none text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-fuchsia-500 to-purple-600 drop-shadow-[0_0_30px_rgba(139,92,246,0.3)] transform scale-105">
                     404
                 </h1>
-                <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full">
-                    <div class="text-lg md:text-2xl font-bold text-white tracking-[0.5em] uppercase opacity-90 drop-shadow-lg">
+                <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full pointer-events-none">
+                    <div class="text-lg md:text-2xl font-bold text-white/10 tracking-[0.5em] uppercase blur-[1px]">
                         Not Found
                     </div>
                 </div>
             </div>
 
-            <div class="glass-panel p-8 md:p-12 rounded-3xl shadow-2xl relative overflow-hidden group border-t border-white/5">
+            <div class="error-card p-8 md:p-12 rounded-3xl relative overflow-hidden group border border-purple-900/30">
                 <div class="absolute inset-0 bg-gradient-to-r from-violet-600/5 to-fuchsia-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                 
                 <h2 class="text-2xl md:text-3xl font-bold text-white mb-4 relative z-10">
                     Oops! Halaman Hilang
                 </h2>
                 
-                <p class="text-gray-400 mb-8 text-sm md:text-base leading-relaxed max-w-md mx-auto relative z-10">
+                <p class="text-purple-300/60 mb-8 text-sm md:text-base leading-relaxed max-w-md mx-auto relative z-10">
                     Halaman yang Anda cari mungkin telah dipindahkan, dihapus, atau tidak pernah ada di dimensi ini.
                 </p>
 
                 <div class="flex flex-col sm:flex-row gap-4 justify-center items-center relative z-10">
-                    <button onclick="history.back()" class="w-full sm:w-auto px-6 py-3.5 rounded-xl border border-gray-700 hover:bg-gray-800 text-gray-300 hover:text-white font-semibold transition-all duration-300 flex items-center justify-center gap-2 group/btn">
+                    <button id="backBtn" class="w-full sm:w-auto px-6 py-3.5 rounded-xl border border-purple-800/50 hover:bg-purple-900/20 text-purple-300 hover:text-white font-semibold transition-all duration-300 flex items-center justify-center gap-2 group/btn">
                         <i class="fas fa-arrow-left group-hover/btn:-translate-x-1 transition-transform"></i>
                         <span>Kembali</span>
                     </button>
 
-                    <a href="/" class="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-semibold shadow-lg shadow-purple-600/30 transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2">
+                    <a href="/" class="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-[#2e1065] hover:bg-purple-900 text-white font-bold shadow-[0_0_20px_rgba(88,28,135,0.4)] transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2 border border-purple-700 hover:border-purple-500">
                         <i class="fas fa-home"></i>
                         <span>Dashboard</span>
                     </a>
                 </div>
             </div>
 
-            <div class="mt-12 text-xs text-gray-600 font-medium tracking-widest uppercase opacity-70">
+            <div class="mt-12 text-xs text-purple-500/40 font-medium tracking-widest uppercase">
                 Dardcor AI System
             </div>
 
         </main>
     </div>
 
+    <script src="/js/404.js"></script>
 </body>
 </html>

@@ -2,11 +2,11 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#0b0c15">
+    <meta name="theme-color" content="#050508">
     
     <title>Dardcor AI</title>
     <link rel="icon" href="/logo.png">
@@ -17,7 +17,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    
+
     <link rel="stylesheet" href="/css/tailwind.css">
     <link rel="stylesheet" href="/vendor/fontawesome/css/all.min.css">
     <link rel="stylesheet" href="/css/atom-one-dark.min.css">
@@ -33,8 +33,9 @@
             overflow: hidden;
             position: fixed;
             inset: 0;
-            background-color: #0b0c15;
-            font-family: 'Poppins', sans-serif;
+            background-color: #050508;
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
         
         .scroll-container {
@@ -45,10 +46,10 @@
         }
 
         .register-card {
-            background: rgba(19, 19, 31, 0.6);
+            background: rgba(10, 10, 18, 0.6);
             backdrop-filter: blur(20px);
-            border: 1px solid rgba(139, 92, 246, 0.2);
-            box-shadow: 0 0 40px rgba(139, 92, 246, 0.15);
+            border: 1px solid rgba(88, 28, 135, 0.3);
+            box-shadow: 0 0 40px rgba(88, 28, 135, 0.15);
             animation: floatUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
         @keyframes floatUp { from { opacity: 0; transform: translateY(40px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
@@ -57,79 +58,88 @@
         .input-group:focus-within { transform: scale(1.02); }
         
         input { 
-            background: rgba(30, 41, 59, 0.5) !important;
-            border: 1px solid #334155 !important; 
+            background: rgba(5, 5, 8, 0.6) !important;
+            border: 1px solid rgba(88, 28, 135, 0.3) !important; 
             color: white !important; 
             transition: all 0.3s;
         }
         input:focus { 
-            border-color: #8b5cf6 !important;
-            box-shadow: 0 0 20px rgba(139, 92, 246, 0.2) !important; 
-            background: rgba(30, 41, 59, 0.8) !important;
+            border-color: #a855f7 !important;
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.15) !important; 
+            background: rgba(5, 5, 8, 0.8) !important;
         }
-        .cyber-line { 
-            height: 2px; 
-            background: linear-gradient(90deg, transparent, #8b5cf6, transparent); 
-            width: 100%;
-            position: absolute; top: 0; left: 0; opacity: 0.5; 
-        }
+        
+        @keyframes star-twinkle { 0%, 100% { opacity: 0.3; transform: scale(0.5); } 50% { opacity: 1; transform: scale(1.2); } }
+        .animate-star { animation: star-twinkle 3s ease-in-out infinite; }
+        .star { position: absolute; background: white; border-radius: 50%; }
+        
+        @keyframes orbit-1 { 0% { transform: rotate3d(1, 1, 1, 0deg); } 100% { transform: rotate3d(1, 1, 1, 360deg); } }
+        @keyframes orbit-2 { 0% { transform: rotate3d(1, -1, 1, 0deg); } 100% { transform: rotate3d(1, -1, 1, 360deg); } }
+        .animate-orbit-1 { animation: orbit-1 6s linear infinite; }
+        .animate-orbit-2 { animation: orbit-2 7s linear infinite; }
     </style>
 </head>
-<body>
+<body class="bg-[#050508] text-white font-sans h-dvh flex overflow-hidden relative">
 
-    <div class="fixed inset-0 z-0">
-        <img src="/header.jpg" alt="Background" class="w-full h-full object-cover opacity-40">
-        <div class="absolute inset-0 bg-gradient-to-t from-[#0b0c15] via-[#0b0c15]/80 to-transparent"></div>
+    <div class="absolute inset-0 pointer-events-none overflow-hidden z-0">
+        <div class="star w-0.5 h-0.5 top-10 left-20 animate-star" style="animation-delay: 0s;"></div>
+        <div class="star w-1 h-1 top-1/4 right-1/4 animate-star" style="animation-delay: 1s;"></div>
+        <div class="star w-0.5 h-0.5 bottom-1/3 left-1/3 animate-star" style="animation-delay: 2s;"></div>
+        <div class="star w-1 h-1 top-20 right-10 animate-star" style="animation-delay: 1.5s;"></div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-purple-900/10 rounded-full blur-[100px] pointer-events-none"></div>
     </div>
 
     <div class="scroll-container flex items-center justify-center p-4 relative z-10">
         <main class="w-full max-w-md my-auto">
-            <div id="registerCard" class="register-card p-6 md:p-8 rounded-2xl relative overflow-hidden">
-                <div class="cyber-line"></div>
+            <div id="registerCard" class="register-card p-6 md:p-8 rounded-2xl relative overflow-hidden border border-purple-900/30">
                 
-                <div class="text-center mb-6 md:mb-8">
-                    <div class="w-16 h-16 md:w-20 md:h-20 bg-purple-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-purple-500/30 shadow-[0_0_30px_rgba(139,92,246,0.3)]">
-                        <i class="fas fa-user-plus text-3xl md:text-3xl text-purple-400"></i>
+                <div class="absolute -top-10 -right-10 w-32 h-32 bg-purple-600/20 rounded-full blur-3xl animate-orbit-1"></div>
+                <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-fuchsia-600/20 rounded-full blur-3xl animate-orbit-2"></div>
+                
+                <div class="text-center mb-6 md:mb-8 relative z-10">
+                    <div class="w-20 h-20 bg-[#050508] rounded-full flex items-center justify-center mx-auto mb-4 border border-purple-500/30 shadow-[0_0_30px_rgba(168,85,247,0.2)] relative overflow-hidden">
+                        <div class="absolute inset-0 bg-gradient-to-b from-purple-900/20 via-transparent to-black z-0"></div>
+                        <img src="/logo.png" class="w-full h-full object-cover opacity-90 relative z-10" alt="Dardcor Logo">
                     </div>
-                    <h1 class="text-2xl md:text-2xl font-bold text-white tracking-tight">Create Account</h1>
-                    <p class="text-slate-400 text-xs md:text-sm mt-2">Join the Dardcor community</p>
+                    <h1 class="text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-200 via-white to-purple-400 drop-shadow-[0_0_10px_rgba(168,85,247,0.5)]">Create Account</h1>
+                    <p class="text-purple-300/60 text-xs md:text-sm mt-2 font-light tracking-wide">Join the Dardcor community</p>
                 </div>
 
-                <form id="registerForm" class="space-y-4">
+                <form id="registerForm" class="space-y-4 relative z-10">
                     <div class="input-group">
-                        <label class="block text-xs font-semibold text-purple-400 uppercase tracking-wider mb-1 ml-1">Email</label>
+                        <label class="block text-[10px] font-bold text-purple-400 uppercase tracking-widest mb-1 ml-1">Email</label>
                         <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i class="fas fa-envelope text-slate-500"></i></div>
-                            <input type="email" name="email" class="w-full py-2.5 md:py-3 pl-10 pr-4 rounded-lg focus:outline-none text-sm md:text-base" placeholder="name@example.com" required>
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i class="fas fa-envelope text-purple-500/50"></i></div>
+                            <input type="email" name="email" class="w-full py-2.5 md:py-3 pl-10 pr-4 rounded-lg focus:outline-none text-sm md:text-base placeholder-purple-500/20" placeholder="name@example.com" required>
                         </div>
                     </div>
                     <div class="input-group">
-                        <label class="block text-xs font-semibold text-purple-400 uppercase tracking-wider mb-1 ml-1">Username</label>
+                        <label class="block text-[10px] font-bold text-purple-400 uppercase tracking-widest mb-1 ml-1">Username</label>
                         <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i class="fas fa-user-tag text-slate-500"></i></div>
-                            <input type="text" name="username" class="w-full py-2.5 md:py-3 pl-10 pr-4 rounded-lg focus:outline-none text-sm md:text-base" placeholder="Choose a username" required>
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i class="fas fa-user-tag text-purple-500/50"></i></div>
+                            <input type="text" name="username" class="w-full py-2.5 md:py-3 pl-10 pr-4 rounded-lg focus:outline-none text-sm md:text-base placeholder-purple-500/20" placeholder="Choose a username" required>
                         </div>
                     </div>
                     <div class="input-group">
-                        <label class="block text-xs font-semibold text-purple-400 uppercase tracking-wider mb-1 ml-1">Password</label>
+                        <label class="block text-[10px] font-bold text-purple-400 uppercase tracking-widest mb-1 ml-1">Password</label>
                         <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i class="fas fa-lock text-slate-500"></i></div>
-                            <input type="password" id="regPassword" name="password" class="w-full py-2.5 md:py-3 pl-10 pr-10 rounded-lg focus:outline-none text-sm md:text-base" placeholder="Create password" required>
-                            <button type="button" id="toggleRegPassword" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-purple-400 transition-colors focus:outline-none">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i class="fas fa-lock text-purple-500/50"></i></div>
+                            <input type="password" id="regPassword" name="password" class="w-full py-2.5 md:py-3 pl-10 pr-10 rounded-lg focus:outline-none text-sm md:text-base placeholder-purple-500/20" placeholder="Create password" required>
+                            <button type="button" id="toggleRegPassword" class="absolute inset-y-0 right-0 pr-3 flex items-center text-purple-500/50 hover:text-purple-300 transition-colors focus:outline-none">
                                 <i class="fas fa-eye"></i>
                             </button>
                         </div>
                     </div>
-                    <p id="errorMessage" class="text-center text-red-400 text-xs md:text-sm hidden bg-red-500/10 p-2 rounded border border-red-500/20"></p>
-                    <button type="submit" id="submitBtn" class="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-bold py-3 md:py-3.5 rounded-xl transition-all transform hover:scale-[1.02] shadow-lg shadow-purple-600/30 mt-2 flex justify-center items-center gap-2 text-sm md:text-base">
+                    <p id="errorMessage" class="text-center text-red-400 text-xs md:text-sm hidden bg-red-900/20 p-2 rounded border border-red-500/30"></p>
+                    <button type="submit" id="submitBtn" class="w-full bg-[#2e1065] hover:bg-purple-900 text-white font-bold py-3 md:py-3.5 rounded-xl transition-all transform hover:scale-[1.02] border border-purple-700 hover:border-purple-500 shadow-[0_0_15px_rgba(88,28,135,0.4)] mt-4 flex justify-center items-center gap-2 text-sm md:text-base">
                         <span>Register</span>
                         <div id="btnLoader" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin hidden"></div>
                     </button>
                 </form>
 
-                <div class="mt-6 pt-4 border-t border-slate-700/50 text-center">
-                    <p class="text-slate-400 text-xs md:text-sm">Already have an account? <a href="/dardcor" class="text-purple-400 hover:text-purple-300 font-semibold transition-colors">Login Here</a></p>
-                    <a href="/" class="inline-block mt-4 text-xs text-slate-500 hover:text-white transition-colors">
+                <div class="mt-6 pt-4 border-t border-purple-900/30 text-center relative z-10">
+                    <p class="text-purple-300/50 text-xs md:text-sm">Already have an account? <a href="/dardcor" class="text-purple-400 hover:text-white font-bold transition-colors">Login Here</a></p>
+                    <a href="/" class="inline-block mt-4 text-xs text-purple-500/50 hover:text-white transition-colors">
                         <i class="fas fa-arrow-left mr-1"></i> Back to Home
                     </a>
                 </div>
@@ -137,59 +147,6 @@
         </main>
     </div>
 
-    <script>
-        const toggleBtn = document.getElementById('toggleRegPassword');
-        const passwordInput = document.getElementById('regPassword');
-        const icon = toggleBtn.querySelector('i');
-        
-        toggleBtn.addEventListener('click', () => {
-            if (passwordInput.type === 'password') {
-                passwordInput.type = 'text';
-                icon.classList.remove('fa-eye');
-                icon.classList.add('fa-eye-slash');
-            } else {
-                passwordInput.type = 'password';
-                icon.classList.remove('fa-eye-slash');
-                icon.classList.add('fa-eye');
-            }
-        });
-
-        document.getElementById('registerForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const submitBtn = document.getElementById('submitBtn');
-            const btnText = submitBtn.querySelector('span');
-            const btnLoader = document.getElementById('btnLoader');
-            const errorMessage = document.getElementById('errorMessage');
-            
-            submitBtn.disabled = true;
-            btnText.textContent = 'Mengirim OTP...'; 
-            btnLoader.classList.remove('hidden');
-            errorMessage.classList.add('hidden');
-
-            const formData = new FormData(this);
-            const data = Object.fromEntries(formData.entries());
-
-            try {
-                const response = await fetch('/register', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                const result = await response.json();
-
-                if (response.ok && result.success) {
-                    window.location.href = result.redirectUrl || '/verify-otp';
-                } else {
-                    throw new Error(result.message || 'Registration failed');
-                }
-            } catch (error) {
-                errorMessage.textContent = error.message;
-                errorMessage.classList.remove('hidden');
-                submitBtn.disabled = false;
-                btnText.textContent = 'Register';
-                btnLoader.classList.add('hidden');
-            }
-        });
-    </script>
+    <script src="/js/register.js"></script>
 </body>
 </html>

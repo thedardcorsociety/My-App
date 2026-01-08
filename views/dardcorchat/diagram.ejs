@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
+    <meta name="theme-color" content="#050508">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#0b0c15">
     
     <title>Dardcor AI</title>
     
@@ -79,8 +79,7 @@
         #editor-footer { padding: 15px; border-top: 1px solid #333; background: #0e0f19; display: flex; justify-content: flex-end; gap: 10px; flex-shrink: 0; }
 
         #preview-pane { 
-            flex: 1; position: relative; 
-            height: 100%;
+            flex: 1; position: relative; height: 100%;
             background-color: #0b0c15;
             background-image: radial-gradient(#1f2937 1px, transparent 1px); 
             background-size: 20px 20px; 
@@ -120,7 +119,8 @@
         .modal-content {
             background: #13131f; border: 1px solid #333; border-radius: 16px;
             padding: 24px; width: 90%; max-width: 320px;
-            text-align: center; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
             transform: scale(0.95); transition: transform 0.2s;
         }
         #download-modal.active .modal-content { transform: scale(1); }
@@ -155,10 +155,10 @@
         <div id="editor-header"></div> 
         <textarea id="code-editor" spellcheck="false" placeholder="Tulis kode mermaid disini..."></textarea>
         <div id="editor-footer">
-            <button onclick="fixCode()" class="px-4 py-2.5 bg-yellow-600 hover:bg-yellow-700 text-white text-sm font-bold rounded-lg flex items-center gap-2 transition w-full justify-center md:w-auto shadow-lg shadow-yellow-900/20">
+            <button onclick="fixCode()" class="px-4 py-2.5 bg-[#2e1065] hover:bg-purple-900 text-white text-sm font-bold rounded-lg flex items-center gap-2 transition w-full justify-center md:w-auto shadow-lg border border-purple-700 hover:border-purple-500">
                 <i class="fas fa-magic"></i> FIX
             </button>
-            <button onclick="renderDiagram()" class="px-6 py-2.5 bg-purple-600 hover:bg-purple-700 text-white text-sm font-bold rounded-lg flex items-center gap-2 transition w-full justify-center md:w-auto shadow-lg shadow-purple-900/20">
+            <button onclick="renderDiagram()" class="px-6 py-2.5 bg-[#2e1065] hover:bg-purple-900 text-white text-sm font-bold rounded-lg flex items-center gap-2 transition w-full justify-center md:w-auto shadow-lg border border-purple-700 hover:border-purple-500">
                 <i class="fas fa-play"></i> RENDER
             </button>
         </div>
@@ -194,202 +194,6 @@
         </div>
     </div>
 
-    <script>
-        let currentScale = 1;
-        let pannedX = 0;
-        let pannedY = 0;
-        let isDragging = false;
-        let startX, startY;
-
-        document.addEventListener('DOMContentLoaded', function() {
-            mermaid.initialize({ 
-                startOnLoad: false, 
-                theme: 'dark', 
-                securityLevel: 'loose',
-                flowchart: { useMaxWidth: false, htmlLabels: true },
-                sequence: { useMaxWidth: false },
-                gantt: { useMaxWidth: false }
-            });
-            
-            try {
-                const b64 = document.getElementById('initial-data').value;
-                const decoded = decodeURIComponent(escape(atob(b64)));
-                document.getElementById('code-editor').value = decoded;
-                
-                // Auto-fix on load
-                fixCode();
-            } catch(e) {}
-
-            if (window.innerWidth >= 768) {
-                document.body.classList.remove('sidebar-closed');
-            } else {
-                document.body.classList.remove('sidebar-open');
-            }
-
-            const previewPane = document.getElementById('preview-pane');
-            
-            previewPane.addEventListener('mousedown', (e) => {
-                if(e.target.closest('button')) return;
-                isDragging = true;
-                startX = e.clientX - pannedX;
-                startY = e.clientY - pannedY;
-                previewPane.style.cursor = 'grabbing';
-            });
-            window.addEventListener('mouseup', () => {
-                isDragging = false;
-                previewPane.style.cursor = 'grab';
-            });
-            window.addEventListener('mousemove', (e) => {
-                if (!isDragging) return;
-                e.preventDefault();
-                pannedX = e.clientX - startX;
-                pannedY = e.clientY - startY;
-                updateTransform();
-            });
-
-            previewPane.addEventListener('touchstart', (e) => {
-                if(e.target.closest('button')) return;
-                isDragging = true;
-                const touch = e.touches[0];
-                startX = touch.clientX - pannedX;
-                startY = touch.clientY - pannedY;
-            }, {passive: false});
-            window.addEventListener('touchend', () => { isDragging = false; });
-
-            window.addEventListener('touchmove', (e) => {
-                if (!isDragging) return;
-                if (e.cancelable) e.preventDefault();
-                const touch = e.touches[0];
-                pannedX = touch.clientX - startX;
-                pannedY = touch.clientY - startY;
-                updateTransform();
-            }, {passive: false});
-
-            previewPane.addEventListener('wheel', (e) => {
-                if(e.ctrlKey) {
-                    e.preventDefault();
-                    adjustZoom(e.deltaY > 0 ? -0.1 : 0.1);
-                }
-            }, {passive: false});
-        });
-
-        function closeApp() {
-            if (window.parent) window.parent.postMessage('closeDiagram', '*');
-            else window.close();
-        }
-
-        function toggleEditor() {
-            if (window.innerWidth >= 768) document.body.classList.toggle('sidebar-closed');
-            else document.body.classList.toggle('sidebar-open');
-        }
-
-        function fixCode() {
-            let code = document.getElementById('code-editor').value;
-            // Robust cleaning for all common issues
-            code = code.replace(/&lt;/g, '<')
-                       .replace(/&gt;/g, '>')
-                       .replace(/&amp;/g, '&')
-                       .replace(/&quot;/g, '"')
-                       .replace(/&#39;/g, "'")
-                       .replace(/^```mermaid\s*/i, '') // Remove start block
-                       .replace(/^```\s*/i, '')
-                       .replace(/```$/i, '') // Remove end block
-                       .replace(/<br\s*\/?>/gi, '\n')
-                       .trim();
-            
-            document.getElementById('code-editor').value = code;
-            renderDiagram();
-        }
-
-        async function renderDiagram() {
-            let code = document.getElementById('code-editor').value.trim();
-            const target = document.getElementById('mermaid-target');
-            
-            if (!code) return;
-
-            target.innerHTML = '';
-            target.removeAttribute('data-processed');
-            
-            try {
-                const { svg } = await mermaid.render('mermaid-svg-' + Date.now(), code);
-                target.innerHTML = svg;
-                if (window.innerWidth < 768) document.body.classList.remove('sidebar-open');
-            } catch(error) {
-                target.innerHTML = `<div class="text-red-400 p-4 border border-red-800 rounded bg-red-900/20 text-xs font-mono text-center flex flex-col items-center gap-2"><i class="fas fa-exclamation-triangle text-2xl"></i><span>Syntax Error:</span><span class="opacity-75">${error.message}</span></div>`;
-            }
-        }
-
-        function adjustZoom(delta) {
-            currentScale += delta;
-            if (currentScale < 0.1) currentScale = 0.1;
-            if (currentScale > 10) currentScale = 10;
-            updateTransform();
-        }
-
-        function resetZoom() {
-            currentScale = 1;
-            pannedX = 0;
-            pannedY = 0;
-            updateTransform();
-        }
-
-        function updateTransform() {
-            const content = document.getElementById('diagram-content');
-            content.style.transform = `translate(${pannedX}px, ${pannedY}px) scale(${currentScale})`;
-        }
-
-        function openDownloadModal() {
-            document.getElementById('download-modal').classList.add('active');
-        }
-
-        function closeDownloadModal() {
-            document.getElementById('download-modal').classList.remove('active');
-        }
-
-        function downloadAs(format) {
-            const svg = document.querySelector('#mermaid-target svg');
-            if (!svg) { alert('Tidak ada diagram.'); return; }
-            
-            const svgData = new XMLSerializer().serializeToString(svg);
-            const canvas = document.createElement("canvas");
-            const ctx = canvas.getContext("2d");
-            const img = new Image();
-            
-            const svgRect = svg.getBoundingClientRect();
-            // High Resolution
-            const scaleFactor = 2;
-            canvas.width = svgRect.width * scaleFactor; 
-            canvas.height = svgRect.height * scaleFactor;
-            
-            img.onload = function() {
-                ctx.fillStyle = "#0b0c15";
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                
-                const filename = `dardcor-diagram-${Date.now()}`;
-                
-                if (format === 'pdf') {
-                    const { jsPDF } = window.jspdf;
-                    const pdf = new jsPDF({
-                        orientation: canvas.width > canvas.height ? 'l' : 'p',
-                        unit: 'px',
-                        format: [canvas.width, canvas.height]
-                    });
-                    pdf.addImage(canvas.toDataURL('image/jpeg'), 'JPEG', 0, 0, canvas.width, canvas.height);
-                    pdf.save(`${filename}.pdf`);
-                } else {
-                    const link = document.createElement("a");
-                    link.download = `${filename}.${format}`;
-                    link.href = canvas.toDataURL(`image/${format === 'jpg' ? 'jpeg' : 'png'}`);
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                }
-                closeDownloadModal();
-            };
-            
-            img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
-        }
-    </script>
+    <script src="/js/diagram.js"></script>
 </body>
 </html>
