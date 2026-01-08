@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const renderer = new marked.Renderer();
         
         renderer.code = function(code, language) {
-            let validCode = (typeof code === 'string' ? code : code.text);
+            let validCode = (typeof code === 'string' ? code : (code.text || ''));
             let lang = (language || '').toLowerCase().trim().split(/\s+/)[0] || 'text';
             const trimmedCode = validCode.trim();
 
@@ -125,14 +125,32 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         
         renderer.link = function(href, title, text) {
-            let finalUrl = href || '#';
-            let finalText = text;
-            
-            if (!finalText || finalText === '[object Object]' || typeof finalText === 'object') {
-                finalText = finalUrl;
+            let u, t, ti;
+
+            if (typeof href === 'object' && href !== null) {
+                u = href.href;
+                t = href.text;
+                ti = href.title;
+            } else {
+                u = href;
+                t = text;
+                ti = title;
             }
 
-            return `<a href="${finalUrl}" target="_blank" class="text-purple-500 hover:text-purple-300 hover:underline font-bold transition-colors break-all" title="${title || ''}">${finalText}</a>`;
+            u = String(u || '').trim();
+            t = String(t || '').trim();
+            
+            if (t === '' || t === 'undefined' || t === 'null' || t.includes('[object Object]')) {
+                t = u;
+            }
+            if (u === '' && t.match(/^https?:\/\//)) {
+                u = t;
+            }
+            if (u === '') {
+                u = '#';
+            }
+
+            return `<a href="${u}" target="_blank" class="text-purple-500 hover:text-purple-300 hover:underline font-bold transition-colors break-all" title="${ti || ''}">${t}</a>`;
         };
 
         marked.setOptions({ 
@@ -886,11 +904,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (role === 'user') {
             contentHtml = `<div class="whitespace-pre-wrap break-words user-text">${text.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" class="text-purple-500 hover:text-purple-300 hover:underline break-all">$1</a>')}</div>`;
         } else {
-            let processedText = text;
-            const thinkMatch = text.match(/<think>([\s\S]*?)<\/think>/);
+            let processedText = String(text || '');
+            const thinkMatch = processedText.match(/<think>([\s\S]*?)<\/think>/);
             if (thinkMatch) {
                 const clean = thinkMatch[1].trim().replace(/\n/g, '<br>');
-                processedText = text.replace(/<think>[\s\S]*?<\/think>/, `<details class="mb-4 bg-transparent border-none rounded-lg overflow-hidden group"><summary class="flex items-center gap-2 px-0 py-2 cursor-pointer text-xs font-mono text-gray-500 hover:text-gray-300 select-none transition-colors"><i class="fas fa-brain text-purple-900/50"></i><span>Thinking Process</span><i class="fas fa-chevron-down ml-auto transition-transform group-open:rotate-180 opacity-50"></i></summary><div class="p-0 text-xs text-gray-500 font-mono italic leading-relaxed pl-6 border-l border-purple-900/20">${clean}</div></details>`);
+                processedText = processedText.replace(/<think>[\s\S]*?<\/think>/, `<details class="mb-4 bg-transparent border-none rounded-lg overflow-hidden group"><summary class="flex items-center gap-2 px-0 py-2 cursor-pointer text-xs font-mono text-gray-500 hover:text-gray-300 select-none transition-colors"><i class="fas fa-brain text-purple-900/50"></i><span>Thinking Process</span><i class="fas fa-chevron-down ml-auto transition-transform group-open:rotate-180 opacity-50"></i></summary><div class="p-0 text-xs text-gray-500 font-mono italic leading-relaxed pl-6 border-l border-purple-900/20">${clean}</div></details>`);
             }
             contentHtml = `<div class="markdown-body w-full max-w-full overflow-hidden break-words">${typeof marked !== 'undefined' ? marked.parse(processedText) : processedText}</div>`;
         }
@@ -1020,7 +1038,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (line.startsWith('data: ')) {
                         try {
                             const json = JSON.parse(line.replace('data: ', ''));
-                            if (json.chunk) fullText += json.chunk;
+                            if (json.chunk && typeof json.chunk === 'string') fullText += json.chunk;
                         } catch (e) {}
                     }
                 }
@@ -1059,7 +1077,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (target && (target.classList.contains('markdown-body') || target.querySelector('.markdown-body'))) { 
                 const mdBody = target.classList.contains('markdown-body') ? target : target.querySelector('.markdown-body');
                 if (mdBody && typeof marked !== 'undefined') { 
-                    let processedText = raw.value;
+                    let processedText = String(raw.value || '');
                     const thinkMatch = processedText.match(/<think>([\s\S]*?)<\/think>/);
                     if (thinkMatch) {
                         const clean = thinkMatch[1].trim().replace(/\n/g, '<br>');
