@@ -338,18 +338,6 @@ router.post('/dardcorchat/ai/store-preview', checkUserAuth, async (req, res) => 
 router.get('/dardcorchat/dardcor-ai/preview/:id', checkUserAuth, async (req, res) => { try { const { data } = await supabase.from('previews_website').select('code').eq('id', req.params.id).single(); if (!data) return res.status(404).send('Not Found'); res.setHeader('Content-Type', 'text/html'); res.send(data.code); } catch (err) { sendDiscordError("View Preview", err); res.status(500).send("Error"); } });
 router.get('/dardcorchat/dardcor-ai/diagram/:id', checkUserAuth, async (req, res) => { try { const { data } = await supabase.from('previews_website').select('code').eq('id', req.params.id).single(); if (!data) return res.status(404).send('Not Found'); const codeBase64 = Buffer.from(data.code).toString('base64'); res.render('dardcorchat/diagram', { code: codeBase64 }); } catch (err) { sendDiscordError("View Diagram", err); res.status(500).send("Error"); } });
 
-router.get('/api/personas', checkUserAuth, async (req, res) => { try { const { data } = await supabase.from('personas').select('*').eq('user_id', req.session.userAccount.id); res.json({ success: true, data }); } catch (e) { sendDiscordError("Get Personas", e); res.status(500).json({ success: false }); } });
-router.post('/api/personas', checkUserAuth, async (req, res) => { try { const { name, instruction } = req.body; const { data } = await supabase.from('personas').insert({ user_id: req.session.userAccount.id, name, instruction, is_public: false }).select().single(); res.json({ success: true, data }); } catch (e) { sendDiscordError("Create Persona", e); res.status(500).json({ success: false }); } });
-router.delete('/api/personas/:id', checkUserAuth, async (req, res) => { try { await supabase.from('personas').delete().eq('id', req.params.id).eq('user_id', req.session.userAccount.id); res.json({ success: true }); } catch (e) { sendDiscordError("Delete Persona", e); res.status(500).json({ success: false }); } });
-
-router.get('/api/vault', checkUserAuth, async (req, res) => { try { const { data } = await supabase.from('vault_docs').select('id, title, created_at').eq('user_id', req.session.userAccount.id); res.json({ success: true, data }); } catch (e) { sendDiscordError("Get Vault", e); res.status(500).json({ success: false }); } });
-router.post('/api/vault', checkUserAuth, async (req, res) => { try { const { title, content } = req.body; await supabase.from('vault_docs').insert({ user_id: req.session.userAccount.id, title, content }); res.json({ success: true }); } catch (e) { sendDiscordError("Create Vault", e); res.status(500).json({ success: false }); } });
-router.delete('/api/vault/:id', checkUserAuth, async (req, res) => { try { await supabase.from('vault_docs').delete().eq('id', req.params.id).eq('user_id', req.session.userAccount.id); res.json({ success: true }); } catch (e) { sendDiscordError("Delete Vault", e); res.status(500).json({ success: false }); } });
-
-router.get('/api/memories', checkUserAuth, async (req, res) => { try { const { data } = await supabase.from('user_memories').select('*').eq('user_id', req.session.userAccount.id); res.json({ success: true, data }); } catch (e) { sendDiscordError("Get Memories", e); res.status(500).json({ success: false }); } });
-router.post('/api/memories', checkUserAuth, async (req, res) => { try { await supabase.from('user_memories').insert({ user_id: req.session.userAccount.id, fact: req.body.fact }); res.json({ success: true }); } catch (e) { sendDiscordError("Create Memory", e); res.status(500).json({ success: false }); } });
-router.delete('/api/memories/:id', checkUserAuth, async (req, res) => { try { await supabase.from('user_memories').delete().eq('id', req.params.id).eq('user_id', req.session.userAccount.id); res.json({ success: true }); } catch (e) { sendDiscordError("Delete Memory", e); res.status(500).json({ success: false }); } });
-
 router.post('/dardcorchat/ai/chat-stream', checkUserAuth, uploadMiddleware, async (req, res) => {
     req.socket.setTimeout(0); 
     req.setTimeout(0); 
@@ -362,9 +350,6 @@ router.post('/dardcorchat/ai/chat-stream', checkUserAuth, uploadMiddleware, asyn
     const toolType = req.body.toolType || 'basic';
     const useDeepThink = req.body.useDeepThink === 'true';
     const useWebSearch = req.body.useWebSearch === 'true';
-    let personaId = req.body.personaId;
-
-    if (personaId === 'null' || personaId === 'undefined' || !personaId) personaId = null;
 
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
@@ -440,16 +425,6 @@ Fokus Mutlak: Hanya data yang diberikan pada sesi ini yang berlaku. Masa lalu ti
             if (searchRes) contextData.searchResults = searchRes;
         }
 
-        const { data: memories } = await supabase.from('user_memories').select('fact').eq('user_id', userId);
-        if (memories && memories.length > 0) contextData.memories = memories.map(m => `- ${m.fact}`).join('\n');
-
-        if (searchKeywords.length > 0) {
-            const { data: vault } = await supabase.from('vault_docs').select('title, content').eq('user_id', userId).textSearch('content', searchKeywords);
-            if (vault && vault.length > 0) {
-                contextData.vaultContent = vault.map(v => `[DOKUMEN: ${v.title}]\n${v.content}`).join('\n\n');
-            }
-        }
-
         if (searchKeywords.length > 0) {
             const { data: globalRecalls } = await supabase.from('history_chat')
                 .select('message, created_at')
@@ -463,17 +438,18 @@ Fokus Mutlak: Hanya data yang diberikan pada sesi ini yang berlaku. Masa lalu ti
             }
         }
 
-        const geminiFiles = [];
+        const geminiFiles = []; 
         let fileTextContext = "";
         let fileMetadata = []; 
 
         if (uploadedFiles.length > 0) {
             for (const file of uploadedFiles) {
-                const mime = file.mimetype;
+                const mime = file.mimetype.toLowerCase();
                 const originalName = file.originalname;
                 const cleanName = originalName.replace(/[^a-zA-Z0-9.]/g, '-');
                 const fileExt = path.extname(originalName).toLowerCase();
                 const fileNamePath = `${userId}/${Date.now()}-${uuidv4()}${fileExt}`;
+                
                 const meta = { 
                     filename: originalName, 
                     size: file.size, 
@@ -499,33 +475,71 @@ Fokus Mutlak: Hanya data yang diberikan pada sesi ini yang berlaku. Masa lalu ti
 
                 fileMetadata.push(meta);
 
-                const codeExtensions = ['.js', '.jsx', '.ts', '.tsx', '.py', '.java', '.c', '.cpp', '.h', '.cs', '.php', '.ejs', '.html', '.css', '.json', '.xml', '.sql', '.md', '.txt', '.env', '.yml', '.yaml', '.ini', '.log', '.sh', '.bat', '.ps1'];
+                const codeExtensions = ['.js', '.jsx', '.ts', '.tsx', '.py', '.java', '.c', '.cpp', '.h', '.cs', '.php', '.ejs', '.html', '.css', '.json', '.xml', '.sql', '.md', '.txt', '.env', '.yml', '.yaml', '.ini', '.log', '.sh', '.bat', '.ps1', '.vb', '.config', '.gitignore', '.rb', '.go', '.rs', '.swift', '.kt', '.lua', '.pl', '.r', '.dart'];
 
                 if (mime.startsWith('image/')) {
                     geminiFiles.push(file); 
-                } else if (mime === 'application/pdf') {
-                    if (toolType === 'basic') {
-                        geminiFiles.push(file);
-                    }
+                    fileTextContext += `\n[INFO FILE GAMBAR]: ${originalName} (Gambar telah dilampirkan ke sistem visual Anda. JIKA Anda mendukung visual, analisislah. JIKA TIDAK, beritahu user bahwa Anda menerima gambar tersebut tetapi hanya bisa membaca nama filenya).\n`;
+                } 
+                else if (mime === 'application/pdf') {
                     const extractedText = await parsePdfSafe(file.buffer);
-                    if (extractedText) {
-                        fileTextContext += `\n[FILE PDF: ${originalName}]\n${extractedText}\n[AKHIR PDF]\n`;
+                    fileTextContext += `\n=== ISI FILE PDF: ${originalName} ===\n${extractedText}\n=== AKHIR FILE PDF ===\n`;
+                    if (toolType === 'basic') geminiFiles.push(file); 
+                } 
+                else if (mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || fileExt === '.docx') {
+                    try { 
+                        const result = await mammoth.extractRawText({ buffer: file.buffer }); 
+                        fileTextContext += `\n=== ISI FILE WORD (DOCX): ${originalName} ===\n${result.value}\n=== AKHIR FILE WORD ===\n`; 
+                    } catch (e) { 
+                        fileTextContext += `\n[ERROR BACA WORD: ${originalName}] Gagal membaca isi file. Pastikan file tidak rusak.\n`; 
                     }
-                } else if (mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-                    try { const result = await mammoth.extractRawText({ buffer: file.buffer }); fileTextContext += `\n[DOKUMEN WORD: ${originalName}]\n${result.value}\n`; } catch (e) {}
-                } else if (mime.includes('spreadsheet') || mime.includes('excel')) {
-                    try { const workbook = xlsx.read(file.buffer, { type: 'buffer' }); const sheetName = workbook.SheetNames[0]; const csv = xlsx.utils.sheet_to_csv(workbook.Sheets[sheetName]); fileTextContext += `\n[DATA EXCEL: ${originalName}]\n${csv}\n`; } catch (e) {}
-                } else if (codeExtensions.includes(fileExt) || mime.startsWith('text/') || mime === 'application/json' || mime === 'application/javascript') {
-                    fileTextContext += `\n[FILE KODE/TEKS: ${originalName}]\n${file.buffer.toString('utf-8')}\n`;
+                } 
+                else if (mime.includes('spreadsheet') || mime.includes('excel') || fileExt === '.xlsx' || fileExt === '.xls' || fileExt === '.csv') {
+                    try { 
+                        const workbook = xlsx.read(file.buffer, { type: 'buffer' }); 
+                        let allSheetsText = "";
+                        workbook.SheetNames.forEach(sheetName => {
+                            const csv = xlsx.utils.sheet_to_csv(workbook.Sheets[sheetName]);
+                            allSheetsText += `\n[SHEET: ${sheetName}]\n${csv}\n`;
+                        });
+                        fileTextContext += `\n=== ISI FILE EXCEL: ${originalName} ===\n${allSheetsText}\n=== AKHIR FILE EXCEL ===\n`; 
+                    } catch (e) { 
+                        fileTextContext += `\n[ERROR BACA EXCEL: ${originalName}] Gagal membaca isi file.\n`; 
+                    }
+                }
+                else if (mime.includes('presentation') || mime.includes('powerpoint') || fileExt === '.pptx' || fileExt === '.ppt') {
+                    fileTextContext += `\n[INFO FILE PPT: ${originalName}] File PowerPoint terdeteksi. Saat ini sistem hanya dapat membaca metadata nama file ini. Silakan minta user untuk memberikan detail atau mengonversi ke PDF jika ingin analisis teks mendalam.\n`;
+                }
+                else if (codeExtensions.includes(fileExt) || mime.startsWith('text/') || mime === 'application/json' || mime === 'application/javascript' || mime === 'application/xml') {
+                    try {
+                        const rawText = file.buffer.toString('utf-8');
+                        fileTextContext += `\n=== ISI FILE KODE/TEKS: ${originalName} ===\n${rawText}\n=== AKHIR FILE KODE/TEKS ===\n`;
+                    } catch(e) {
+                         fileTextContext += `\n[ERROR BACA FILE TEKS: ${originalName}]\n`;
+                    }
+                } 
+                else {
+                    try {
+                        const rawText = file.buffer.toString('utf-8');
+                        if (/^[\x00-\x7F]*$/.test(rawText.substring(0, 1000))) {
+                             fileTextContext += `\n=== ISI FILE LAINNYA: ${originalName} ===\n${rawText}\n=== AKHIR FILE ===\n`;
+                        } else {
+                             fileTextContext += `\n[INFO FILE: ${originalName}] Tipe file (${mime}) diterima. Isi file berupa data biner yang tidak dapat dibaca sebagai teks langsung.\n`;
+                        }
+                    } catch (e) {
+                        fileTextContext += `\n[INFO FILE: ${originalName}] File diterima.\n`;
+                    }
                 }
             }
         }
 
         if (fileTextContext) {
-            message += `\n\n=== DATA FILE YANG DIUPLOAD USER SAAT INI (PRIORITAS TERTINGGI) ===\n${fileTextContext}\n=== AKHIR DATA FILE ===\n\nAnalisa data di atas dengan teliti.`;
+            message = `[SYSTEM INJECTION - USER UPLOADED FILES]:\nBerikut adalah konten dari file yang diunggah user. Jawab pertanyaan user berdasarkan data ini jika relevan:\n${fileTextContext}\n\n[END FILE DATA]\n\n${message}`;
+        } else if (uploadedFiles.length > 0 && !message.includes("USER UPLOADED FILES")) {
+             message = `[SYSTEM INJECTION]: User mengupload ${uploadedFiles.length} file gambar/biner. Gunakan kemampuan visual jika tersedia, atau konfirmasi penerimaan file.\n\n${message}`;
         }
 
-        const userMessageDisplay = req.body.message || (uploadedFiles.length > 0 ? `Analisis ${uploadedFiles.length} file...` : "...");
+        const userMessageDisplay = req.body.message || (uploadedFiles.length > 0 ? `Mengirim ${uploadedFiles.length} file...` : "...");
         const { data: convCheck } = await supabase.from('conversations').select('id').eq('id', conversationId).single();
         if (!convCheck) await supabase.from('conversations').insert({ id: conversationId, user_id: userId, title: userMessageDisplay.substring(0, 30) });
         else await supabase.from('conversations').update({ updated_at: new Date() }).eq('id', conversationId);
@@ -543,19 +557,13 @@ Fokus Mutlak: Hanya data yang diberikan pada sesi ini yang berlaku. Masa lalu ti
 
         const { data: historyData } = await supabase.from('history_chat').select('role, message').eq('conversation_id', conversationId).order('created_at', { ascending: true });
 
-        let customSystemPrompt = null;
-        if (personaId) {
-            const { data: persona } = await supabase.from('personas').select('instruction').eq('id', personaId).maybeSingle();
-            if (persona) customSystemPrompt = persona.instruction;
-        }
-
         let stream;
         if (toolType === 'pro') {
-            stream = await handleProChatStream(message, geminiFiles, historyData, toolType, customSystemPrompt, contextData);
+            stream = await handleProChatStream(message, geminiFiles, historyData, toolType, null, contextData);
         } else if (toolType === 'dark') {
-            stream = await handleDarkChatStream(message, geminiFiles, historyData, toolType, customSystemPrompt, contextData);
+            stream = await handleDarkChatStream(message, geminiFiles, historyData, toolType, null, contextData);
         } else {
-            stream = await handleBasicChatStream(message, geminiFiles, historyData, toolType, customSystemPrompt, contextData);
+            stream = await handleBasicChatStream(message, geminiFiles, historyData, toolType, null, contextData);
         }
 
         req.on('close', async () => {

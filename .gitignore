@@ -8,11 +8,7 @@
 framework.txt
 
 #test
-test.html
+index.txt
 
 #database
 db.sql
-
-# Log atau file build/dist
-/logs
-/dist

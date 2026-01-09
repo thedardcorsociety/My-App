@@ -43,8 +43,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const serverData = window.SERVER_DATA || {};
     let storedModel = localStorage.getItem('dardcor_selected_model');
     let currentToolType = storedModel || serverData.toolType || 'basic';
-    let selectedPersonaId = localStorage.getItem('activePersonaId') || null;
-    let selectedPersonaName = localStorage.getItem('activePersonaName') || null;
     let currentUtterance = null;
     let chatToEdit = null;
     let chatToDelete = null;
@@ -53,7 +51,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let abortController = null;
     let isChatLoading = false;
     let userIsScrolling = false;
-    let pendingToolDelete = null;
     let loadingTimeout = null;
     let isDeepThinkEnabled = false;
     let isSearchEnabled = false;
@@ -220,24 +217,6 @@ document.addEventListener('DOMContentLoaded', () => {
         currentToolType = type;
     }
     updateModelUI(currentToolType);
-
-    function updatePersonaUI() {
-        const container = document.getElementById('active-persona-container');
-        const label = document.getElementById('active-persona-label');
-        if (selectedPersonaId && selectedPersonaName) {
-            if (container) {
-                container.classList.remove('hidden');
-                container.classList.add('flex');
-            }
-            if (label) label.innerText = selectedPersonaName;
-        } else {
-            if (container) {
-                container.classList.add('hidden');
-                container.classList.remove('flex');
-            }
-        }
-    }
-    updatePersonaUI();
 
     function getFileIconClass(mimetype, filename) {
         if (!mimetype) mimetype = "";
@@ -683,225 +662,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    window.openPersonaModal = async function() {
-        const modal = document.getElementById('persona-modal');
-        const list = document.getElementById('persona-list');
-        if (!modal || !list) return;
-        
-        list.innerHTML = '<div class="text-center text-gray-500 py-4"><i class="fas fa-spinner fa-spin"></i> Memuat...</div>';
-        modal.classList.add('active');
-        
-        try {
-            const res = await fetch('/api/personas');
-            const data = await res.json();
-            list.innerHTML = '';
-            
-            if (data.success && data.data.length > 0) {
-                data.data.forEach(p => {
-                    const isActive = p.id === selectedPersonaId;
-                    const item = document.createElement('div');
-                    item.className = `p-3 rounded bg-white/5 border border-white/10 flex flex-col gap-2 ${isActive ? 'border-purple-500' : ''}`;
-                    item.innerHTML = `
-                        <div class="flex justify-between items-center">
-                            <span class="font-bold text-sm text-white">${p.name}</span>
-                            <div class="flex gap-2">
-                                <button onclick="window.selectPersona('${p.id}', '${p.name}')" class="text-xs px-2 py-1 ${isActive ? 'bg-green-600' : 'bg-purple-900'} text-white rounded">${isActive ? 'Aktif' : 'Pilih'}</button>
-                                <button onclick="window.deleteTool('persona', '${p.id}')" class="text-xs px-2 py-1 bg-red-900 text-white rounded"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </div>
-                        <p class="text-[10px] text-gray-400 truncate">${p.instruction}</p>
-                    `;
-                    list.appendChild(item);
-                });
-            } else {
-                list.innerHTML = '<div class="text-center text-gray-500 py-4 text-xs">Belum ada persona</div>';
-            }
-        } catch (e) {
-            list.innerHTML = '<div class="text-center text-red-400 py-4 text-xs">Gagal memuat data</div>';
-        }
-    };
-
-    window.addPersona = async function() {
-        const nameInput = document.getElementById('new-persona-name');
-        const instInput = document.getElementById('new-persona-inst');
-        if (!nameInput || !instInput || !nameInput.value || !instInput.value) return;
-        
-        try {
-            const res = await fetch('/api/personas', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ name: nameInput.value, instruction: instInput.value })
-            });
-            if (res.ok) {
-                nameInput.value = '';
-                instInput.value = '';
-                window.openPersonaModal();
-                window.showNavbarAlert('Persona dibuat', 'success');
-            }
-        } catch (e) {
-            window.showNavbarAlert('Gagal membuat persona', 'error');
-        }
-    };
-
-    window.selectPersona = function(id, name) {
-        selectedPersonaId = id;
-        selectedPersonaName = name;
-        localStorage.setItem('activePersonaId', id);
-        localStorage.setItem('activePersonaName', name);
-        updatePersonaUI();
-        window.closeModals();
-        window.showNavbarAlert(`Persona aktif: ${name}`, 'success');
-    };
-
-    window.deselectPersona = function() {
-        selectedPersonaId = null;
-        selectedPersonaName = null;
-        localStorage.removeItem('activePersonaId');
-        localStorage.removeItem('activePersonaName');
-        updatePersonaUI();
-        window.showNavbarAlert('Persona dinonaktifkan', 'info');
-    };
-
-    window.openVaultModal = async function() {
-        const modal = document.getElementById('vault-modal');
-        const list = document.getElementById('vault-list');
-        if (!modal || !list) return;
-        
-        list.innerHTML = '<div class="text-center text-gray-500 py-4"><i class="fas fa-spinner fa-spin"></i> Memuat...</div>';
-        modal.classList.add('active');
-        
-        try {
-            const res = await fetch('/api/vault');
-            const data = await res.json();
-            list.innerHTML = '';
-            
-            if (data.success && data.data.length > 0) {
-                data.data.forEach(v => {
-                    const item = document.createElement('div');
-                    item.className = 'p-3 rounded bg-white/5 border border-white/10 flex justify-between items-center';
-                    item.innerHTML = `
-                        <div class="overflow-hidden">
-                            <div class="font-bold text-sm text-white truncate">${v.title}</div>
-                            <div class="text-[10px] text-gray-500">${new Date(v.created_at).toLocaleDateString()}</div>
-                        </div>
-                        <button onclick="window.deleteTool('vault', '${v.id}')" class="text-xs px-2 py-1 bg-red-900 text-white rounded"><i class="fas fa-trash"></i></button>
-                    `;
-                    list.appendChild(item);
-                });
-            } else {
-                list.innerHTML = '<div class="text-center text-gray-500 py-4 text-xs">Vault kosong</div>';
-            }
-        } catch (e) {
-            list.innerHTML = '<div class="text-center text-red-400 py-4 text-xs">Gagal memuat data</div>';
-        }
-    };
-
-    window.addVault = async function() {
-        const titleInput = document.getElementById('new-vault-title');
-        const contentInput = document.getElementById('new-vault-content');
-        if (!titleInput || !contentInput || !titleInput.value || !contentInput.value) return;
-        
-        try {
-            const res = await fetch('/api/vault', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ title: titleInput.value, content: contentInput.value })
-            });
-            if (res.ok) {
-                titleInput.value = '';
-                contentInput.value = '';
-                window.openVaultModal();
-                window.showNavbarAlert('Dokumen disimpan ke Vault', 'success');
-            }
-        } catch (e) {
-            window.showNavbarAlert('Gagal menyimpan dokumen', 'error');
-        }
-    };
-
-    window.openMemoryModal = async function() {
-        const modal = document.getElementById('memory-modal');
-        const list = document.getElementById('memory-list');
-        if (!modal || !list) return;
-        
-        list.innerHTML = '<div class="text-center text-gray-500 py-4"><i class="fas fa-spinner fa-spin"></i> Memuat...</div>';
-        modal.classList.add('active');
-        
-        try {
-            const res = await fetch('/api/memories');
-            const data = await res.json();
-            list.innerHTML = '';
-            
-            if (data.success && data.data.length > 0) {
-                data.data.forEach(m => {
-                    const item = document.createElement('div');
-                    item.className = 'p-3 rounded bg-white/5 border border-white/10 flex justify-between items-start gap-2';
-                    item.innerHTML = `
-                        <div class="text-xs text-gray-300 break-words flex-1">${m.fact}</div>
-                        <button onclick="window.deleteTool('memory', '${m.id}')" class="text-xs px-2 py-1 bg-red-900 text-white rounded flex-shrink-0"><i class="fas fa-trash"></i></button>
-                    `;
-                    list.appendChild(item);
-                });
-            } else {
-                list.innerHTML = '<div class="text-center text-gray-500 py-4 text-xs">Memori kosong</div>';
-            }
-        } catch (e) {
-            list.innerHTML = '<div class="text-center text-red-400 py-4 text-xs">Gagal memuat data</div>';
-        }
-    };
-
-    window.addMemory = async function() {
-        const input = document.getElementById('new-memory');
-        if (!input || !input.value) return;
-        
-        try {
-            const res = await fetch('/api/memories', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ fact: input.value })
-            });
-            if (res.ok) {
-                input.value = '';
-                window.openMemoryModal();
-                window.showNavbarAlert('Fakta diingat', 'success');
-            }
-        } catch (e) {
-            window.showNavbarAlert('Gagal menyimpan memori', 'error');
-        }
-    };
-
-    window.deleteTool = function(type, id) {
-        pendingToolDelete = { type, id };
-        const modal = document.getElementById('tool-delete-modal');
-        const text = document.getElementById('tool-delete-text');
-        if (text) text.innerText = `Hapus item ${type} ini?`;
-        if (modal) modal.classList.add('active');
-    };
-
-    window.confirmToolDelete = async function() {
-        if (!pendingToolDelete) return;
-        const { type, id } = pendingToolDelete;
-        const endpoints = { 'persona': 'personas', 'vault': 'vault', 'memory': 'memories' };
-        
-        try {
-            const res = await fetch(`/api/${endpoints[type]}/${id}`, { method: 'DELETE' });
-            if (res.ok) {
-                window.closeModal('tool-delete-modal');
-                if (type === 'persona') {
-                    if (selectedPersonaId === id) window.deselectPersona();
-                    window.openPersonaModal();
-                } else if (type === 'vault') {
-                    window.openVaultModal();
-                } else if (type === 'memory') {
-                    window.openMemoryModal();
-                }
-                window.showNavbarAlert('Item dihapus', 'success');
-            }
-        } catch (e) {
-            window.showNavbarAlert('Gagal menghapus item', 'error');
-        }
-        pendingToolDelete = null;
-    };
-
     function createMessageElementSync(role, text, files = []) {
         const div = document.createElement('div');
         div.className = `flex w-full ${role === 'user' ? 'justify-end' : 'justify-start'} message-bubble-container group min-w-0`;
@@ -1010,8 +770,6 @@ document.addEventListener('DOMContentLoaded', () => {
         fd.append('toolType', currentToolType);
         fd.append('useDeepThink', isDeepThinkEnabled);
         fd.append('useWebSearch', isSearchEnabled);
-        const activeId = selectedPersonaId || localStorage.getItem('activePersonaId');
-        if (activeId && activeId !== 'null') fd.append('personaId', activeId);
         selectedFiles.forEach(f => fd.append('file_attachment', f));
         selectedFiles = []; if (fileInput) fileInput.value = '';
 
