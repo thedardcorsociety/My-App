@@ -1,22 +1,24 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Injeksi CSS agar scrollbar transparan (tidak terlihat) tapi tetap bisa discroll
     const style = document.createElement('style');
     style.innerHTML = `
-        /* Scrollbar Terminal Transparan tapi Scrollable */
         .terminal-code {
             overflow-x: auto;
-            scrollbar-width: none; /* Firefox */
-            -ms-overflow-style: none; /* IE 10+ */
+            scrollbar-width: thin;
+            scrollbar-color: #4b5563 transparent;
         }
         .terminal-code::-webkit-scrollbar { 
-            display: none !important; /* Chrome/Safari - Force Hide */
-            width: 0 !important;
-            height: 0 !important;
+            height: 4px !important;
+            width: 4px !important;
             background: transparent !important;
-            -webkit-appearance: none !important;
+            display: block !important;
         }
-        
-        /* Syntax Highlighting - Neon Purple Theme (Immediate Force) */
+        .terminal-code::-webkit-scrollbar-track {
+            background: transparent !important;
+        }
+        .terminal-code::-webkit-scrollbar-thumb {
+            background-color: #4b5563 !important;
+            border-radius: 4px !important;
+        }
         .hljs { color: #e9d5ff !important; background: transparent !important; }
         .hljs-keyword, .hljs-selector-tag, .hljs-built_in, .hljs-name, .hljs-tag { color: #d8b4fe !important; font-weight: bold; text-shadow: 0 0 5px rgba(216, 180, 254, 0.3); }
         .hljs-string, .hljs-title, .hljs-section, .hljs-attribute, .hljs-literal, .hljs-template-tag, .hljs-template-variable, .hljs-type, .hljs-addition { color: #f0abfc !important; }
@@ -24,6 +26,9 @@ document.addEventListener('DOMContentLoaded', () => {
         .hljs-number, .hljs-regexp, .hljs-symbol, .hljs-bullet, .hljs-link { color: #c084fc !important; }
         .hljs-function, .hljs-title.function_ { color: #e879f9 !important; }
         .hljs-variable, .hljs-template-variable { color: #a855f7 !important; }
+        
+        details.deep-think-box > summary { list-style: none; }
+        details.deep-think-box > summary::-webkit-details-marker { display: none; }
     `;
     document.head.appendChild(style);
 
@@ -138,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const escapedCode = validCode.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
             return `<div class="terminal-container" style="background-color: #000000 !important; border: 1px solid #333; margin: 10px 0; max-width: 100%;">
-                        <div class="terminal-head" style="height: 30px; padding: 0 10px; background-color: #000000 !important; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #333;">
+                        <div class="terminal-head" style="height: 32px; padding: 0 12px; background-color: #000000 !important; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #333;">
                             <div class="text-[10px] font-bold text-gray-400 uppercase flex items-center"><i class="fas fa-code mr-2"></i> ${lang}</div>
                             <div class="terminal-actions flex gap-2">
                                 ${btnHtml}
@@ -211,7 +216,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateModelUI(type) {
         const nameMap = { 'basic': 'Basic Model', 'dark': 'Dark Model', 'pro': 'Pro Model' };
         if (toolLabel) toolLabel.innerText = nameMap[type] || 'Basic Model';
-        if (messageInput) messageInput.placeholder = `Ask To Dardcor ${type === 'basic' ? '' : (type === 'dark' ? 'Dark' : 'Pro')}...`;
+        if (messageInput) messageInput.placeholder = `Ask To Dardcor ${type === 'basic' ? 'Basic' : (type === 'dark' ? 'Dark' : 'Pro')}...`;
         currentToolType = type;
     }
     updateModelUI(currentToolType);
@@ -929,7 +934,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const thinkMatch = processedText.match(/<think>([\s\S]*?)<\/think>/);
             if (thinkMatch) {
                 const clean = thinkMatch[1].trim().replace(/\n/g, '<br>');
-                processedText = processedText.replace(/<think>[\s\S]*?<\/think>/, `<details class="mb-4 bg-transparent border-none rounded-lg overflow-hidden group"><summary class="flex items-center gap-2 px-0 py-2 cursor-pointer text-xs font-mono text-gray-500 hover:text-gray-300 select-none transition-colors"><i class="fas fa-brain text-purple-900/50"></i><span>Thinking Process</span><i class="fas fa-chevron-down ml-auto transition-transform group-open:rotate-180 opacity-50"></i></summary><div class="p-0 text-xs text-gray-500 font-mono italic leading-relaxed pl-6 border-l border-purple-900/20">${clean}</div></details>`);
+                processedText = processedText.replace(/<think>[\s\S]*?<\/think>/, `<details class="deep-think-box mb-4 bg-black/40 border border-white/10 rounded-lg overflow-hidden group"><summary class="flex items-center gap-2 px-4 py-2 cursor-pointer text-xs font-mono text-gray-400 hover:text-gray-200 select-none transition-colors bg-white/5"><i class="fas fa-brain text-purple-500/70"></i><span>Deep Think Process</span><i class="fas fa-chevron-down ml-auto transition-transform group-open:rotate-180 opacity-50"></i></summary><div class="p-4 text-xs text-gray-400 font-mono italic leading-relaxed border-t border-white/5 bg-black/20">${clean}</div></details>`);
             }
             contentHtml = `<div class="markdown-body w-full max-w-full overflow-hidden break-words">${typeof marked !== 'undefined' ? marked.parse(processedText) : processedText}</div>`;
         }
@@ -991,7 +996,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const loaderDiv = document.createElement('div');
         loaderDiv.id = 'loading-indicator';
         loaderDiv.className = "flex w-full justify-start message-bubble-container group min-w-0";
-        loaderDiv.innerHTML = `<div class="flex flex-col items-start w-full max-w-full min-w-0"><div class="flex items-center gap-3 bg-transparent border-none px-4 py-3.5"><div class="loader"></div><span class="text-xs text-purple-400 font-medium animate-pulse">Sedang berpikir...</span></div></div>`;
+        loaderDiv.innerHTML = `<div class="flex flex-col items-start w-full max-w-full min-w-0"><div class="flex items-center gap-3 bg-transparent border-none px-4 py-3.5"><div class="loader"></div><span class="text-xs text-purple-400 font-medium animate-pulse">Dardcor AI Thinking...</span></div></div>`;
         messageList.appendChild(loaderDiv);
         
         scrollToBottom(true);
@@ -1038,10 +1043,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const thinkMatch = fullText.match(/<think>([\s\S]*?)<\/think>/); 
                 if (thinkMatch) { 
                     const clean = thinkMatch[1].trim().replace(/\n/g, '<br>'); 
-                    formatted = fullText.replace(/<think>[\s\S]*?<\/think>/, `<details class="mb-4 bg-transparent border-none rounded-lg overflow-hidden group"><summary class="flex items-center gap-2 px-0 py-2 cursor-pointer text-xs font-mono text-gray-500 hover:text-gray-300 select-none transition-colors"><i class="fas fa-brain text-purple-900/50"></i><span>Thinking Process</span><i class="fas fa-chevron-down ml-auto transition-transform group-open:rotate-180 opacity-50"></i></summary><div class="p-0 text-xs text-gray-500 font-mono italic leading-relaxed pl-6 border-l border-purple-900/20">${clean}</div></details>`); 
+                    formatted = fullText.replace(/<think>[\s\S]*?<\/think>/, `<details class="deep-think-box mb-4 bg-black/40 border border-white/10 rounded-lg overflow-hidden group"><summary class="flex items-center gap-2 px-4 py-2 cursor-pointer text-xs font-mono text-gray-400 hover:text-gray-200 select-none transition-colors bg-white/5"><i class="fas fa-brain text-purple-500/70"></i><span>Deep Think Process</span><i class="fas fa-chevron-down ml-auto transition-transform group-open:rotate-180 opacity-50"></i></summary><div class="p-4 text-xs text-gray-400 font-mono italic leading-relaxed border-t border-white/5 bg-black/20">${clean}</div></details>`); 
                 }
 
-                // Auto-close code blocks for immediate highlighting
                 let tempFormatted = formatted;
                 const codeBlockCount = (tempFormatted.match(/```/g) || []).length;
                 if (codeBlockCount % 2 !== 0) {
@@ -1083,7 +1087,10 @@ document.addEventListener('DOMContentLoaded', () => {
             
             let formatted = fullText;
             const thinkMatch = fullText.match(/<think>([\s\S]*?)<\/think>/); 
-            if (thinkMatch) formatted = fullText.replace(/<think>[\s\S]*?<\/think>/, `<details class="mb-4 bg-transparent border-none rounded-lg overflow-hidden group"><summary class="flex items-center gap-2 px-0 py-2 cursor-pointer text-xs font-mono text-gray-500 hover:text-gray-300 select-none transition-colors"><i class="fas fa-brain text-purple-900/50"></i><span>Thinking Process</span><i class="fas fa-chevron-down ml-auto transition-transform group-open:rotate-180 opacity-50"></i></summary><div class="p-0 text-xs text-gray-500 font-mono italic leading-relaxed pl-6 border-l border-purple-900/20">${clean}</div></details>`);
+            if (thinkMatch) {
+                const clean = thinkMatch[1].trim().replace(/\n/g, '<br>');
+                formatted = fullText.replace(/<think>[\s\S]*?<\/think>/, `<details class="deep-think-box mb-4 bg-black/40 border border-white/10 rounded-lg overflow-hidden group"><summary class="flex items-center gap-2 px-4 py-2 cursor-pointer text-xs font-mono text-gray-400 hover:text-gray-200 select-none transition-colors bg-white/5"><i class="fas fa-brain text-purple-500/70"></i><span>Deep Think Process</span><i class="fas fa-chevron-down ml-auto transition-transform group-open:rotate-180 opacity-50"></i></summary><div class="p-4 text-xs text-gray-400 font-mono italic leading-relaxed border-t border-white/5 bg-black/20">${clean}</div></details>`);
+            }
             
             if (botContent) {
                 botContent.innerHTML = marked.parse(formatted);
@@ -1092,21 +1099,23 @@ document.addEventListener('DOMContentLoaded', () => {
             scrollToBottom(true);
 
         } catch (e) {
-            // Handle AbortError specifically to keep partial response
             if (e.name === 'AbortError') {
+                isStreaming = false; 
                 document.getElementById('loading-indicator')?.remove();
                 if (sendIcon) sendIcon.classList.replace('fa-stop', 'fa-paper-plane');
                 isSending = false;
                 abortController = null;
                 
-                // Force final render of whatever we have
                 if (fullText && typeof marked !== 'undefined') {
                      let finalFormatted = fullText;
                      const codeCount = (finalFormatted.match(/```/g) || []).length;
-                     if (codeCount % 2 !== 0) finalFormatted += "\n```"; // Close pending code blocks
+                     if (codeCount % 2 !== 0) finalFormatted += "\n```"; 
 
                      const thinkMatch = finalFormatted.match(/<think>([\s\S]*?)<\/think>/);
-                     if (thinkMatch) finalFormatted = finalFormatted.replace(/<think>[\s\S]*?<\/think>/, `<details class="mb-4 bg-transparent border-none rounded-lg overflow-hidden group"><summary class="flex items-center gap-2 px-0 py-2 cursor-pointer text-xs font-mono text-gray-500 hover:text-gray-300 select-none transition-colors"><i class="fas fa-brain text-purple-900/50"></i><span>Thinking Process</span><i class="fas fa-chevron-down ml-auto transition-transform group-open:rotate-180 opacity-50"></i></summary><div class="p-0 text-xs text-gray-500 font-mono italic leading-relaxed pl-6 border-l border-purple-900/20">${thinkMatch[1].trim().replace(/\n/g, '<br>')}</div></details>`);
+                     if (thinkMatch) {
+                         const clean = thinkMatch[1].trim().replace(/\n/g, '<br>');
+                         finalFormatted = finalFormatted.replace(/<think>[\s\S]*?<\/think>/, `<details class="deep-think-box mb-4 bg-black/40 border border-white/10 rounded-lg overflow-hidden group"><summary class="flex items-center gap-2 px-4 py-2 cursor-pointer text-xs font-mono text-gray-400 hover:text-gray-200 select-none transition-colors bg-white/5"><i class="fas fa-brain text-purple-500/70"></i><span>Deep Think Process</span><i class="fas fa-chevron-down ml-auto transition-transform group-open:rotate-180 opacity-50"></i></summary><div class="p-4 text-xs text-gray-400 font-mono italic leading-relaxed border-t border-white/5 bg-black/20">${clean}</div></details>`);
+                     }
 
                      const lastBotDiv = messageList.lastElementChild;
                      if(lastBotDiv) {
@@ -1145,7 +1154,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const thinkMatch = processedText.match(/<think>([\s\S]*?)<\/think>/);
                     if (thinkMatch) {
                         const clean = thinkMatch[1].trim().replace(/\n/g, '<br>');
-                        processedText = processedText.replace(/<think>[\s\S]*?<\/think>/, `<details class="mb-4 bg-transparent border-none rounded-lg overflow-hidden group"><summary class="flex items-center gap-2 px-0 py-2 cursor-pointer text-xs font-mono text-gray-500 hover:text-gray-300 select-none transition-colors"><i class="fas fa-brain text-purple-900/50"></i><span>Thinking Process</span><i class="fas fa-chevron-down ml-auto transition-transform group-open:rotate-180 opacity-50"></i></summary><div class="p-0 text-xs text-gray-500 font-mono italic leading-relaxed pl-6 border-l border-purple-900/20">${clean}</div></details>`);
+                        processedText = processedText.replace(/<think>[\s\S]*?<\/think>/, `<details class="deep-think-box mb-4 bg-black/40 border border-white/10 rounded-lg overflow-hidden group"><summary class="flex items-center gap-2 px-4 py-2 cursor-pointer text-xs font-mono text-gray-400 hover:text-gray-200 select-none transition-colors bg-white/5"><i class="fas fa-brain text-purple-500/70"></i><span>Deep Think Process</span><i class="fas fa-chevron-down ml-auto transition-transform group-open:rotate-180 opacity-50"></i></summary><div class="p-4 text-xs text-gray-400 font-mono italic leading-relaxed border-t border-white/5 bg-black/20">${clean}</div></details>`);
                     }
                     mdBody.innerHTML = marked.parse(processedText); 
                     if (window.renderMathInElement) renderMathInElement(mdBody, { delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }], throwOnError: false }); 
