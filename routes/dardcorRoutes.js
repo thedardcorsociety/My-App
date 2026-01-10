@@ -52,14 +52,14 @@ async function parsePdfSafe(buffer) {
                 const page = await pdf.getPage(i);
                 const textContent = await page.getTextContent();
                 const pageText = textContent.items.map(item => item.str).join(' ');
-                fullText += `[Halaman ${i}]: ${pageText}\n`;
+                fullText += `[HALAMAN PDF ${i}]: ${pageText}\n`;
             } catch (pageErr) {
-                fullText += `[Halaman ${i} Error: Gagal membaca teks]\n`;
+                fullText += `[HALAMAN PDF ${i} ERROR]: Gagal membaca teks halaman ini.\n`;
             }
         }
-        return fullText || "[PDF kosong atau hanya berisi gambar]";
+        return fullText || "[INFO SYSTEM]: File PDF ini tampaknya berisi gambar yang belum di-OCR atau kosong.";
     } catch (error) {
-        return null;
+        return "[INFO SYSTEM]: Gagal mengekstrak teks PDF. File mungkin rusak atau terenkripsi.";
     }
 }
 
@@ -392,7 +392,7 @@ Fokus Mutlak: Hanya data yang diberikan pada sesi ini yang berlaku. Masa lalu ti
         `;
 
         if (useDeepThink) {
-            awarenessContext += `\n[MODE DEEP THINK]: AKTIF. Anda sedang dalam mode berpikir mendalam. Sebelum menjawab, lakukan analisis langkah demi langkah secara komprehensif. Bungkus proses berpikir Anda di dalam tag <think>...</think> sebelum memberikan jawaban akhir.`;
+            awarenessContext += `\n[MODE DEEP THINK: AKTIF]\nINSTRUKSI MUTLAK UNTUK FORMAT OUTPUT:\n1.  Anda WAJIB memulai respon dengan tag <think>. \n2.  Isi tag <think> adalah analisis langkah demi langkah yang mendalam.\n3.  Tutup dengan tag </think>.\n4.  BARU berikan jawaban akhir setelah tag penutup </think>.\n\nCONTOH OUTPUT YANG BENAR:\n<think>\nSaya akan menganalisis pertanyaan ini...\nLangkah 1: ...\nLangkah 2: ...\n</think>\nIni adalah jawaban akhir saya.`;
         }
 
         const contextData = { vaultContent: '', memories: '', searchResults: '', globalHistory: '' };
@@ -441,8 +441,9 @@ Fokus Mutlak: Hanya data yang diberikan pada sesi ini yang berlaku. Masa lalu ti
         const geminiFiles = []; 
         let fileTextContext = "";
         let fileMetadata = []; 
+        let hasDocumentContent = false;
 
-        if (uploadedFiles.length > 0) {
+        if (uploadedFiles && uploadedFiles.length > 0) {
             for (const file of uploadedFiles) {
                 const mime = file.mimetype.toLowerCase();
                 const originalName = file.originalname;
@@ -479,14 +480,16 @@ Fokus Mutlak: Hanya data yang diberikan pada sesi ini yang berlaku. Masa lalu ti
 
                 if (mime.startsWith('image/')) {
                     geminiFiles.push(file); 
-                    fileTextContext += `\n[INFO FILE GAMBAR]: ${originalName} (Gambar telah dilampirkan ke sistem visual Anda. JIKA Anda mendukung visual, analisislah. JIKA TIDAK, beritahu user bahwa Anda menerima gambar tersebut tetapi hanya bisa membaca nama filenya).\n`;
+                    fileTextContext += `\n[INFO FILE GAMBAR]: ${originalName} (Gambar telah dilampirkan. Analisislah visualnya jika fitur Vision aktif. Jika tidak, informasikan nama file saja).\n`;
                 } 
                 else if (mime === 'application/pdf') {
+                    hasDocumentContent = true;
                     const extractedText = await parsePdfSafe(file.buffer);
                     fileTextContext += `\n=== ISI FILE PDF: ${originalName} ===\n${extractedText}\n=== AKHIR FILE PDF ===\n`;
                     if (toolType === 'basic') geminiFiles.push(file); 
                 } 
                 else if (mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || fileExt === '.docx') {
+                    hasDocumentContent = true;
                     try { 
                         const result = await mammoth.extractRawText({ buffer: file.buffer }); 
                         fileTextContext += `\n=== ISI FILE WORD (DOCX): ${originalName} ===\n${result.value}\n=== AKHIR FILE WORD ===\n`; 
@@ -495,22 +498,21 @@ Fokus Mutlak: Hanya data yang diberikan pada sesi ini yang berlaku. Masa lalu ti
                     }
                 } 
                 else if (mime.includes('spreadsheet') || mime.includes('excel') || fileExt === '.xlsx' || fileExt === '.xls' || fileExt === '.csv') {
+                    hasDocumentContent = true;
                     try { 
                         const workbook = xlsx.read(file.buffer, { type: 'buffer' }); 
                         let allSheetsText = "";
                         workbook.SheetNames.forEach(sheetName => {
                             const csv = xlsx.utils.sheet_to_csv(workbook.Sheets[sheetName]);
-                            allSheetsText += `\n[SHEET: ${sheetName}]\n${csv}\n`;
+                            allSheetsText += `\n[SHEET EXCEL: ${sheetName}]\n${csv}\n`;
                         });
                         fileTextContext += `\n=== ISI FILE EXCEL: ${originalName} ===\n${allSheetsText}\n=== AKHIR FILE EXCEL ===\n`; 
                     } catch (e) { 
                         fileTextContext += `\n[ERROR BACA EXCEL: ${originalName}] Gagal membaca isi file.\n`; 
                     }
                 }
-                else if (mime.includes('presentation') || mime.includes('powerpoint') || fileExt === '.pptx' || fileExt === '.ppt') {
-                    fileTextContext += `\n[INFO FILE PPT: ${originalName}] File PowerPoint terdeteksi. Saat ini sistem hanya dapat membaca metadata nama file ini. Silakan minta user untuk memberikan detail atau mengonversi ke PDF jika ingin analisis teks mendalam.\n`;
-                }
                 else if (codeExtensions.includes(fileExt) || mime.startsWith('text/') || mime === 'application/json' || mime === 'application/javascript' || mime === 'application/xml') {
+                    hasDocumentContent = true;
                     try {
                         const rawText = file.buffer.toString('utf-8');
                         fileTextContext += `\n=== ISI FILE KODE/TEKS: ${originalName} ===\n${rawText}\n=== AKHIR FILE KODE/TEKS ===\n`;
@@ -521,10 +523,11 @@ Fokus Mutlak: Hanya data yang diberikan pada sesi ini yang berlaku. Masa lalu ti
                 else {
                     try {
                         const rawText = file.buffer.toString('utf-8');
-                        if (/^[\x00-\x7F]*$/.test(rawText.substring(0, 1000))) {
-                             fileTextContext += `\n=== ISI FILE LAINNYA: ${originalName} ===\n${rawText}\n=== AKHIR FILE ===\n`;
+                        if (/^[\x00-\x7F\n\r\t]*$/.test(rawText.substring(0, 2000))) {
+                             hasDocumentContent = true;
+                             fileTextContext += `\n=== ISI FILE (UNKNOWN TYPE): ${originalName} ===\n${rawText}\n=== AKHIR FILE ===\n`;
                         } else {
-                             fileTextContext += `\n[INFO FILE: ${originalName}] Tipe file (${mime}) diterima. Isi file berupa data biner yang tidak dapat dibaca sebagai teks langsung.\n`;
+                             fileTextContext += `\n[INFO FILE BINER: ${originalName}] Tipe file (${mime}) diterima namun tidak dapat dibaca sebagai teks. Informasikan ke user bahwa file telah diterima.\n`;
                         }
                     } catch (e) {
                         fileTextContext += `\n[INFO FILE: ${originalName}] File diterima.\n`;
@@ -534,9 +537,9 @@ Fokus Mutlak: Hanya data yang diberikan pada sesi ini yang berlaku. Masa lalu ti
         }
 
         if (fileTextContext) {
-            message = `[SYSTEM INJECTION - USER UPLOADED FILES]:\nBerikut adalah konten dari file yang diunggah user. Jawab pertanyaan user berdasarkan data ini jika relevan:\n${fileTextContext}\n\n[END FILE DATA]\n\n${message}`;
+            message = `[SYSTEM INJECTION - USER UPLOADED FILES]:\nBerikut adalah konten lengkap dari file yang diunggah user. WAJIB baca dan gunakan data ini untuk menjawab pertanyaan user:\n${fileTextContext}\n\n[END FILE DATA]\n\nPERTANYAAN USER: ${message}`;
         } else if (uploadedFiles.length > 0 && !message.includes("USER UPLOADED FILES")) {
-             message = `[SYSTEM INJECTION]: User mengupload ${uploadedFiles.length} file gambar/biner. Gunakan kemampuan visual jika tersedia, atau konfirmasi penerimaan file.\n\n${message}`;
+             message = `[SYSTEM INJECTION]: User mengupload ${uploadedFiles.length} file (Gambar/Biner). Gunakan kemampuan visual jika model mendukung, atau konfirmasi penerimaan file.\n\nUSER QUERY: ${message}`;
         }
 
         const userMessageDisplay = req.body.message || (uploadedFiles.length > 0 ? `Mengirim ${uploadedFiles.length} file...` : "...");

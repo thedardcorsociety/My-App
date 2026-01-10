@@ -690,13 +690,75 @@ document.addEventListener('DOMContentLoaded', () => {
         if (role === 'user') {
             contentHtml = `<div class="whitespace-pre-wrap break-words user-text">${text.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" class="text-purple-500 hover:text-purple-300 hover:underline break-all">$1</a>')}</div>`;
         } else {
-            let processedText = String(text || '');
-            const thinkMatch = processedText.match(/<think>([\s\S]*?)<\/think>/);
+            let deepThinkHtml = '';
+            let mainText = text;
+            
+            const thinkMatch = text.match(/<think>([\s\S]*?)<\/think>/);
             if (thinkMatch) {
-                const clean = thinkMatch[1].trim().replace(/\n/g, '<br>');
-                processedText = processedText.replace(/<think>[\s\S]*?<\/think>/, `<details class="deep-think-box mb-4 bg-black/40 border border-white/10 rounded-lg overflow-hidden group"><summary class="flex items-center gap-2 px-4 py-2 cursor-pointer text-xs font-mono text-gray-400 hover:text-gray-200 select-none transition-colors bg-white/5"><i class="fas fa-brain text-purple-500/70"></i><span>Deep Think Process</span><i class="fas fa-chevron-down ml-auto transition-transform group-open:rotate-180 opacity-50"></i></summary><div class="p-4 text-xs text-gray-400 font-mono italic leading-relaxed border-t border-white/5 bg-black/20">${clean}</div></details>`);
+                const cleanThink = thinkMatch[1].trim();
+                mainText = text.replace(/<think>[\s\S]*?<\/think>/, '').trim();
+                deepThinkHtml = `
+                    <details class="deep-think-box group w-full max-w-full">
+                        <summary>
+                            <div class="deep-think-header-content">
+                                <div class="think-spinner-container">
+                                    <div class="think-spinner-ring"></div>
+                                    <img src="/logo.png" class="think-logo-inner">
+                                </div>
+                                <span class="deep-think-title">Dardcor AI : Show Process</span>
+                            </div>
+                            <i class="fas fa-chevron-down deep-think-chevron"></i>
+                        </summary>
+                        <div class="deep-think-content">
+                            <div class="whitespace-pre-wrap">${cleanThink}</div>
+                        </div>
+                    </details>
+                `;
+            } else if (text.startsWith('<think>')) {
+                 const partialThink = text.match(/<think>([\s\S]*)/);
+                 if (partialThink) {
+                     const cleanThink = partialThink[1].trim();
+                     mainText = ""; 
+                     deepThinkHtml = `
+                        <details class="deep-think-box group w-full max-w-full" open>
+                            <summary>
+                                <div class="deep-think-header-content">
+                                    <div class="think-spinner-container">
+                                        <div class="think-spinner-ring"></div>
+                                        <img src="/logo.png" class="think-logo-inner">
+                                    </div>
+                                    <span class="deep-think-title">Dardcor AI Thinking...</span>
+                                </div>
+                                <i class="fas fa-chevron-down deep-think-chevron"></i>
+                            </summary>
+                            <div class="deep-think-content">
+                                <div class="whitespace-pre-wrap">${cleanThink}</div>
+                            </div>
+                        </details>
+                    `;
+                 }
             }
-            contentHtml = `<div class="markdown-body w-full max-w-full overflow-hidden break-words">${typeof marked !== 'undefined' ? marked.parse(processedText) : processedText}</div>`;
+
+            const identityHtml = `
+                <div class="bot-identity">
+                    <img src="/logo.png" class="bot-identity-logo">
+                    <span class="bot-identity-name">Dardcor AI</span>
+                </div>
+            `;
+
+            if (deepThinkHtml) {
+                contentHtml = deepThinkHtml + identityHtml;
+            } else {
+                if (mainText) {
+                    contentHtml = identityHtml; 
+                }
+            }
+            
+            if (mainText || !deepThinkHtml) {
+                 contentHtml += `<div class="chat-content-box relative rounded-2xl px-5 py-3.5 shadow-md text-sm ${bubbleClass} w-fit min-w-0 max-w-full overflow-hidden leading-7">
+                    <div class="markdown-body w-full max-w-full overflow-hidden break-words">${typeof marked !== 'undefined' ? marked.parse(mainText) : mainText}</div>
+                 </div>`;
+            }
         }
 
         let actions = '';
@@ -706,7 +768,11 @@ document.addEventListener('DOMContentLoaded', () => {
             actions = `<div class="flex items-center gap-3 mt-1 px-1 select-none opacity-50 group-hover:opacity-100 transition-opacity"><button onclick="window.copyMessageBubble(this)" class="text-[10px] font-medium bg-transparent border-none p-0 text-gray-500 hover:text-white flex items-center gap-1.5 transition-colors" title="Salin"><i class="fas fa-copy"></i> Salin</button><button onclick="window.speakMessage(this)" class="text-[10px] font-medium bg-transparent border-none p-0 text-gray-500 hover:text-white flex items-center gap-1.5 transition-colors" title="Dengarkan"><i class="fas fa-volume-up"></i> Dengar</button></div>`;
         }
 
-        div.innerHTML = `<div class="flex flex-col ${role === 'user' ? 'items-end' : 'items-start'} w-full max-w-full min-w-0">${fileHtml}<div class="chat-content-box relative rounded-2xl px-5 py-3.5 shadow-md text-sm ${bubbleClass} w-fit min-w-0 max-w-full overflow-hidden leading-7">${contentHtml}</div>${actions}</div>`;
+        if (role === 'user') {
+             div.innerHTML = `<div class="flex flex-col items-end w-full max-w-full min-w-0">${fileHtml}<div class="chat-content-box relative rounded-2xl px-5 py-3.5 shadow-md text-sm ${bubbleClass} w-fit min-w-0 max-w-full overflow-hidden leading-7">${contentHtml}</div>${actions}</div>`;
+        } else {
+             div.innerHTML = `<div class="flex flex-col items-start w-full max-w-full min-w-0">${fileHtml}${contentHtml}${actions}</div>`;
+        }
         
         return div;
     }
@@ -756,7 +822,36 @@ document.addEventListener('DOMContentLoaded', () => {
         const loaderDiv = document.createElement('div');
         loaderDiv.id = 'loading-indicator';
         loaderDiv.className = "flex w-full justify-start message-bubble-container group min-w-0";
-        loaderDiv.innerHTML = `<div class="flex flex-col items-start w-full max-w-full min-w-0"><div class="flex items-center gap-3 bg-transparent border-none px-4 py-3.5"><div class="loader"></div><span class="text-xs text-purple-400 font-medium animate-pulse">Dardcor AI Thinking...</span></div></div>`;
+        
+        if (isDeepThinkEnabled) {
+            loaderDiv.innerHTML = `
+                <div class="flex flex-col items-start w-full max-w-full min-w-0">
+                    <details class="deep-think-box group w-full max-w-full" open>
+                        <summary style="pointer-events: none;">
+                            <div class="deep-think-header-content">
+                                <div class="think-spinner-container">
+                                    <div class="think-spinner-ring"></div>
+                                    <img src="/logo.png" class="think-logo-inner">
+                                </div>
+                                <span class="deep-think-title animate-pulse">Dardcor AI Thinking...</span>
+                            </div>
+                            <i class="fas fa-chevron-down deep-think-chevron"></i>
+                        </summary>
+                    </details>
+                </div>`;
+        } else {
+            loaderDiv.innerHTML = `
+                <div class="flex flex-col items-start w-full max-w-full min-w-0">
+                    <div class="flex items-center gap-3 bg-transparent border-none px-4 py-3.5">
+                        <div class="think-spinner-container">
+                            <div class="think-spinner-ring"></div>
+                            <img src="/logo.png" class="think-logo-inner">
+                        </div>
+                        <span class="text-xs text-purple-400 font-medium animate-pulse">Dardcor AI Thinking...</span>
+                    </div>
+                </div>`;
+        }
+        
         messageList.appendChild(loaderDiv);
         
         scrollToBottom(true);
@@ -780,11 +875,29 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const botDiv = document.createElement('div');
             botDiv.className = "flex w-full justify-start message-bubble-container group min-w-0";
-            const actions = `<div class="flex items-center gap-3 mt-1 px-1 select-none opacity-50 group-hover:opacity-100 transition-opacity"><button onclick="window.copyMessageBubble(this)" class="text-[10px] font-medium bg-transparent border-none p-0 text-gray-500 hover:text-white flex items-center gap-1.5 transition-colors" title="Salin"><i class="fas fa-copy"></i> Salin</button><button onclick="window.speakMessage(this)" class="text-[10px] font-medium bg-transparent border-none p-0 text-gray-500 hover:text-white flex items-center gap-1.5 transition-colors" title="Dengarkan"><i class="fas fa-volume-up"></i> Dengar</button></div>`;
-            botDiv.innerHTML = `<div class="flex flex-col items-start w-full max-w-full min-w-0"><div class="chat-content-box relative rounded-2xl px-5 py-3.5 shadow-md text-sm bg-transparent text-gray-200 rounded-bl-sm border-none w-fit min-w-0 max-w-full overflow-hidden leading-7"><div class="markdown-body w-full max-w-full overflow-hidden break-words"></div></div>${actions}</div>`;
+            
+            botDiv.innerHTML = `<div class="flex flex-col items-start w-full max-w-full min-w-0">
+                <div id="deep-think-container"></div>
+                <div id="bot-identity-container" class="bot-identity hidden">
+                    <img src="/logo.png" class="bot-identity-logo">
+                    <span class="bot-identity-name">Dardcor AI</span>
+                </div>
+                <div id="main-content-container" class="chat-content-box relative rounded-2xl px-5 py-3.5 shadow-md text-sm bg-transparent text-gray-200 rounded-bl-sm border-none w-fit min-w-0 max-w-full overflow-hidden leading-7 hidden">
+                    <div class="markdown-body w-full max-w-full overflow-hidden break-words"></div>
+                </div>
+                <div class="flex items-center gap-3 mt-1 px-1 select-none opacity-50 group-hover:opacity-100 transition-opacity">
+                    <button onclick="window.copyMessageBubble(this)" class="text-[10px] font-medium bg-transparent border-none p-0 text-gray-500 hover:text-white flex items-center gap-1.5 transition-colors" title="Salin"><i class="fas fa-copy"></i> Salin</button>
+                    <button onclick="window.speakMessage(this)" class="text-[10px] font-medium bg-transparent border-none p-0 text-gray-500 hover:text-white flex items-center gap-1.5 transition-colors" title="Dengarkan"><i class="fas fa-volume-up"></i> Dengar</button>
+                </div>
+            </div>`;
+            
             if (messageList) messageList.appendChild(botDiv);
             
+            const thinkContainer = botDiv.querySelector('#deep-think-container');
+            const identityContainer = botDiv.querySelector('#bot-identity-container');
+            const mainContainer = botDiv.querySelector('#main-content-container');
             const botContent = botDiv.querySelector('.markdown-body');
+            
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
             let fullText = "";
@@ -797,23 +910,50 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (timestamp - lastUpdate < 50) { requestAnimationFrame(render); return; }
                 lastUpdate = timestamp;
                 
-                let formatted = fullText;
-                const thinkMatch = fullText.match(/<think>([\s\S]*?)<\/think>/); 
-                if (thinkMatch) { 
-                    const clean = thinkMatch[1].trim().replace(/\n/g, '<br>'); 
-                    formatted = fullText.replace(/<think>[\s\S]*?<\/think>/, `<details class="deep-think-box mb-4 bg-black/40 border border-white/10 rounded-lg overflow-hidden group"><summary class="flex items-center gap-2 px-4 py-2 cursor-pointer text-xs font-mono text-gray-400 hover:text-gray-200 select-none transition-colors bg-white/5"><i class="fas fa-brain text-purple-500/70"></i><span>Deep Think Process</span><i class="fas fa-chevron-down ml-auto transition-transform group-open:rotate-180 opacity-50"></i></summary><div class="p-4 text-xs text-gray-400 font-mono italic leading-relaxed border-t border-white/5 bg-black/20">${clean}</div></details>`); 
+                let thinkText = "";
+                let mainText = fullText;
+                
+                const thinkMatch = fullText.match(/<think>([\s\S]*?)(?:<\/think>|$)/);
+                
+                if (thinkMatch) {
+                    thinkText = thinkMatch[1].trim();
+                    mainText = fullText.replace(/<think>[\s\S]*?(\s)*?(?:<\/think>|$)/, '').trim();
+                    
+                    const isThinking = !fullText.includes('</think>');
+                    
+                    thinkContainer.innerHTML = `
+                        <details class="deep-think-box group w-full max-w-full" ${isThinking ? 'open' : ''}>
+                            <summary>
+                                <div class="deep-think-header-content">
+                                    <div class="think-spinner-container">
+                                        ${isThinking ? '<div class="think-spinner-ring"></div>' : ''}
+                                        <img src="/logo.png" class="think-logo-inner">
+                                    </div>
+                                    <span class="deep-think-title">${isThinking ? 'Dardcor AI Thinking...' : 'Dardcor AI : Show Process'}</span>
+                                </div>
+                                <i class="fas fa-chevron-down deep-think-chevron"></i>
+                            </summary>
+                            <div class="deep-think-content">
+                                <div class="whitespace-pre-wrap">${thinkText}</div>
+                            </div>
+                        </details>
+                    `;
                 }
 
-                let tempFormatted = formatted;
-                const codeBlockCount = (tempFormatted.match(/```/g) || []).length;
-                if (codeBlockCount % 2 !== 0) {
-                    tempFormatted += "\n```"; 
+                if (mainText) {
+                    identityContainer.classList.remove('hidden');
+                    mainContainer.classList.remove('hidden');
+                    let tempFormatted = mainText;
+                    const codeBlockCount = (tempFormatted.match(/```/g) || []).length;
+                    if (codeBlockCount % 2 !== 0) {
+                        tempFormatted += "\n```"; 
+                    }
+                    if (typeof marked !== 'undefined') {
+                        botContent.innerHTML = marked.parse(tempFormatted);
+                        if (typeof hljs !== 'undefined') botContent.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
+                    }
                 }
                 
-                if (botContent && typeof marked !== 'undefined') {
-                    botContent.innerHTML = marked.parse(tempFormatted);
-                    if (typeof hljs !== 'undefined') botContent.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
-                }
                 if (!userIsScrolling) {
                     const threshold = 150;
                     const position = chatContainer.scrollTop + chatContainer.clientHeight;
@@ -843,15 +983,35 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             isStreaming = false; 
             
-            let formatted = fullText;
-            const thinkMatch = fullText.match(/<think>([\s\S]*?)<\/think>/); 
+            let thinkText = "";
+            let mainText = fullText;
+            const thinkMatch = fullText.match(/<think>([\s\S]*?)<\/think>/);
+            
             if (thinkMatch) {
-                const clean = thinkMatch[1].trim().replace(/\n/g, '<br>');
-                formatted = fullText.replace(/<think>[\s\S]*?<\/think>/, `<details class="deep-think-box mb-4 bg-black/40 border border-white/10 rounded-lg overflow-hidden group"><summary class="flex items-center gap-2 px-4 py-2 cursor-pointer text-xs font-mono text-gray-400 hover:text-gray-200 select-none transition-colors bg-white/5"><i class="fas fa-brain text-purple-500/70"></i><span>Deep Think Process</span><i class="fas fa-chevron-down ml-auto transition-transform group-open:rotate-180 opacity-50"></i></summary><div class="p-4 text-xs text-gray-400 font-mono italic leading-relaxed border-t border-white/5 bg-black/20">${clean}</div></details>`);
+                thinkText = thinkMatch[1].trim();
+                mainText = fullText.replace(/<think>[\s\S]*?<\/think>/, '').trim();
+                thinkContainer.innerHTML = `
+                    <details class="deep-think-box group w-full max-w-full">
+                        <summary>
+                            <div class="deep-think-header-content">
+                                <div class="think-spinner-container">
+                                    <img src="/logo.png" class="think-logo-inner">
+                                </div>
+                                <span class="deep-think-title">Dardcor AI : Show Process</span>
+                            </div>
+                            <i class="fas fa-chevron-down deep-think-chevron"></i>
+                        </summary>
+                        <div class="deep-think-content">
+                            <div class="whitespace-pre-wrap">${thinkText}</div>
+                        </div>
+                    </details>
+                `;
             }
             
-            if (botContent) {
-                botContent.innerHTML = marked.parse(formatted);
+            if (mainText || !thinkMatch) {
+                identityContainer.classList.remove('hidden');
+                mainContainer.classList.remove('hidden');
+                botContent.innerHTML = marked.parse(mainText);
                 if (typeof hljs !== 'undefined') botContent.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
             }
             scrollToBottom(true);
@@ -863,27 +1023,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (sendIcon) sendIcon.classList.replace('fa-stop', 'fa-paper-plane');
                 isSending = false;
                 abortController = null;
-                
-                if (fullText && typeof marked !== 'undefined') {
-                     let finalFormatted = fullText;
-                     const codeCount = (finalFormatted.match(/```/g) || []).length;
-                     if (codeCount % 2 !== 0) finalFormatted += "\n```"; 
-
-                     const thinkMatch = finalFormatted.match(/<think>([\s\S]*?)<\/think>/);
-                     if (thinkMatch) {
-                         const clean = thinkMatch[1].trim().replace(/\n/g, '<br>');
-                         finalFormatted = finalFormatted.replace(/<think>[\s\S]*?<\/think>/, `<details class="deep-think-box mb-4 bg-black/40 border border-white/10 rounded-lg overflow-hidden group"><summary class="flex items-center gap-2 px-4 py-2 cursor-pointer text-xs font-mono text-gray-400 hover:text-gray-200 select-none transition-colors bg-white/5"><i class="fas fa-brain text-purple-500/70"></i><span>Deep Think Process</span><i class="fas fa-chevron-down ml-auto transition-transform group-open:rotate-180 opacity-50"></i></summary><div class="p-4 text-xs text-gray-400 font-mono italic leading-relaxed border-t border-white/5 bg-black/20">${clean}</div></details>`);
-                     }
-
-                     const lastBotDiv = messageList.lastElementChild;
-                     if(lastBotDiv) {
-                         const contentDiv = lastBotDiv.querySelector('.markdown-body');
-                         if(contentDiv) {
-                             contentDiv.innerHTML = marked.parse(finalFormatted);
-                             if (typeof hljs !== 'undefined') contentDiv.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
-                         }
-                     }
-                }
                 return;
             }
             
@@ -909,11 +1048,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const mdBody = target.classList.contains('markdown-body') ? target : target.querySelector('.markdown-body');
                 if (mdBody && typeof marked !== 'undefined') { 
                     let processedText = String(raw.value || '');
-                    const thinkMatch = processedText.match(/<think>([\s\S]*?)<\/think>/);
-                    if (thinkMatch) {
-                        const clean = thinkMatch[1].trim().replace(/\n/g, '<br>');
-                        processedText = processedText.replace(/<think>[\s\S]*?<\/think>/, `<details class="deep-think-box mb-4 bg-black/40 border border-white/10 rounded-lg overflow-hidden group"><summary class="flex items-center gap-2 px-4 py-2 cursor-pointer text-xs font-mono text-gray-400 hover:text-gray-200 select-none transition-colors bg-white/5"><i class="fas fa-brain text-purple-500/70"></i><span>Deep Think Process</span><i class="fas fa-chevron-down ml-auto transition-transform group-open:rotate-180 opacity-50"></i></summary><div class="p-4 text-xs text-gray-400 font-mono italic leading-relaxed border-t border-white/5 bg-black/20">${clean}</div></details>`);
-                    }
+                    processedText = processedText.replace(/<think>[\s\S]*?<\/think>/, '').trim();
+                    
                     mdBody.innerHTML = marked.parse(processedText); 
                     if (window.renderMathInElement) renderMathInElement(mdBody, { delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }], throwOnError: false }); 
                     mdBody.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
