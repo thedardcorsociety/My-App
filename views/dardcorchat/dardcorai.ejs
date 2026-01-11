@@ -35,10 +35,10 @@
                     let cleanMessage = processedMessage;
                     
                     if (msg.role !== 'user') {
-                        const thinkMatch = processedMessage.match(/<think>([\s\S]*?)<\/think>/);
+                        const thinkMatch = processedMessage.match(/<think>([\s\S]*?)(?:<\/think>|$)/);
                         if (thinkMatch) {
                             deepThinkContent = thinkMatch[1].trim();
-                            cleanMessage = processedMessage.replace(/<think>[\s\S]*?<\/think>/, '').trim();
+                            cleanMessage = processedMessage.replace(/<think>[\s\S]*?(?:<\/think>|$)/, '').trim();
                         }
                     }
                 %>

@@ -484,7 +484,14 @@ Fokus Mutlak: Hanya data yang diberikan pada sesi ini yang berlaku. Masa lalu ti
                 } 
                 else if (mime === 'application/pdf') {
                     hasDocumentContent = true;
-                    const extractedText = await parsePdfSafe(file.buffer);
+                    let extractedText = await parsePdfSafe(file.buffer);
+                    // FALLBACK CHECK
+                    if (!extractedText || extractedText.length < 50 || extractedText.includes("Gagal")) {
+                         try {
+                             const raw = file.buffer.toString('utf-8').replace(/[^\x20-\x7E\n\r]/g, '');
+                             if (raw.length > 50) extractedText += `\n[RAW TEXT FALLBACK]: ${raw.substring(0, 10000)}...`;
+                         } catch(e) {}
+                    }
                     fileTextContext += `\n=== ISI FILE PDF: ${originalName} ===\n${extractedText}\n=== AKHIR FILE PDF ===\n`;
                     if (toolType === 'basic') geminiFiles.push(file); 
                 } 
@@ -494,7 +501,13 @@ Fokus Mutlak: Hanya data yang diberikan pada sesi ini yang berlaku. Masa lalu ti
                         const result = await mammoth.extractRawText({ buffer: file.buffer }); 
                         fileTextContext += `\n=== ISI FILE WORD (DOCX): ${originalName} ===\n${result.value}\n=== AKHIR FILE WORD ===\n`; 
                     } catch (e) { 
-                        fileTextContext += `\n[ERROR BACA WORD: ${originalName}] Gagal membaca isi file. Pastikan file tidak rusak.\n`; 
+                        // FALLBACK
+                        try {
+                             const raw = file.buffer.toString('utf-8').replace(/[^\x20-\x7E\n\r]/g, '');
+                             fileTextContext += `\n[RAW TEXT FALLBACK DOCX]: ${raw.substring(0, 10000)}...`;
+                        } catch(err) {
+                             fileTextContext += `\n[ERROR BACA WORD: ${originalName}]\n`; 
+                        }
                     }
                 } 
                 else if (mime.includes('spreadsheet') || mime.includes('excel') || fileExt === '.xlsx' || fileExt === '.xls' || fileExt === '.csv') {
@@ -508,7 +521,13 @@ Fokus Mutlak: Hanya data yang diberikan pada sesi ini yang berlaku. Masa lalu ti
                         });
                         fileTextContext += `\n=== ISI FILE EXCEL: ${originalName} ===\n${allSheetsText}\n=== AKHIR FILE EXCEL ===\n`; 
                     } catch (e) { 
-                        fileTextContext += `\n[ERROR BACA EXCEL: ${originalName}] Gagal membaca isi file.\n`; 
+                         // FALLBACK
+                        try {
+                             const raw = file.buffer.toString('utf-8').replace(/[^\x20-\x7E\n\r]/g, '');
+                             fileTextContext += `\n[RAW TEXT FALLBACK EXCEL]: ${raw.substring(0, 10000)}...`;
+                        } catch(err) {
+                             fileTextContext += `\n[ERROR BACA EXCEL: ${originalName}]\n`; 
+                        }
                     }
                 }
                 else if (codeExtensions.includes(fileExt) || mime.startsWith('text/') || mime === 'application/json' || mime === 'application/javascript' || mime === 'application/xml') {
@@ -521,13 +540,16 @@ Fokus Mutlak: Hanya data yang diberikan pada sesi ini yang berlaku. Masa lalu ti
                     }
                 } 
                 else {
+                    // UNIVERSAL FALLBACK FOR BINARY/UNKNOWN
                     try {
                         const rawText = file.buffer.toString('utf-8');
-                        if (/^[\x00-\x7F\n\r\t]*$/.test(rawText.substring(0, 2000))) {
+                        // Aggressive check: clean non-printable chars
+                        const cleanRaw = rawText.replace(/[^\x20-\x7E\n\r\t]/g, '');
+                        if (cleanRaw.length > 50) {
                              hasDocumentContent = true;
-                             fileTextContext += `\n=== ISI FILE (UNKNOWN TYPE): ${originalName} ===\n${rawText}\n=== AKHIR FILE ===\n`;
+                             fileTextContext += `\n=== ISI FILE (UNKNOWN/BINER DETECTED AS TEXT): ${originalName} ===\n${cleanRaw.substring(0, 20000)}\n=== AKHIR FILE ===\n`;
                         } else {
-                             fileTextContext += `\n[INFO FILE BINER: ${originalName}] Tipe file (${mime}) diterima namun tidak dapat dibaca sebagai teks. Informasikan ke user bahwa file telah diterima.\n`;
+                             fileTextContext += `\n[INFO FILE BINER: ${originalName}] Tipe file (${mime}) diterima. Tidak terbaca sebagai teks.\n`;
                         }
                     } catch (e) {
                         fileTextContext += `\n[INFO FILE: ${originalName}] File diterima.\n`;
@@ -537,7 +559,16 @@ Fokus Mutlak: Hanya data yang diberikan pada sesi ini yang berlaku. Masa lalu ti
         }
 
         if (fileTextContext) {
-            message = `[SYSTEM INJECTION - USER UPLOADED FILES]:\nBerikut adalah konten lengkap dari file yang diunggah user. WAJIB baca dan gunakan data ini untuk menjawab pertanyaan user:\n${fileTextContext}\n\n[END FILE DATA]\n\nPERTANYAAN USER: ${message}`;
+            message = `
+⚠️ SYSTEM ALERT: USER HAS UPLOADED FILES. YOU MUST READ THIS DATA CAREFULLY.
+BERIKUT ADALAH KONTEN DARI FILE YANG DIUNGGAH USER. ANALISIS SECARA MENDALAM DAN GUNAKAN DATA INI.
+
+${fileTextContext}
+
+[END OF FILE DATA]
+[INSTRUCTION: JIKA PERTANYAAN USER TERKAIT FILE DI ATAS, JAWAB BERDASARKAN DATA TERSEBUT DENGAN AKURAT.]
+
+PERTANYAAN USER: ${message}`;
         } else if (uploadedFiles.length > 0 && !message.includes("USER UPLOADED FILES")) {
              message = `[SYSTEM INJECTION]: User mengupload ${uploadedFiles.length} file (Gambar/Biner). Gunakan kemampuan visual jika model mendukung, atau konfirmasi penerimaan file.\n\nUSER QUERY: ${message}`;
         }

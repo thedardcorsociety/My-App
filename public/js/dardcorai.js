@@ -213,7 +213,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateModelUI(type) {
         const nameMap = { 'basic': 'Basic Model', 'dark': 'Dark Model', 'pro': 'Pro Model' };
         if (toolLabel) toolLabel.innerText = nameMap[type] || 'Basic Model';
-        if (messageInput) messageInput.placeholder = `Ask To Dardcor ${type === 'basic' ? 'Basic' : (type === 'dark' ? 'Dark' : 'Pro')}...`;
+        if (messageInput) messageInput.placeholder = `Ask Dardcor ${type === 'basic' ? 'Basic' : (type === 'dark' ? 'Dark' : 'Pro')}...`;
         currentToolType = type;
     }
     updateModelUI(currentToolType);
@@ -693,10 +693,10 @@ document.addEventListener('DOMContentLoaded', () => {
             let deepThinkHtml = '';
             let mainText = text;
             
-            const thinkMatch = text.match(/<think>([\s\S]*?)<\/think>/);
+            const thinkMatch = text.match(/<think>([\s\S]*?)(?:<\/think>|$)/);
             if (thinkMatch) {
                 const cleanThink = thinkMatch[1].trim();
-                mainText = text.replace(/<think>[\s\S]*?<\/think>/, '').trim();
+                mainText = text.replace(/<think>[\s\S]*?(?:<\/think>|$)/, '').trim();
                 
                 deepThinkHtml = `
                     <details class="deep-think-box group w-full max-w-full">
@@ -779,7 +779,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderEmptyState() { 
         if (!messageList) return; 
-        messageList.innerHTML = `<div id="empty-state" class="flex flex-col items-center justify-center min-h-[50vh] w-full"><div class="relative w-48 h-48 md:w-56 md:h-56 flex items-center justify-center mb-6 md:mb-8 perspective-[1000px]"><div class="absolute inset-0 bg-purple-900/20 rounded-full blur-3xl animate-pulse"></div><div class="absolute w-[110%] h-[110%] rounded-full border border-purple-500/60 shadow-[0_0_15px_rgba(168,85,247,0.3)] animate-orbit-1 border-t-transparent border-l-transparent"></div><div class="absolute w-[110%] h-[110%] rounded-full border border-fuchsia-500/50 shadow-[0_0_15px_rgba(217,70,239,0.3)] animate-orbit-2 border-b-transparent border-r-transparent"></div><div class="absolute w-[110%] h-[110%] rounded-full border border-violet-500/50 animate-orbit-3 border-t-transparent border-r-transparent"></div><div class="absolute w-[110%] h-[110%] rounded-full border border-indigo-500/40 animate-orbit-4 border-b-transparent border-l-transparent"></div><div class="absolute w-[110%] h-[110%] rounded-full border border-pink-500/40 animate-orbit-5 border-l-transparent border-r-transparent"></div><div class="absolute w-[110%] h-[110%] rounded-full border border-cyan-500/40 animate-orbit-6 border-t-transparent border-b-transparent"></div><div class="w-24 h-24 md:w-28 md:h-28 rounded-full overflow-hidden border-2 border-purple-400/20 bg-[#050508] relative z-10 shadow-[0_0_40px_rgba(147,51,234,0.3)]"><div class="absolute inset-0 bg-gradient-to-b from-purple-900/30 via-transparent to-black z-10"></div><img src="/logo.png" alt="Logo" class="relative w-full h-full object-cover opacity-90"></div></div><h2 class="text-3xl md:text-5xl font-bold mb-2 text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-200 via-white to-purple-400 drop-shadow-[0_0_10px_rgba(168,85,247,0.5)]">Dardcor AI</h2><p class="text-sm md:text-base text-purple-300/60 text-center max-w-xs md:max-w-md px-4 leading-relaxed font-light tracking-wide">Jelajahi kecerdasan buatan tanpa batas</p></div>`; 
+        messageList.innerHTML = `<div id="empty-state" class="flex flex-col items-center justify-center min-h-[50vh] w-full"><div class="relative w-48 h-48 md:w-56 md:h-56 flex items-center justify-center mb-6 md:mb-8 perspective-[1000px]"><div class="absolute inset-0 bg-purple-900/20 rounded-full blur-3xl animate-pulse"></div><div class="absolute w-[110%] h-[110%] rounded-full border border-purple-500/60 shadow-[0_0_15px_rgba(168,85,247,0.3)] animate-orbit-1 border-t-transparent border-l-transparent"></div><div class="absolute w-[110%] h-[110%] rounded-full border border-fuchsia-500/50 shadow-[0_0_15px_rgba(217,70,239,0.3)] animate-orbit-2 border-b-transparent border-r-transparent"></div><div class="absolute w-[110%] h-[110%] rounded-full border border-violet-500/50 animate-orbit-3 border-t-transparent border-r-transparent"></div><div class="absolute w-[110%] h-[110%] rounded-full border border-indigo-500/40 animate-orbit-4 border-b-transparent border-l-transparent"></div><div class="absolute w-[110%] h-[110%] rounded-full border border-pink-500/40 animate-orbit-5 border-l-transparent border-r-transparent"></div><div class="absolute w-[110%] h-[110%] rounded-full border border-cyan-500/40 animate-orbit-6 border-t-transparent border-b-transparent"></div><div class="w-24 h-24 md:w-28 md:h-28 rounded-full overflow-hidden border-2 border-purple-400/20 bg-[#050508] relative z-10 shadow-[0_0_40px_rgba(147,51,234,0.3)]"><div class="absolute inset-0 bg-gradient-to-b from-purple-900/30 via-transparent to-black z-10"></div><img src="/logo.png" alt="Logo" class="relative w-full h-full object-cover opacity-90"></div></div><h2 class="text-3xl md:text-5xl font-bold mb-2 text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-200 via-white to-purple-400 drop-shadow-[0_0_10px_rgba(168,85,247,0.5)]">Dardcor AI</h2><p class="text-sm md:text-base text-purple-300/60 text-center max-w-xs md:max-w-md px-4 leading-relaxed font-light tracking-wide">Apa yang bisa saya bantu?</p></div>`; 
         messageList.className = "w-full max-w-3xl mx-auto flex flex-col h-full items-center justify-center pb-4"; 
     }
 
@@ -1123,7 +1123,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const mdBody = target.classList.contains('markdown-body') ? target : target.querySelector('.markdown-body');
                 if (mdBody && typeof marked !== 'undefined') { 
                     let processedText = String(raw.value || '');
-                    processedText = processedText.replace(/<think>[\s\S]*?<\/think>/, '').trim();
+                    processedText = processedText.replace(/<think>[\s\S]*?(?:<\/think>|$)/, '').trim();
                     
                     mdBody.innerHTML = marked.parse(processedText); 
                     if (window.renderMathInElement) renderMathInElement(mdBody, { delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }], throwOnError: false }); 
