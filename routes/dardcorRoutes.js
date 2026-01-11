@@ -392,7 +392,7 @@ Fokus Mutlak: Hanya data yang diberikan pada sesi ini yang berlaku. Masa lalu ti
         `;
 
         if (useDeepThink) {
-            awarenessContext += `\n[MODE DEEP THINK: AKTIF]\nINSTRUKSI MUTLAK UNTUK FORMAT OUTPUT:\n1.  Anda WAJIB memulai respon dengan tag <think>. \n2.  Isi tag <think> adalah analisis langkah demi langkah yang mendalam.\n3.  Tutup dengan tag </think>.\n4.  BARU berikan jawaban akhir setelah tag penutup </think>.\n\nCONTOH OUTPUT YANG BENAR:\n<think>\nSaya akan menganalisis pertanyaan ini...\nLangkah 1: ...\nLangkah 2: ...\n</think>\nIni adalah jawaban akhir saya.`;
+            awarenessContext += `\n[MODE DEEP THINK: AKTIF]\nINSTRUKSI MUTLAK & KRITIKAL: ANDA WAJIB MENGGUNAKAN FORMAT BERIKUT SECARA KETAT:\n<think>\n(Isi proses berpikir dan analisis langkah demi langkah anda disini secara mendalam)\n</think>\n(Jawaban akhir anda disini)\n\nPERINGATAN: JIKA ANDA TIDAK MENYERTAKAN TAG <think>, SISTEM AKAN MENGANGGAP ERROR. JANGAN PERNAH LANGSUNG MENJAWAB TANPA MELALUI PROSES <think> TERLEBIH DAHULU.`;
         }
 
         const contextData = { vaultContent: '', memories: '', searchResults: '', globalHistory: '' };

@@ -697,17 +697,17 @@ document.addEventListener('DOMContentLoaded', () => {
             if (thinkMatch) {
                 const cleanThink = thinkMatch[1].trim();
                 mainText = text.replace(/<think>[\s\S]*?<\/think>/, '').trim();
+                
                 deepThinkHtml = `
                     <details class="deep-think-box group w-full max-w-full">
                         <summary>
                             <div class="deep-think-header-content">
                                 <div class="think-spinner-container">
-                                    <div class="think-spinner-ring"></div>
                                     <img src="/logo.png" class="think-logo-inner">
                                 </div>
                                 <span class="deep-think-title">Dardcor AI : Show Process</span>
+                                <i class="fas fa-chevron-down deep-think-chevron"></i>
                             </div>
-                            <i class="fas fa-chevron-down deep-think-chevron"></i>
                         </summary>
                         <div class="deep-think-content">
                             <div class="whitespace-pre-wrap">${cleanThink}</div>
@@ -720,16 +720,16 @@ document.addEventListener('DOMContentLoaded', () => {
                      const cleanThink = partialThink[1].trim();
                      mainText = ""; 
                      deepThinkHtml = `
-                        <details class="deep-think-box group w-full max-w-full" open>
+                        <details class="deep-think-box group w-full max-w-full">
                             <summary>
                                 <div class="deep-think-header-content">
                                     <div class="think-spinner-container">
                                         <div class="think-spinner-ring"></div>
                                         <img src="/logo.png" class="think-logo-inner">
                                     </div>
-                                    <span class="deep-think-title">Dardcor AI Thinking...</span>
+                                    <span class="deep-think-title animate-pulse">Dardcor AI Thinking...</span>
+                                    <i class="fas fa-chevron-down deep-think-chevron"></i>
                                 </div>
-                                <i class="fas fa-chevron-down deep-think-chevron"></i>
                             </summary>
                             <div class="deep-think-content">
                                 <div class="whitespace-pre-wrap">${cleanThink}</div>
@@ -747,14 +747,14 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
 
             if (deepThinkHtml) {
-                contentHtml = deepThinkHtml + identityHtml;
+                contentHtml = deepThinkHtml;
             } else {
-                if (mainText) {
+                if (mainText || !deepThinkHtml) {
                     contentHtml = identityHtml; 
                 }
             }
             
-            if (mainText || !deepThinkHtml) {
+            if (mainText || (!deepThinkHtml && !mainText)) {
                  contentHtml += `<div class="chat-content-box relative rounded-2xl px-5 py-3.5 shadow-md text-sm ${bubbleClass} w-fit min-w-0 max-w-full overflow-hidden leading-7">
                     <div class="markdown-body w-full max-w-full overflow-hidden break-words">${typeof marked !== 'undefined' ? marked.parse(mainText) : mainText}</div>
                  </div>`;
@@ -826,7 +826,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isDeepThinkEnabled) {
             loaderDiv.innerHTML = `
                 <div class="flex flex-col items-start w-full max-w-full min-w-0">
-                    <details class="deep-think-box group w-full max-w-full" open>
+                    <details class="deep-think-box group w-full max-w-full">
                         <summary style="pointer-events: none;">
                             <div class="deep-think-header-content">
                                 <div class="think-spinner-container">
@@ -834,20 +834,20 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <img src="/logo.png" class="think-logo-inner">
                                 </div>
                                 <span class="deep-think-title animate-pulse">Dardcor AI Thinking...</span>
+                                <i class="fas fa-chevron-down deep-think-chevron"></i>
                             </div>
-                            <i class="fas fa-chevron-down deep-think-chevron"></i>
                         </summary>
                     </details>
                 </div>`;
         } else {
             loaderDiv.innerHTML = `
                 <div class="flex flex-col items-start w-full max-w-full min-w-0">
-                    <div class="flex items-center gap-3 bg-transparent border-none px-4 py-3.5">
-                        <div class="think-spinner-container">
-                            <div class="think-spinner-ring"></div>
-                            <img src="/logo.png" class="think-logo-inner">
-                        </div>
-                        <span class="text-xs text-purple-400 font-medium animate-pulse">Dardcor AI Thinking...</span>
+                    <div class="flex items-center gap-2 mb-2">
+                         <div class="think-spinner-container">
+                             <div class="think-spinner-ring"></div>
+                             <img src="/logo.png" class="think-logo-inner">
+                         </div>
+                         <span class="text-xs font-bold text-purple-200 animate-pulse">Dardcor AI Thinking...</span>
                     </div>
                 </div>`;
         }
@@ -904,6 +904,18 @@ document.addEventListener('DOMContentLoaded', () => {
             let buffer = "";
             let isStreaming = true;
             let lastUpdate = 0;
+            let isIdentityShown = false;
+
+            if (!isDeepThinkEnabled) {
+                thinkContainer.innerHTML = `
+                    <div class="flex items-center gap-2 mb-2">
+                         <div class="think-spinner-container">
+                             <div class="think-spinner-ring"></div>
+                             <img src="/logo.png" class="think-logo-inner">
+                         </div>
+                         <span class="text-xs font-bold text-purple-200 animate-pulse">Dardcor AI Thinking...</span>
+                    </div>`;
+            }
 
             const render = (timestamp) => {
                 if (!isStreaming) return;
@@ -915,33 +927,56 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 const thinkMatch = fullText.match(/<think>([\s\S]*?)(?:<\/think>|$)/);
                 
-                if (thinkMatch) {
-                    thinkText = thinkMatch[1].trim();
-                    mainText = fullText.replace(/<think>[\s\S]*?(\s)*?(?:<\/think>|$)/, '').trim();
-                    
-                    const isThinking = !fullText.includes('</think>');
-                    
-                    thinkContainer.innerHTML = `
-                        <details class="deep-think-box group w-full max-w-full" ${isThinking ? 'open' : ''}>
-                            <summary>
-                                <div class="deep-think-header-content">
-                                    <div class="think-spinner-container">
-                                        ${isThinking ? '<div class="think-spinner-ring"></div>' : ''}
-                                        <img src="/logo.png" class="think-logo-inner">
+                if (isDeepThinkEnabled) {
+                    if (thinkMatch) {
+                        thinkText = thinkMatch[1].trim();
+                        mainText = fullText.replace(/<think>[\s\S]*?(\s)*?(?:<\/think>|$)/, '').trim();
+                        
+                        const isThinking = !fullText.includes('</think>');
+                        
+                        thinkContainer.innerHTML = `
+                            <details class="deep-think-box group w-full max-w-full" ${isThinking ? 'open' : ''}>
+                                <summary>
+                                    <div class="deep-think-header-content">
+                                        <div class="think-spinner-container">
+                                            ${isThinking ? '<div class="think-spinner-ring"></div>' : ''}
+                                            <img src="/logo.png" class="think-logo-inner">
+                                        </div>
+                                        <span class="deep-think-title">${isThinking ? 'Dardcor AI Thinking...' : 'Dardcor AI : Show Process'}</span>
+                                        <i class="fas fa-chevron-down deep-think-chevron"></i>
                                     </div>
-                                    <span class="deep-think-title">${isThinking ? 'Dardcor AI Thinking...' : 'Dardcor AI : Show Process'}</span>
+                                </summary>
+                                <div class="deep-think-content">
+                                    <div class="whitespace-pre-wrap">${thinkText}</div>
                                 </div>
-                                <i class="fas fa-chevron-down deep-think-chevron"></i>
-                            </summary>
-                            <div class="deep-think-content">
-                                <div class="whitespace-pre-wrap">${thinkText}</div>
-                            </div>
-                        </details>
-                    `;
+                            </details>
+                        `;
+                    }
+                } else {
+                    mainText = fullText.replace(/<think>[\s\S]*?<\/think>/, '').trim();
+                    if (mainText && !isIdentityShown) {
+                        thinkContainer.innerHTML = `
+                            <div class="bot-identity">
+                                <img src="/logo.png" class="bot-identity-logo">
+                                <span class="bot-identity-name">Dardcor AI</span>
+                            </div>`;
+                        isIdentityShown = true;
+                    }
                 }
 
                 if (mainText) {
-                    identityContainer.classList.remove('hidden');
+                    if (!isDeepThinkEnabled && !isIdentityShown) {
+                         thinkContainer.innerHTML = `
+                            <div class="bot-identity">
+                                <img src="/logo.png" class="bot-identity-logo">
+                                <span class="bot-identity-name">Dardcor AI</span>
+                            </div>`;
+                         isIdentityShown = true;
+                    }
+                    if (!isDeepThinkEnabled) {
+                        identityContainer.classList.add('hidden'); // Hide separate identity container as it's handled in thinkContainer for OFF state
+                    }
+                    
                     mainContainer.classList.remove('hidden');
                     let tempFormatted = mainText;
                     const codeBlockCount = (tempFormatted.match(/```/g) || []).length;
@@ -987,29 +1022,39 @@ document.addEventListener('DOMContentLoaded', () => {
             let mainText = fullText;
             const thinkMatch = fullText.match(/<think>([\s\S]*?)<\/think>/);
             
-            if (thinkMatch) {
-                thinkText = thinkMatch[1].trim();
+            if (isDeepThinkEnabled) {
+                if (thinkMatch) {
+                    thinkText = thinkMatch[1].trim();
+                    mainText = fullText.replace(/<think>[\s\S]*?<\/think>/, '').trim();
+                    thinkContainer.innerHTML = `
+                        <details class="deep-think-box group w-full max-w-full">
+                            <summary>
+                                <div class="deep-think-header-content">
+                                    <div class="think-spinner-container">
+                                        <img src="/logo.png" class="think-logo-inner">
+                                    </div>
+                                    <span class="deep-think-title">Dardcor AI : Show Process</span>
+                                    <i class="fas fa-chevron-down deep-think-chevron"></i>
+                                </div>
+                            </summary>
+                            <div class="deep-think-content">
+                                <div class="whitespace-pre-wrap">${thinkText}</div>
+                            </div>
+                        </details>
+                    `;
+                }
+            } else {
                 mainText = fullText.replace(/<think>[\s\S]*?<\/think>/, '').trim();
                 thinkContainer.innerHTML = `
-                    <details class="deep-think-box group w-full max-w-full">
-                        <summary>
-                            <div class="deep-think-header-content">
-                                <div class="think-spinner-container">
-                                    <img src="/logo.png" class="think-logo-inner">
-                                </div>
-                                <span class="deep-think-title">Dardcor AI : Show Process</span>
-                            </div>
-                            <i class="fas fa-chevron-down deep-think-chevron"></i>
-                        </summary>
-                        <div class="deep-think-content">
-                            <div class="whitespace-pre-wrap">${thinkText}</div>
-                        </div>
-                    </details>
-                `;
+                    <div class="bot-identity">
+                        <img src="/logo.png" class="bot-identity-logo">
+                        <span class="bot-identity-name">Dardcor AI</span>
+                    </div>`;
+                identityContainer.classList.add('hidden');
             }
             
-            if (mainText || !thinkMatch) {
-                identityContainer.classList.remove('hidden');
+            if (mainText || (!thinkMatch && isDeepThinkEnabled)) {
+                if(!isDeepThinkEnabled) identityContainer.classList.add('hidden');
                 mainContainer.classList.remove('hidden');
                 botContent.innerHTML = marked.parse(mainText);
                 if (typeof hljs !== 'undefined') botContent.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));

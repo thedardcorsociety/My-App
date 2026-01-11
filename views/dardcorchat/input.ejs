@@ -9,18 +9,17 @@
             
             <div class="flex justify-between items-center mt-1">
                 <div class="flex gap-2">
-                    <button id="deep-think-btn" type="button" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-purple-800/30 bg-purple-900/10 text-[11px] md:text-xs font-medium text-purple-400 hover:text-white hover:bg-purple-900/30 transition-all cursor-pointer select-none">
-                        <i id="deep-think-icon" class="fas fa-brain text-[10px]"></i>
-                        <span>Deep Think</span>
+                    <button id="deep-think-btn" type="button" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-purple-800/30 bg-purple-900/10 text-[11px] md:text-xs font-medium text-purple-400 hover:text-white hover:bg-purple-900/40 hover:border-purple-500/50 transition-all cursor-pointer group" title="Deep Think (Reasoning)">
+                        <i class="fas fa-brain text-xs group-hover:scale-110 transition-transform"></i> <span>Deep Think</span>
                     </button>
-                    <button id="search-btn" type="button" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-purple-800/30 bg-purple-900/10 text-[11px] md:text-xs font-medium text-purple-400 hover:text-white hover:bg-purple-900/30 transition-all cursor-pointer select-none">
-                        <i id="search-icon" class="fas fa-globe text-[10px]"></i>
-                        <span>Search</span>
+                    
+                    <button id="search-btn" type="button" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-purple-800/30 bg-purple-900/10 text-[11px] md:text-xs font-medium text-purple-400 hover:text-white hover:bg-purple-900/40 hover:border-purple-500/50 transition-all cursor-pointer group" title="Web Search">
+                        <i class="fas fa-globe text-xs group-hover:scale-110 transition-transform"></i> <span>Search</span>
                     </button>
                 </div>
 
                 <div class="flex items-center gap-3 pr-1">
-                    <button id="mic-btn" type="button" class="text-purple-500/40 hover:text-purple-300 transition-colors p-1 cursor-pointer" title="Voice Input">
+                    <button id="mic-btn" type="button" class="text-purple-500/40 hover:text-white transition-colors p-1 cursor-pointer" title="Voice Input">
                         <i class="fas fa-microphone text-lg"></i>
                     </button>
 
@@ -38,10 +37,10 @@
 
         <div class="text-center mt-2 text-[10px] text-purple-500/30">Dardcor AI dapat membuat kesalahan. Cek info penting.</div>
         
-        <div id="drop-zone" class="absolute inset-0 top-0 left-4 right-4 bg-purple-950/90 hidden items-center justify-center rounded-[1.5rem] z-50 backdrop-blur-sm border-2 border-purple-900 border-dashed h-full" style="bottom: 24px;">
-            <div class="text-center">
-                <i class="fas fa-cloud-upload-alt text-4xl text-white mb-2"></i>
-                <p class="text-white font-bold text-sm">Lepaskan file disini</p>
+        <div id="drop-zone" class="absolute inset-0 top-0 left-4 right-4 bg-purple-950/90 hidden items-center justify-center rounded-[1.5rem] z-50 backdrop-blur-sm border-2 border-purple-900 border-dashed h-full">
+            <div class="text-center text-purple-200">
+                <i class="fas fa-cloud-upload-alt text-4xl mb-2 animate-bounce"></i>
+                <p class="font-bold text-sm">Lepaskan file disini</p>
             </div>
         </div>
     </div>
