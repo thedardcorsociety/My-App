@@ -925,14 +925,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 let thinkText = "";
                 let mainText = fullText;
                 
-                const thinkMatch = fullText.match(/<think>([\s\S]*?)(?:<\/think>|$)/);
+                let textToParse = fullText;
+                if (isDeepThinkEnabled && textToParse.trim().length > 0 && !textToParse.includes('<think>')) {
+                    textToParse = "<think>\n" + textToParse;
+                }
+
+                const thinkMatch = textToParse.match(/<think>([\s\S]*?)(?:<\/think>|$)/);
                 
                 if (isDeepThinkEnabled) {
                     if (thinkMatch) {
                         thinkText = thinkMatch[1].trim();
-                        mainText = fullText.replace(/<think>[\s\S]*?(\s)*?(?:<\/think>|$)/, '').trim();
+                        mainText = textToParse.replace(/<think>[\s\S]*?(\s)*?(?:<\/think>|$)/, '').trim();
                         
-                        const isThinking = !fullText.includes('</think>');
+                        const isThinking = !textToParse.includes('</think>');
                         
                         thinkContainer.innerHTML = `
                             <details class="deep-think-box group w-full max-w-full" ${isThinking ? 'open' : ''}>
@@ -1020,13 +1025,38 @@ document.addEventListener('DOMContentLoaded', () => {
             
             let thinkText = "";
             let mainText = fullText;
-            const thinkMatch = fullText.match(/<think>([\s\S]*?)<\/think>/);
+            
+            let textToParse = fullText;
+            if (isDeepThinkEnabled && textToParse.trim().length > 0 && !textToParse.includes('<think>')) {
+                textToParse = "<think>\n" + textToParse;
+            }
+
+            const thinkMatch = textToParse.match(/<think>([\s\S]*?)<\/think>/);
             
             if (isDeepThinkEnabled) {
                 if (thinkMatch) {
                     thinkText = thinkMatch[1].trim();
-                    mainText = fullText.replace(/<think>[\s\S]*?<\/think>/, '').trim();
+                    mainText = textToParse.replace(/<think>[\s\S]*?<\/think>/, '').trim();
                     thinkContainer.innerHTML = `
+                        <details class="deep-think-box group w-full max-w-full">
+                            <summary>
+                                <div class="deep-think-header-content">
+                                    <div class="think-spinner-container">
+                                        <img src="/logo.png" class="think-logo-inner">
+                                    </div>
+                                    <span class="deep-think-title">Dardcor AI : Show Process</span>
+                                    <i class="fas fa-chevron-down deep-think-chevron"></i>
+                                </div>
+                            </summary>
+                            <div class="deep-think-content">
+                                <div class="whitespace-pre-wrap">${thinkText}</div>
+                            </div>
+                        </details>
+                    `;
+                } else if (textToParse.includes('<think>')) {
+                     thinkText = textToParse.replace('<think>', '').trim();
+                     mainText = "";
+                     thinkContainer.innerHTML = `
                         <details class="deep-think-box group w-full max-w-full">
                             <summary>
                                 <div class="deep-think-header-content">
@@ -1053,7 +1083,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 identityContainer.classList.add('hidden');
             }
             
-            if (mainText || (!thinkMatch && isDeepThinkEnabled)) {
+            if (mainText || (!thinkMatch && isDeepThinkEnabled && !textToParse.includes('<think>'))) {
                 if(!isDeepThinkEnabled) identityContainer.classList.add('hidden');
                 mainContainer.classList.remove('hidden');
                 botContent.innerHTML = marked.parse(mainText);

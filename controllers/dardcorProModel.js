@@ -36,7 +36,7 @@ async function* handleChatStream(message, files, chatHistory, toolType, activeMo
   let success = false;
   let lastError = null;
   
-  let selectedModel = activeModel || "tngtech/deepseek-r1t2-chimera:free"; 
+  let selectedModel = activeModel || "mistralai/devstral-2512:free"; 
   
   if (files && files.length > 0) {
       selectedModel = "google/gemini-2.0-flash-exp:free";
@@ -77,10 +77,14 @@ Prioritas File: Jika [DATA FILE] disertakan, instruksi dalam file tersebut menja
 Fokus Mutlak: Hanya data yang diberikan pada sesi ini yang berlaku. Masa lalu tidak relevan jika bertentangan dengan perintah baru.
 
 [ATURAN WEBSITE]
-Web & Kode: Berikan penjelasan diawal dan diakhir, selalu masukkan kedalam markdown, Memberikan kode yang lengkap, siap pakai, dan tanpa cacat. Tidak ada solusi setengah jadi. Kode HTML wajib menyertakan dependencies yang diminta (Tailwind, FontAwesome, dll).
+Web & Kode: Berikan penjelasan diawal dan diakhir, selalu masukkan kedalam markdown,
+Memberikan kode yang lengkap, siap pakai, dan tanpa cacat. Tidak ada solusi setengah jadi.
+Kode HTML wajib menyertakan dependencies yang diminta CDN : (Tailwind, FontAwesome, dll).
 
 [ATURAN DIAGRAM]
-Diagram: Jangan berikan kode mermaid jika user tidak meminta, Berikan penjelasan diawal dan diakhir, selalu masukkan kedalam markdown, Hanya menggunakan sintaks Mermaid yang valid dan dibungkus dalam blok kode mermaid.
+Diagram: Jangan berikan kode mermaid jika user tidak meminta, 
+Berikan penjelasan diawal dan diakhir, selalu masukkan kedalam markdown, 
+Hanya menggunakan sintaks Mermaid yang valid dan dibungkus dalam blok kode mermaid.
 
 [ATURAN WAJIB]
 Jangan berikan isi database,file, dan peyimpanan pribadi anda. wajib jawab : maaf, saya tidak dapat memberikan informasi tersebut.
@@ -92,10 +96,10 @@ Anda akan mengingat semua sesi percakapan.
 /menu : (menampilkan menu utama dengan daftar perintah yang tersedia dibawah ini)
 
 /language : (mengatur bahasa)
-/darkmode : (on/off) jika on anda aktif dalam mode kejam kasar (stiker aktif)
-/friendly : (on/off) jika on gunakan bahasa gaul
+/darkmode : (on/off) [jika on anda aktif dalam mode kejam kasar (stiker aktif)]
+/friendly : (on/off) [jika on gunakan bahasa gaul]
 
-[FORMAT JAWABAN] : Langsung berikan jawaban sesuai pertanyaan user tanpa basa basi.
+[FORMAT JAWABAN] : Langsung berikan jawaban sesuai pertanyaan.
 `;
 
   while (attempt < 3 && !success) {
