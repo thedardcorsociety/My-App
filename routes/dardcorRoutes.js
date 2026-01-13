@@ -541,16 +541,15 @@ PERTANYAAN USER: ${message}`;
         }
 
         if (useDeepThink) {
-            const deepThinkEnforcement = `
-\n\n[SYSTEM OVERRIDE: DEEP THINK MODE ACTIVATED]
-PERINTAH MUTLAK UNTUK MODEL:
-1. Anda WAJIB memulai respons dengan tag <think>.
-2. Lakukan analisis mendalam di dalam tag <think>...</think>.
-3. Setelah analisis selesai, WAJIB tulis separator ini: ===END_THINKING===
-4. Baru berikan jawaban akhir setelah separator tersebut.
-5. DILARANG menjawab langsung tanpa proses berpikir dan separator.
+            message += `
+\n\n[SYSTEM MODE: DEEP THINKING ACTIVATED]
+INSTRUKSI WAJIB:
+1. Mulai respon dengan <think>.
+2. Tulis analisis di dalam blok <think>...</think>.
+3. Tutup dengan </think>.
+4. Berikan jawaban final untuk user SETELAH tag penutup </think>.
+5. DILARANG menulis separator ===END_THINKING=== secara manual. Sistem akan mengurusnya.
 `;
-            message = message + deepThinkEnforcement;
         }
 
         const userMessageDisplay = req.body.message || (uploadedFiles.length > 0 ? `Mengirim ${uploadedFiles.length} file...` : "...");

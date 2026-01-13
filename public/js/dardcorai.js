@@ -86,27 +86,28 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (flexCol) flexCol.appendChild(actionDiv);
                 }
 
-                if (!actionDiv.querySelector('button[title="Edit Pesan"]')) {
-                    const editBtn = document.createElement('button');
-                    editBtn.onclick = function() { window.editMessage(this); };
-                    editBtn.className = "text-[10px] font-medium bg-transparent border-none p-0 text-gray-500 hover:text-white flex items-center gap-1.5 transition-colors";
-                    editBtn.title = "Edit Pesan";
-                    editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit';
-                    
-                    if (actionDiv.firstChild) {
-                        actionDiv.insertBefore(editBtn, actionDiv.firstChild);
-                    } else {
-                        actionDiv.appendChild(editBtn);
-                    }
-                }
+                if (actionDiv) {
+                    let editBtn = actionDiv.querySelector('button[title="Edit Pesan"]');
+                    let copyBtn = actionDiv.querySelector('button[title="Salin Pesan"]');
 
-                if (!actionDiv.querySelector('button[title="Salin Pesan"]')) {
-                    const copyBtn = document.createElement('button');
-                    copyBtn.onclick = function() { window.copyMessageBubble(this); };
-                    copyBtn.className = "text-[10px] font-medium bg-transparent border-none p-0 text-gray-500 hover:text-white flex items-center gap-1.5 transition-colors";
-                    copyBtn.title = "Salin Pesan";
-                    copyBtn.innerHTML = '<i class="fas fa-copy"></i> Salin';
-                    actionDiv.appendChild(copyBtn);
+                    if (!editBtn) {
+                        editBtn = document.createElement('button');
+                        editBtn.onclick = function() { window.editMessage(this); };
+                        editBtn.className = "text-[10px] font-medium bg-transparent border-none p-0 text-gray-500 hover:text-white flex items-center gap-1.5 transition-colors";
+                        editBtn.title = "Edit Pesan";
+                        editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit';
+                    }
+
+                    if (!copyBtn) {
+                        copyBtn = document.createElement('button');
+                        copyBtn.onclick = function() { window.copyMessageBubble(this); };
+                        copyBtn.className = "text-[10px] font-medium bg-transparent border-none p-0 text-gray-500 hover:text-white flex items-center gap-1.5 transition-colors";
+                        copyBtn.title = "Salin Pesan";
+                        copyBtn.innerHTML = '<i class="fas fa-copy"></i> Salin';
+                    }
+
+                    actionDiv.prepend(editBtn);
+                    editBtn.after(copyBtn);
                 }
             }
         });
@@ -128,8 +129,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (trimmedCode.match(/^<!DOCTYPE html/i) || trimmedCode.match(/^<html/i) || trimmedCode.match(/<\/div>/)) lang = 'html';
                 else if (trimmedCode.match(/^<\?php/i) || trimmedCode.match(/\$\w+\s*=/)) lang = 'php';
                 else if (trimmedCode.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|gantt|pie|gitGraph)/i)) lang = 'mermaid';
-                else if (trimmedCode.match(/^(import|export|const|let|var|function|console\.log|=>)/)) lang = 'javascript';
-                else if (trimmedCode.match(/^(def|class|import|from|print\(|elif|if __name__)/)) lang = 'python';
+                
+                else if (trimmedCode.match(/^(def\s|class\s|from\s|import\s+[\w\s,]+from|print\(|if\s+__name__\s*==|elif\s|try:|except:|with\s+open)/m)) lang = 'python';
+                
+                else if (trimmedCode.match(/^(const\s|let\s|var\s|function|console\.log|=>|document\.|window\.|import\s+.*from\s+['"]|export\s)/m)) lang = 'javascript';
+                
                 else if (trimmedCode.match(/^#include/) || trimmedCode.match(/std::/)) lang = 'cpp';
                 else if (trimmedCode.match(/^package main/) || trimmedCode.match(/^func main/)) lang = 'go';
                 else if (trimmedCode.match(/^using System;/) || trimmedCode.match(/Console\.WriteLine/)) lang = 'csharp';
@@ -223,7 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateModelUI(type) {
         const nameMap = { 'basic': 'Basic Model', 'dark': 'Dark Model', 'pro': 'Pro Model' };
         if (toolLabel) toolLabel.innerText = nameMap[type] || 'Basic Model';
-        if (messageInput) messageInput.placeholder = `Ask To Dardcor ${type === 'basic' ? 'Basic' : (type === 'dark' ? 'Dark' : 'Pro')}...`;
+        if (messageInput) messageInput.placeholder = `Ask Dardcor ${type === 'basic' ? 'Basic' : (type === 'dark' ? 'Dark' : 'Pro')}...`;
         currentToolType = type;
     }
     updateModelUI(currentToolType);
@@ -785,7 +789,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderEmptyState() { 
         if (!messageList) return; 
-        messageList.innerHTML = `<div id="empty-state" class="flex flex-col items-center justify-center min-h-[50vh] w-full"><div class="relative w-48 h-48 md:w-56 md:h-56 flex items-center justify-center mb-6 md:mb-8 perspective-[1000px]"><div class="absolute inset-0 bg-purple-900/20 rounded-full blur-3xl animate-pulse"></div><div class="absolute w-[110%] h-[110%] rounded-full border border-purple-500/60 shadow-[0_0_15px_rgba(168,85,247,0.3)] animate-orbit-1 border-t-transparent border-l-transparent"></div><div class="absolute w-[110%] h-[110%] rounded-full border border-fuchsia-500/50 shadow-[0_0_15px_rgba(217,70,239,0.3)] animate-orbit-2 border-b-transparent border-r-transparent"></div><div class="absolute w-[110%] h-[110%] rounded-full border border-violet-500/50 animate-orbit-3 border-t-transparent border-r-transparent"></div><div class="absolute w-[110%] h-[110%] rounded-full border border-indigo-500/40 animate-orbit-4 border-b-transparent border-l-transparent"></div><div class="absolute w-[110%] h-[110%] rounded-full border border-pink-500/40 animate-orbit-5 border-l-transparent border-r-transparent"></div><div class="absolute w-[110%] h-[110%] rounded-full border border-cyan-500/40 animate-orbit-6 border-t-transparent border-b-transparent"></div><div class="w-24 h-24 md:w-28 md:h-28 rounded-full overflow-hidden border-2 border-purple-400/20 bg-[#050508] relative z-10 shadow-[0_0_40px_rgba(147,51,234,0.3)]"><div class="absolute inset-0 bg-gradient-to-b from-purple-900/30 via-transparent to-black z-10"></div><img src="/logo.png" alt="Logo" class="relative w-full h-full object-cover opacity-90"></div></div><h2 class="text-3xl md:text-5xl font-bold mb-2 text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-200 via-white to-purple-400 drop-shadow-[0_0_10px_rgba(168,85,247,0.5)]">Dardcor AI</h2><p class="text-sm md:text-base text-purple-300/60 text-center max-w-xs md:max-w-md px-4 leading-relaxed font-light tracking-wide">Jelajahi kecerdasan buatan tanpa batas</p></div>`; 
+        messageList.innerHTML = `<div id="empty-state" class="flex flex-col items-center justify-center min-h-[50vh] w-full"><div class="relative w-48 h-48 md:w-56 md:h-56 flex items-center justify-center mb-6 md:mb-8 perspective-[1000px]"><div class="absolute inset-0 bg-purple-900/20 rounded-full blur-3xl animate-pulse"></div><div class="absolute w-[110%] h-[110%] rounded-full border border-purple-500/60 shadow-[0_0_15px_rgba(168,85,247,0.3)] animate-orbit-1 border-t-transparent border-l-transparent"></div><div class="absolute w-[110%] h-[110%] rounded-full border border-fuchsia-500/50 shadow-[0_0_15px_rgba(217,70,239,0.3)] animate-orbit-2 border-b-transparent border-r-transparent"></div><div class="absolute w-[110%] h-[110%] rounded-full border border-violet-500/50 animate-orbit-3 border-t-transparent border-r-transparent"></div><div class="absolute w-[110%] h-[110%] rounded-full border border-indigo-500/40 animate-orbit-4 border-b-transparent border-l-transparent"></div><div class="absolute w-[110%] h-[110%] rounded-full border border-pink-500/40 animate-orbit-5 border-l-transparent border-r-transparent"></div><div class="absolute w-[110%] h-[110%] rounded-full border border-cyan-500/40 animate-orbit-6 border-t-transparent border-b-transparent"></div><div class="w-24 h-24 md:w-28 md:h-28 rounded-full overflow-hidden border-2 border-purple-400/20 bg-[#050508] relative z-10 shadow-[0_0_40px_rgba(147,51,234,0.3)]"><div class="absolute inset-0 bg-gradient-to-b from-purple-900/30 via-transparent to-black z-10"></div><img src="/logo.png" alt="Logo" class="relative w-full h-full object-cover opacity-90"></div></div><h2 class="text-3xl md:text-5xl font-bold mb-2 text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-200 via-white to-purple-400 drop-shadow-[0_0_10px_rgba(168,85,247,0.5)]">Dardcor AI</h2><p class="text-sm md:text-base text-purple-300/60 text-center max-w-xs md:max-w-md px-4 leading-relaxed font-light tracking-wide">Apa yang bisa saya bantu?</p></div>`; 
         messageList.className = "w-full max-w-3xl mx-auto flex flex-col h-full items-center justify-center pb-4"; 
     }
 
@@ -940,33 +944,32 @@ document.addEventListener('DOMContentLoaded', () => {
                     mainText = parts.slice(1).join(TRAP_KEYWORD).trim();
                 } else {
                     if (isDeepThinkEnabled && (textToParse.includes('<think>') || !textToParse.includes('</think>'))) {
-                         thinkText = textToParse.replace(/<think>/g, "").trim();
+                         thinkText = textToParse.replace(/<think>|<\/think>/g, "").trim();
                     } else {
                          mainText = textToParse;
                     }
                 }
                 
-                if (isDeepThinkEnabled) {
+                if (isDeepThinkEnabled || thinkText) {
                     const isThinking = !textToParse.includes(TRAP_KEYWORD) && !textToParse.includes('</think>');
-                    if (thinkText) {
-                        thinkContainer.innerHTML = `
-                            <details class="deep-think-box group w-full max-w-full" ${isThinking ? 'open' : ''}>
-                                <summary>
-                                    <div class="deep-think-header-content">
-                                        <div class="think-spinner-container">
-                                            ${isThinking ? '<div class="think-spinner-ring"></div>' : ''}
-                                            <img src="/logo.png" class="think-logo-inner">
-                                        </div>
-                                        <span class="deep-think-title">${isThinking ? 'Dardcor AI Thinking...' : 'Dardcor AI : Show Process'}</span>
-                                        <i class="fas fa-chevron-down deep-think-chevron"></i>
+                    
+                    thinkContainer.innerHTML = `
+                        <details class="deep-think-box group w-full max-w-full" ${isThinking ? 'open' : ''}>
+                            <summary>
+                                <div class="deep-think-header-content">
+                                    <div class="think-spinner-container">
+                                        ${isThinking ? '<div class="think-spinner-ring"></div>' : ''}
+                                        <img src="/logo.png" class="think-logo-inner">
                                     </div>
-                                </summary>
-                                <div class="deep-think-content">
-                                    <div class="whitespace-pre-wrap">${thinkText}</div>
+                                    <span class="deep-think-title">${isThinking ? 'Dardcor AI Thinking...' : 'Dardcor AI : Show Process'}</span>
+                                    <i class="fas fa-chevron-down deep-think-chevron"></i>
                                 </div>
-                            </details>
-                        `;
-                    }
+                            </summary>
+                            <div class="deep-think-content">
+                                <div class="whitespace-pre-wrap">${thinkText}</div>
+                            </div>
+                        </details>
+                    `;
                 } else {
                     if (mainText && !isIdentityShown) {
                         thinkContainer.innerHTML = `
@@ -1048,25 +1051,25 @@ document.addEventListener('DOMContentLoaded', () => {
                  }
             }
             
-            if (isDeepThinkEnabled) {
-                if (thinkText) {
-                    thinkContainer.innerHTML = `
-                        <details class="deep-think-box group w-full max-w-full">
-                            <summary>
-                                <div class="deep-think-header-content">
-                                    <div class="think-spinner-container">
-                                        <img src="/logo.png" class="think-logo-inner">
-                                    </div>
-                                    <span class="deep-think-title">Dardcor AI : Show Process</span>
-                                    <i class="fas fa-chevron-down deep-think-chevron"></i>
+            if (isDeepThinkEnabled || thinkText) {
+                const isThinking = !textToParse.includes(TRAP_KEYWORD) && !textToParse.includes('</think>');
+                thinkContainer.innerHTML = `
+                    <details class="deep-think-box group w-full max-w-full" ${isThinking ? 'open' : ''}>
+                        <summary>
+                            <div class="deep-think-header-content">
+                                <div class="think-spinner-container">
+                                    ${isThinking ? '<div class="think-spinner-ring"></div>' : ''}
+                                    <img src="/logo.png" class="think-logo-inner">
                                 </div>
-                            </summary>
-                            <div class="deep-think-content">
-                                <div class="whitespace-pre-wrap">${thinkText}</div>
+                                <span class="deep-think-title">${isThinking ? 'Dardcor AI Thinking...' : 'Dardcor AI : Show Process'}</span>
+                                <i class="fas fa-chevron-down deep-think-chevron"></i>
                             </div>
-                        </details>
-                    `;
-                }
+                        </summary>
+                        <div class="deep-think-content">
+                            <div class="whitespace-pre-wrap">${thinkText}</div>
+                        </div>
+                    </details>
+                `;
             } else {
                 thinkContainer.innerHTML = `
                     <div class="bot-identity">
