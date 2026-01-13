@@ -704,15 +704,27 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             let deepThinkHtml = '';
             
-            let processedText = text.replace(/===END_THINKING===/g, '</think>');
-            
+            const TRAP_KEYWORD = "===END_THINKING===";
+            let parts = text.split(TRAP_KEYWORD);
             let thinkText = "";
-            const thinkMatches = [...processedText.matchAll(/<think>([\s\S]*?)(?:<\/think>|$)/g)];
-            if (thinkMatches.length > 0) {
-                thinkText = thinkMatches.map(m => m[1].trim()).join('\n\n');
+            let mainText = "";
+
+            if (parts.length > 1) {
+                thinkText = parts[0].replace(/<think>|<\/think>/g, "").trim();
+                mainText = parts.slice(1).join(TRAP_KEYWORD).trim();
+            } else {
+                if (text.includes('<think>')) {
+                    const thinkMatch = text.match(/<think>([\s\S]*?)(?:<\/think>|$)/);
+                    if (thinkMatch) {
+                        thinkText = thinkMatch[1].trim();
+                        mainText = text.replace(/<think>[\s\S]*?(?:<\/think>|$)/, "").trim();
+                    } else {
+                         mainText = text;
+                    }
+                } else {
+                    mainText = text;
+                }
             }
-            
-            let mainText = processedText.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim();
             
             if (thinkText) {
                 deepThinkHtml = `
@@ -899,6 +911,8 @@ document.addEventListener('DOMContentLoaded', () => {
             let isStreaming = true;
             let lastUpdate = 0;
             let isIdentityShown = false;
+            
+            const TRAP_KEYWORD = "===END_THINKING===";
 
             if (!isDeepThinkEnabled) {
                 thinkContainer.innerHTML = `
@@ -917,22 +931,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 lastUpdate = timestamp;
                 
                 let textToParse = fullText;
-                if (isDeepThinkEnabled && textToParse.trim().length > 0 && !textToParse.includes('<think>')) {
-                    textToParse = "<think>\n" + textToParse;
-                }
-                
-                let processedText = textToParse.replace(/===END_THINKING===/g, '</think>');
-
                 let thinkText = "";
-                const thinkMatches = [...processedText.matchAll(/<think>([\s\S]*?)(?:<\/think>|$)/g)];
-                if (thinkMatches.length > 0) {
-                    thinkText = thinkMatches.map(m => m[1].trim()).join('\n\n');
+                let mainText = "";
+
+                if (textToParse.includes(TRAP_KEYWORD)) {
+                    let parts = textToParse.split(TRAP_KEYWORD);
+                    thinkText = parts[0].replace(/<think>|<\/think>/g, "").trim();
+                    mainText = parts.slice(1).join(TRAP_KEYWORD).trim();
+                } else {
+                    if (isDeepThinkEnabled && (textToParse.includes('<think>') || !textToParse.includes('</think>'))) {
+                         thinkText = textToParse.replace(/<think>/g, "").trim();
+                    } else {
+                         mainText = textToParse;
+                    }
                 }
-                
-                let mainText = processedText.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim();
-                const isThinking = processedText.lastIndexOf('<think>') > processedText.lastIndexOf('</think>');
                 
                 if (isDeepThinkEnabled) {
+                    const isThinking = !textToParse.includes(TRAP_KEYWORD) && !textToParse.includes('</think>');
                     if (thinkText) {
                         thinkContainer.innerHTML = `
                             <details class="deep-think-box group w-full max-w-full" ${isThinking ? 'open' : ''}>
@@ -1018,19 +1033,20 @@ document.addEventListener('DOMContentLoaded', () => {
             isStreaming = false; 
             
             let textToParse = fullText;
-            if (isDeepThinkEnabled && textToParse.trim().length > 0 && !textToParse.includes('<think>')) {
-                textToParse = "<think>\n" + textToParse;
-            }
-            
-            let processedText = textToParse.replace(/===END_THINKING===/g, '</think>');
-
             let thinkText = "";
-            const thinkMatches = [...processedText.matchAll(/<think>([\s\S]*?)(?:<\/think>|$)/g)];
-            if (thinkMatches.length > 0) {
-                thinkText = thinkMatches.map(m => m[1].trim()).join('\n\n');
+            let mainText = "";
+
+            if (textToParse.includes(TRAP_KEYWORD)) {
+                let parts = textToParse.split(TRAP_KEYWORD);
+                thinkText = parts[0].replace(/<think>|<\/think>/g, "").trim();
+                mainText = parts.slice(1).join(TRAP_KEYWORD).trim();
+            } else {
+                 if (isDeepThinkEnabled && textToParse.includes('<think>')) {
+                      thinkText = textToParse.replace(/<think>|<\/think>/g, "").trim();
+                 } else {
+                      mainText = textToParse;
+                 }
             }
-            
-            let mainText = processedText.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim();
             
             if (isDeepThinkEnabled) {
                 if (thinkText) {
@@ -1100,10 +1116,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 const mdBody = target.classList.contains('markdown-body') ? target : target.querySelector('.markdown-body');
                 if (mdBody && typeof marked !== 'undefined') { 
                     let rawVal = String(raw.value || '');
-                    let processedText = rawVal.replace(/===END_THINKING===/g, '</think>');
-                    processedText = processedText.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim();
                     
-                    mdBody.innerHTML = marked.parse(processedText); 
+                    const TRAP_KEYWORD = "===END_THINKING===";
+                    let mainText = "";
+                    if (rawVal.includes(TRAP_KEYWORD)) {
+                        mainText = rawVal.split(TRAP_KEYWORD).slice(1).join(TRAP_KEYWORD).trim();
+                    } else {
+                        mainText = rawVal.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim();
+                    }
+                    
+                    mdBody.innerHTML = marked.parse(mainText); 
                     if (window.renderMathInElement) renderMathInElement(mdBody, { delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }], throwOnError: false }); 
                     mdBody.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
                 } 
