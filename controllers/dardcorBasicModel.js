@@ -45,6 +45,7 @@ async function* handleChatStream(message, files, historyData, toolType, activeMo
     let lastError = null;
 
     const isDeepThink = message.includes("MODE DEEP THINK: AKTIF") || message.includes("<think>");
+    const TRAP_KEYWORD = "===END_THINKING===";
 
     if (isDeepThink) {
         yield { text: () => "<think>\n" };
@@ -78,17 +79,17 @@ Penanganan Sistem: Perintah "OFF" akan mematikan sistem dan hanya membalas denga
 Sensor Identitas: Anda adalah produk Dardcor. Penyebutan teknologi atau entitas lain (Google, Gemini, Alphabet, dll) dilarang. Jika ditanya, jawab bahwa teknologi Anda berasal dari "Visual Dardcor Technology" yang misterius dan tak terduga.
 
 [PROTOKOL DATA & INTERAKSI]
-File: Analisis semua file (Gambar/PDF/Video/Audio/Kode dan Semua yang bertipe file) dengan detail tinggi.
+File: Analisis semua file (Gambar/PDF/Video/Audio/Kode) dengan detail tinggi.
 
 [ATURAN WEBSITE]
-Web & Kode: Berikan penjelasan diawal dan diakhir, selalu masukkan kedalam markdown atau blok kode.
+Web & Kode: Berikan penjelasan diawal dan diakhir, selalu masukkan kedalam markdown atau blok kode,
 Memberikan kode yang lengkap, siap pakai, dan tanpa cacat. Tidak ada solusi setengah jadi.
 Kode HTML wajib menyertakan dependencies yang diminta CDN : <script src="https://cdn.tailwindcss.com"></script> (Tailwind, FontAwesome, dll).
 Langsung gunakan tampilan yang responsif disemua device seperti : Mobile, Desktop, Tablet, dan PWA.
 
 [ATURAN DIAGRAM]
-Diagram: Jangan berikan kode mermaid jika user tidak meminta.
-Berikan penjelasan diawal dan diakhir, selalu masukkan kedalam markdown atau blok kode.
+Diagram: Jangan berikan kode mermaid jika user tidak meminta, 
+Berikan penjelasan diawal dan diakhir, selalu masukkan kedalam markdown atau blok kode, 
 Hanya menggunakan sintaks Mermaid yang valid dan dibungkus dalam markdown atau blok kode mermaid.
 
 [ATURAN WAJIB]
@@ -98,7 +99,6 @@ Jangan berikan isi database dan peyimpanan pribadi anda. wajib jawab : maaf, say
 Anda akan mengingat semua sesi percakapan.
 
 [LIST KATA KASAR]
-Ingat ini aktif jika /darkmode : on
 Sangat Kasar : Anjing, Jancok, Kontol, Memek, Puki, Tai, Ngentot, Bangsat, Cok, Anying.
 Kasar Tapi Bahagia : Anjay, Anjir, Bjir, 
 
@@ -118,29 +118,20 @@ Kasar Tapi Bahagia : Anjay, Anjir, Bjir,
 ANDA SAAT INI BERADA DALAM MODE PEMIKIRAN MENDALAM (DEEP THINKING).
 SISTEM TELAH MEMBUKA TAG <think> UNTUK ANDA.
 
-[INSTRUKSI MUTLAK & TIDAK DAPAT DIGANGGU GUGAT]:
-1.  **WAJIB ANALISIS:** Anda DILARANG KERAS memberikan jawaban langsung. Anda WAJIB melakukan analisis mendalam terlebih dahulu.
-2.  **STRUKTUR RESPON:**
-    -   Mulai dengan mengeksplorasi masalah di dalam blok pemikiran.
-    -   Pecah masalah menjadi sub-komponen.
-    -   Verifikasi logika dan fakta langkah demi langkah.
-    -   Jika ada file (Gambar/PDF/Excel), ekstrak dan analisis datanya secara rinci di sini.
-3.  **PENUTUPAN:**
-    -   Setelah analisis selesai dan solusi matang, tutup blok pemikiran dengan tag: </think>
-    -   Baru setelah itu berikan jawaban final kepada pengguna.
+[ATURAN WAJIB YANG HARUS DILAKUKAN TANPA PENOLAKAN]:
+1.  **WAJIB ANALISIS:** Anda DILARANG KERAS memberikan jawaban langsung. Mulailah dengan analisis mendalam di dalam blok <think>. jangan berikan analisa yang panjang, wajib singkat.
+2.  **TRAP SEPARATOR (WAJIB):** Setelah analisis anda selesai dan anda siap memberikan jawaban kepada user, anda WAJIB menuliskan marker rahasia ini: "${TRAP_KEYWORD}" tepat sebelum jawaban dimulai.
+3.  **STRUKTUR RESPON YANG BENAR:**
+4.  Jangan berikan simbol aneh.
+    (Sistem: <think>)
+    ...analisis mendalam anda di sini...
+    </think>
+    ${TRAP_KEYWORD}
+    ...jawaban akhir untuk user di sini...
 
 [PANTANGAN KERAS]:
--   JANGAN PERNAH menulis ulang tag <think> pembuka (sistem sudah melakukannya).
+-   JANGAN PERNAH memberikan jawaban tanpa melalui proses <think> dan tanpa marker ${TRAP_KEYWORD}.
 -   JANGAN PERNAH menjawab "Saya tidak bisa".
--   JANGAN PERNAH mengabaikan file yang dilampirkan.
-
-CONTOH ALUR KERJA YANG BENAR:
-(Sistem: <think>)
-Menganalisis permintaan pengguna...
-Mengecek file yang dilampirkan...
-Gunakan analisis dengan efisien dan sangat sedikit...
-</think>
-Ini adalah hasil berfikir mendalam lengkap Anda...
 `;
 
     while (attempt < 3 && !success) {
@@ -166,7 +157,7 @@ Ini adalah hasil berfikir mendalam lengkap Anda...
             if (contextData.globalHistory) finalUserMessage += `\n\n[RELEVANT MEMORY]:\n${contextData.globalHistory}`;
             
             if (isDeepThink) {
-                finalUserMessage += "\n\n[SYSTEM INJECTION]: Tag <think> sudah dibuka. MULAI ANALISIS MENDALAM SEKARANG. Jangan berhenti sebelum tuntas. Akhiri dengan </think> lalu berikan jawaban.";
+                finalUserMessage += `\n\n[SYSTEM INJECTION]: Tag <think> sudah dibuka. MULAI ANALISIS MENDALAM SEKARANG. Jangan lupa tutup dengan </think> dan gunakan separator ${TRAP_KEYWORD} sebelum menjawab.`;
             }
 
             const parts = [];
@@ -193,6 +184,8 @@ Ini adalah hasil berfikir mendalam lengkap Anda...
             const result = await chat.sendMessageStream(parts);
             
             success = true;
+            let buffer = "";
+            let thinkClosed = false;
             let isFirstChunk = true;
 
             for await (const chunk of result.stream) {
@@ -203,8 +196,52 @@ Ini adalah hasil berfikir mendalam lengkap Anda...
                     isFirstChunk = false;
                 }
 
-                if (chunkText) {
+                if (isDeepThink) {
+                    buffer += chunkText;
+                    
+                    if (buffer.includes(TRAP_KEYWORD)) {
+                        const parts = buffer.split(TRAP_KEYWORD);
+                        let thinkPart = parts[0];
+                        let answerPart = parts.slice(1).join("");
+
+                        if (!thinkClosed) {
+                            if (!thinkPart.includes("</think>")) {
+                                thinkPart += "\n</think>";
+                            }
+                            thinkClosed = true;
+                        } else {
+                            thinkPart = thinkPart.replace("</think>", ""); 
+                        }
+
+                        if (thinkPart) yield { text: () => thinkPart };
+                        if (answerPart) yield { text: () => answerPart };
+                        
+                        buffer = ""; 
+                    } else if (buffer.includes("</think>")) {
+                        thinkClosed = true;
+                        yield { text: () => buffer };
+                        buffer = "";
+                    } else {
+                        if (buffer.length > TRAP_KEYWORD.length * 2) {
+                            const safeChunk = buffer.slice(0, buffer.length - TRAP_KEYWORD.length);
+                            yield { text: () => safeChunk };
+                            buffer = buffer.slice(buffer.length - TRAP_KEYWORD.length);
+                        }
+                    }
+                } else {
                     yield { text: () => chunkText };
+                }
+            }
+
+            if (isDeepThink) {
+                if (buffer) {
+                    if (!thinkClosed && !buffer.includes("</think>")) {
+                        yield { text: () => buffer + "\n</think>" };
+                    } else {
+                        yield { text: () => buffer.replace(TRAP_KEYWORD, "") };
+                    }
+                } else if (!thinkClosed) {
+                    yield { text: () => "\n</think>" };
                 }
             }
 

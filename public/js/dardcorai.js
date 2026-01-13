@@ -703,13 +703,18 @@ document.addEventListener('DOMContentLoaded', () => {
             contentHtml = `<div class="whitespace-pre-wrap break-words user-text">${text.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" class="text-purple-500 hover:text-purple-300 hover:underline break-all">$1</a>')}</div>`;
         } else {
             let deepThinkHtml = '';
-            let mainText = text;
             
-            const thinkMatches = [...text.matchAll(/<think>([\s\S]*?)(?:<\/think>|$)/g)];
+            let processedText = text.replace(/===END_THINKING===/g, '</think>');
+            
+            let thinkText = "";
+            const thinkMatches = [...processedText.matchAll(/<think>([\s\S]*?)(?:<\/think>|$)/g)];
             if (thinkMatches.length > 0) {
-                const cleanThink = thinkMatches.map(m => m[1].trim()).join('\n\n');
-                mainText = text.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim();
-                
+                thinkText = thinkMatches.map(m => m[1].trim()).join('\n\n');
+            }
+            
+            let mainText = processedText.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim();
+            
+            if (thinkText) {
                 deepThinkHtml = `
                     <details class="deep-think-box group w-full max-w-full">
                         <summary>
@@ -722,7 +727,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             </div>
                         </summary>
                         <div class="deep-think-content">
-                            <div class="whitespace-pre-wrap">${cleanThink}</div>
+                            <div class="whitespace-pre-wrap">${thinkText}</div>
                         </div>
                     </details>
                 `;
@@ -915,15 +920,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (isDeepThinkEnabled && textToParse.trim().length > 0 && !textToParse.includes('<think>')) {
                     textToParse = "<think>\n" + textToParse;
                 }
+                
+                let processedText = textToParse.replace(/===END_THINKING===/g, '</think>');
 
                 let thinkText = "";
-                const thinkMatches = [...textToParse.matchAll(/<think>([\s\S]*?)(?:<\/think>|$)/g)];
+                const thinkMatches = [...processedText.matchAll(/<think>([\s\S]*?)(?:<\/think>|$)/g)];
                 if (thinkMatches.length > 0) {
                     thinkText = thinkMatches.map(m => m[1].trim()).join('\n\n');
                 }
                 
-                let mainText = textToParse.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim();
-                const isThinking = textToParse.lastIndexOf('<think>') > textToParse.lastIndexOf('</think>');
+                let mainText = processedText.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim();
+                const isThinking = processedText.lastIndexOf('<think>') > processedText.lastIndexOf('</think>');
                 
                 if (isDeepThinkEnabled) {
                     if (thinkText) {
@@ -1014,14 +1021,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if (isDeepThinkEnabled && textToParse.trim().length > 0 && !textToParse.includes('<think>')) {
                 textToParse = "<think>\n" + textToParse;
             }
+            
+            let processedText = textToParse.replace(/===END_THINKING===/g, '</think>');
 
             let thinkText = "";
-            const thinkMatches = [...textToParse.matchAll(/<think>([\s\S]*?)(?:<\/think>|$)/g)];
+            const thinkMatches = [...processedText.matchAll(/<think>([\s\S]*?)(?:<\/think>|$)/g)];
             if (thinkMatches.length > 0) {
                 thinkText = thinkMatches.map(m => m[1].trim()).join('\n\n');
             }
             
-            let mainText = textToParse.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim();
+            let mainText = processedText.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim();
             
             if (isDeepThinkEnabled) {
                 if (thinkText) {
@@ -1090,7 +1099,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (target && (target.classList.contains('markdown-body') || target.querySelector('.markdown-body'))) { 
                 const mdBody = target.classList.contains('markdown-body') ? target : target.querySelector('.markdown-body');
                 if (mdBody && typeof marked !== 'undefined') { 
-                    let processedText = String(raw.value || '');
+                    let rawVal = String(raw.value || '');
+                    let processedText = rawVal.replace(/===END_THINKING===/g, '</think>');
                     processedText = processedText.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim();
                     
                     mdBody.innerHTML = marked.parse(processedText); 
