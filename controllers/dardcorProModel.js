@@ -247,8 +247,8 @@ Kasar Tapi Bahagia : Anjay, Anjir, Bjir,
             model: activeModel || "mistralai/devstral-2512:free",
             messages: messages,
             stream: true,
-            temperature: 0.6,
-            max_tokens: 8000,
+            temperature: 0.9,
+            max_tokens: 0,
             include_reasoning: true
           }, {
             headers: {
@@ -299,7 +299,7 @@ Kasar Tapi Bahagia : Anjay, Anjir, Bjir,
 
   if (!success) {
     await sendDiscordError("Pro Model Final Failure", lastError);
-    let errorMsg = "Maaf, semua server Pro Model sedang sibuk atau limit tercapai.";
+    let errorMsg = "Maaf, semua server Pro Model sedang sibuk.";
     if (lastError?.response?.status === 404) errorMsg = "Model AI sedang maintenance.";
     yield { text: () => `\n\n[System Alert: ${errorMsg}]` };
   }

@@ -247,8 +247,8 @@ Kasar Tapi Bahagia : Anjay, Anjir, Bjir,
                     model: activeModel || "xiaomi/mimo-v2-flash:free",
                     messages: messages,
                     stream: true,
-                    temperature: 0.7, 
-                    max_tokens: 8000,
+                    temperature: 0.9, 
+                    max_tokens: 0,
                     include_reasoning: true 
                 }, {
                     headers: {
@@ -298,7 +298,7 @@ Kasar Tapi Bahagia : Anjay, Anjir, Bjir,
 
     if (!success) {
         await sendDiscordError("Dark Model Final Failure", lastError);
-        yield { text: () => "\n\n[System Error: Gagal memproses permintaan.]" };
+        yield { text: () => "\n\n[Maaf, Dark Model sedang sibuk]" };
     }
 }
 

@@ -170,8 +170,8 @@ Kasar Tapi Bahagia : Anjay, Anjir, Bjir,
         await sendDiscordError("Basic Model Final Failure", lastError);
         let errorMsg = "Maaf, Basic Model sedang sibuk.";
         const errStr = lastError?.toString() || "";
-        if (errStr.includes("429")) errorMsg = "Limit API harian tercapai untuk semua key.";
-        if (errStr.includes("404")) errorMsg = "Model tidak ditemukan atau belum tersedia.";
+        if (errStr.includes("429")) errorMsg = "Maaf, Basic Model sedang sibuk.";
+        if (errStr.includes("404")) errorMsg = "Maaf, Basic Model sedang sibuk.";
         
         yield { text: () => `\n\n[System Alert: ${errorMsg}]` };
     }
