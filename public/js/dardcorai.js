@@ -1,24 +1,10 @@
 document.addEventListener('DOMContentLoaded', () => {
     const style = document.createElement('style');
     style.innerHTML = `
-        .terminal-code {
-            overflow-x: auto;
-            scrollbar-width: thin;
-            scrollbar-color: #4b5563 transparent;
-        }
-        .terminal-code::-webkit-scrollbar { 
-            height: 4px !important;
-            width: 4px !important;
-            background: transparent !important;
-            display: block !important;
-        }
-        .terminal-code::-webkit-scrollbar-track {
-            background: transparent !important;
-        }
-        .terminal-code::-webkit-scrollbar-thumb {
-            background-color: #4b5563 !important;
-            border-radius: 4px !important;
-        }
+        .terminal-code { overflow-x: auto; scrollbar-width: thin; scrollbar-color: #4b5563 transparent; }
+        .terminal-code::-webkit-scrollbar { height: 4px !important; width: 4px !important; background: transparent !important; display: block !important; }
+        .terminal-code::-webkit-scrollbar-track { background: transparent !important; }
+        .terminal-code::-webkit-scrollbar-thumb { background-color: #4b5563 !important; border-radius: 4px !important; }
         .hljs { color: #e2e8f0 !important; background: transparent !important; }
         .hljs-keyword, .hljs-selector-tag, .hljs-built_in, .hljs-name, .hljs-tag { color: #a855f7 !important; font-weight: bold; text-shadow: 0 0 5px rgba(168, 85, 247, 0.3); }
         .hljs-string, .hljs-title, .hljs-section, .hljs-attribute, .hljs-literal, .hljs-template-tag, .hljs-template-variable, .hljs-type, .hljs-addition { color: #22c55e !important; }
@@ -27,8 +13,39 @@ document.addEventListener('DOMContentLoaded', () => {
         .hljs-function, .hljs-title.function_ { color: #3b82f6 !important; }
         .hljs-variable { color: #eab308 !important; }
         
-        details.deep-think-box > summary { list-style: none; }
-        details.deep-think-box > summary::-webkit-details-marker { display: none; }
+        details.unified-header { width: fit-content; margin-bottom: 6px; display: block; border: none !important; background: transparent !important; outline: none !important; box-shadow: none !important; }
+        details.unified-header > summary { list-style: none; display: flex; align-items: center; width: fit-content; outline: none !important; cursor: pointer; border: none !important; background: transparent !important; padding: 0; margin: 0; }
+        details.unified-header > summary::-webkit-details-marker { display: none; }
+
+        .header-content-wrapper { display: flex; align-items: center; gap: 10px; padding: 4px 0; opacity: 0.95; transition: opacity 0.2s; user-select: none; white-space: nowrap; background: transparent !important; border: none !important; box-shadow: none !important; }
+        .header-content-wrapper:hover { opacity: 1; }
+        .header-content-wrapper.static-mode { cursor: default; }
+        
+        .logo-stack { position: relative; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .main-logo { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; position: relative; z-index: 2; box-shadow: 0 0 10px rgba(168, 85, 247, 0.4); }
+        .spinner-ring { position: absolute; inset: -3px; border: 2px solid transparent; border-top-color: #a855f7; border-right-color: #a855f7; border-radius: 50%; animation: spin 1s linear infinite; z-index: 1; opacity: 0; transition: opacity 0.3s; }
+        .spinner-ring.active { opacity: 1; }
+        
+        .bot-name-display { font-size: 13px; font-weight: 700; color: #e9d5ff; letter-spacing: 0.5px; text-shadow: 0 0 10px rgba(168, 85, 247, 0.3); }
+        .toggle-chevron { font-size: 10px; color: #a78bfa; transition: transform 0.3s ease; opacity: 0.8; margin-left: 2px; flex-shrink: 0; display: inline-block; }
+        details[open] .toggle-chevron { transform: rotate(180deg); }
+        
+        .think-content-box { margin-top: 6px; margin-bottom: 12px; margin-left: 8px; padding: 10px 14px; background: rgba(15, 15, 20, 0.5); border-left: 2px solid #a855f7; border-radius: 0 6px 6px 0; font-family: 'Consolas', monospace; font-size: 11px; line-height: 1.6; color: #cbd5e1; width: 100%; max-width: 95%; overflow-x: hidden; white-space: pre-wrap; }
+        
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes orbit-1 { 0% { transform: rotate3d(1, 1, 1, 0deg); } 100% { transform: rotate3d(1, 1, 1, 360deg); } }
+        @keyframes orbit-2 { 0% { transform: rotate3d(1, -1, 1, 0deg); } 100% { transform: rotate3d(1, -1, 1, 360deg); } }
+        @keyframes orbit-3 { 0% { transform: rotate3d(-1, 1, 1, 0deg); } 100% { transform: rotate3d(-1, 1, 1, 360deg); } }
+        @keyframes orbit-4 { 0% { transform: rotate3d(1, 1, -1, 0deg); } 100% { transform: rotate3d(1, 1, -1, 360deg); } }
+        @keyframes orbit-5 { 0% { transform: rotate3d(0, 1, 1, 0deg); } 100% { transform: rotate3d(0, 1, 1, 360deg); } }
+        @keyframes orbit-6 { 0% { transform: rotate3d(1, 0, 0, 0deg); } 100% { transform: rotate3d(1, 0, 0, 360deg); } }
+        
+        .animate-orbit-1 { animation: orbit-1 6s linear infinite; }
+        .animate-orbit-2 { animation: orbit-2 7s linear infinite; }
+        .animate-orbit-3 { animation: orbit-3 8s linear infinite; }
+        .animate-orbit-4 { animation: orbit-4 9s linear infinite; }
+        .animate-orbit-5 { animation: orbit-5 10s linear infinite; }
+        .animate-orbit-6 { animation: orbit-6 11s linear infinite; }
     `;
     document.head.appendChild(style);
 
@@ -73,23 +90,33 @@ document.addEventListener('DOMContentLoaded', () => {
     const deepThinkBtn = document.getElementById('deep-think-btn');
     const searchBtn = document.getElementById('search-btn');
 
+    function parseMessageContent(text) {
+        if (!text) return { think: '', answer: '', hasDeepThink: false };
+        const safeText = text.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+        const thinkRegex = /<think>([\s\S]*?)<\/think>/i;
+        const match = safeText.match(thinkRegex);
+        if (match) {
+            return { think: match[1].trim(), answer: safeText.replace(match[0], '').trim(), hasDeepThink: true };
+        } else if (safeText.includes('<think>') && !safeText.includes('</think>')) {
+            return { think: safeText.replace('<think>', '').trim(), answer: '', hasDeepThink: true };
+        }
+        return { think: '', answer: safeText, hasDeepThink: false };
+    }
+
     function injectEditButtonsOnLoad() {
         const userBubbles = document.querySelectorAll('.message-bubble-container');
         userBubbles.forEach(container => {
             if (container.classList.contains('justify-end')) {
                 let actionDiv = container.querySelector('.flex.items-center.gap-3');
-                
                 if (!actionDiv) {
                     actionDiv = document.createElement('div');
                     actionDiv.className = "flex items-center gap-3 mt-1 px-1 select-none opacity-50 group-hover:opacity-100 transition-opacity";
                     const flexCol = container.querySelector('.flex.flex-col');
                     if (flexCol) flexCol.appendChild(actionDiv);
                 }
-
                 if (actionDiv) {
                     let editBtn = actionDiv.querySelector('button[title="Edit Pesan"]');
                     let copyBtn = actionDiv.querySelector('button[title="Salin Pesan"]');
-
                     if (!editBtn) {
                         editBtn = document.createElement('button');
                         editBtn.onclick = function() { window.editMessage(this); };
@@ -97,7 +124,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         editBtn.title = "Edit Pesan";
                         editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit';
                     }
-
                     if (!copyBtn) {
                         copyBtn = document.createElement('button');
                         copyBtn.onclick = function() { window.copyMessageBubble(this); };
@@ -105,7 +131,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         copyBtn.title = "Salin Pesan";
                         copyBtn.innerHTML = '<i class="fas fa-copy"></i> Salin';
                     }
-
                     actionDiv.prepend(editBtn);
                     editBtn.after(copyBtn);
                 }
@@ -119,21 +144,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (typeof marked !== 'undefined') {
         const renderer = new marked.Renderer();
-        
         renderer.code = function(code, language) {
             let validCode = (typeof code === 'string' ? code : (code.text || ''));
             let lang = (language || '').toLowerCase().trim().split(/\s+/)[0] || 'text';
             const trimmedCode = validCode.trim();
-
             if (['text', 'txt', 'code', ''].includes(lang)) {
                 if (trimmedCode.match(/^<!DOCTYPE html/i) || trimmedCode.match(/^<html/i) || trimmedCode.match(/<\/div>/)) lang = 'html';
                 else if (trimmedCode.match(/^<\?php/i) || trimmedCode.match(/\$\w+\s*=/)) lang = 'php';
                 else if (trimmedCode.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|gantt|pie|gitGraph)/i)) lang = 'mermaid';
-                
                 else if (trimmedCode.match(/^(def\s|class\s|from\s|import\s+[\w\s,]+from|print\(|if\s+__name__\s*==|elif\s|try:|except:|with\s+open)/m)) lang = 'python';
-                
                 else if (trimmedCode.match(/^(const\s|let\s|var\s|function|console\.log|=>|document\.|window\.|import\s+.*from\s+['"]|export\s)/m)) lang = 'javascript';
-                
                 else if (trimmedCode.match(/^#include/) || trimmedCode.match(/std::/)) lang = 'cpp';
                 else if (trimmedCode.match(/^package main/) || trimmedCode.match(/^func main/)) lang = 'go';
                 else if (trimmedCode.match(/^using System;/) || trimmedCode.match(/Console\.WriteLine/)) lang = 'csharp';
@@ -143,16 +163,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 else if (trimmedCode.match(/^\{[\s\S]*"[^"]+":/)) lang = 'json';
                 else if (trimmedCode.match(/^#!/)) lang = 'bash';
             }
-
             let btnHtml = '';
             if (['html', 'xml', 'ejs', 'php', 'svg'].includes(lang)) {
                 btnHtml = `<button onclick="window.previewCode(this)" class="cmd-btn btn-preview" style="font-size: 10px; padding: 2px 8px; background-color: #2e1065; color: white;"><i class="fas fa-play"></i> Preview</button>`;
             } else if (lang === 'mermaid') {
                 btnHtml = `<button onclick="window.previewDiagram(this)" class="cmd-btn btn-diagram" style="font-size: 10px; padding: 2px 8px; background-color: #2e1065; color: white;"><i class="fas fa-project-diagram"></i> Preview Diagram</button>`;
             }
-
             const escapedCode = validCode.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-
             return `<div class="terminal-container" style="background-color: #000000 !important; border: 1px solid #333; margin: 10px 0; max-width: 100%;">
                         <div class="terminal-head" style="height: 32px; padding: 0 12px; background-color: #000000 !important; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #333;">
                             <div class="text-[10px] font-bold text-gray-400 uppercase flex items-center"><i class="fas fa-code mr-2"></i> ${lang}</div>
@@ -167,35 +184,18 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </div>`;
         };
-        
         renderer.link = function(href, title, text) {
             let u, t;
-            if (typeof href === 'object' && href !== null) {
-                u = href.href || '';
-                t = href.text || u;
-            } else {
-                u = href || '';
-                t = text || u;
-            }
-
-            u = String(u).trim();
-            t = String(t).trim();
-
+            if (typeof href === 'object' && href !== null) { u = href.href || ''; t = href.text || u; } else { u = href || ''; t = text || u; }
+            u = String(u).trim(); t = String(t).trim();
             if (u.includes('[object Object]')) u = '';
             if (t.includes('[object Object]')) t = u;
             if (!u && t.match(/^https?:\/\//)) u = t;
             if (!t && u) t = u;
             if (!u) u = '#';
-
             return `<a href="${u}" target="_blank" class="text-purple-500 hover:text-purple-300 hover:underline font-bold transition-colors break-all" title="${title || ''}">${t}</a>`;
         };
-
-        marked.setOptions({ 
-            renderer: renderer, 
-            gfm: true, 
-            breaks: true, 
-            sanitize: false 
-        });
+        marked.setOptions({ renderer: renderer, gfm: true, breaks: true, sanitize: false });
     }
 
     function resetChatState() {
@@ -341,7 +341,6 @@ document.addEventListener('DOMContentLoaded', () => {
             recognition.lang = 'id-ID';
             recognition.continuous = false;
             recognition.interimResults = false;
-
             recognition.onresult = (event) => {
                 const transcript = event.results[0][0].transcript;
                 if (messageInput) {
@@ -352,18 +351,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 micBtn.classList.remove('text-red-500', 'animate-pulse');
                 micBtn.classList.add('text-purple-500/40');
             };
-
             recognition.onerror = () => {
                 micBtn.classList.remove('text-red-500', 'animate-pulse');
                 micBtn.classList.add('text-purple-500/40');
                 window.showNavbarAlert('Gagal mengenali suara', 'error');
             };
-
             recognition.onend = () => {
                 micBtn.classList.remove('text-red-500', 'animate-pulse');
                 micBtn.classList.add('text-purple-500/40');
             };
-
             micBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 if (micBtn.classList.contains('text-red-500')) {
@@ -706,67 +702,48 @@ document.addEventListener('DOMContentLoaded', () => {
         if (role === 'user') {
             contentHtml = `<div class="whitespace-pre-wrap break-words user-text">${text.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" class="text-purple-500 hover:text-purple-300 hover:underline break-all">$1</a>')}</div>`;
         } else {
+            const parsed = parseMessageContent(text);
             let deepThinkHtml = '';
             
-            const TRAP_KEYWORD = "===END_THINKING===";
-            let parts = text.split(TRAP_KEYWORD);
-            let thinkText = "";
-            let mainText = "";
-
-            if (parts.length > 1) {
-                thinkText = parts[0].replace(/<think>|<\/think>/g, "").trim();
-                mainText = parts.slice(1).join(TRAP_KEYWORD).trim();
-            } else {
-                if (text.includes('<think>')) {
-                    const thinkMatch = text.match(/<think>([\s\S]*?)(?:<\/think>|$)/);
-                    if (thinkMatch) {
-                        thinkText = thinkMatch[1].trim();
-                        mainText = text.replace(/<think>[\s\S]*?(?:<\/think>|$)/, "").trim();
-                    } else {
-                         mainText = text;
-                    }
-                } else {
-                    mainText = text;
-                }
-            }
-            
-            if (thinkText) {
+            if (parsed.hasDeepThink && parsed.think) {
                 deepThinkHtml = `
-                    <details class="deep-think-box group w-full max-w-full">
+                    <details class="unified-header group w-full max-w-full">
                         <summary>
-                            <div class="deep-think-header-content">
-                                <div class="think-spinner-container">
-                                    <img src="/logo.png" class="think-logo-inner">
+                            <div class="header-content-wrapper">
+                                <div class="logo-stack">
+                                    <img src="/logo.png" class="main-logo">
                                 </div>
-                                <span class="deep-think-title">Dardcor AI : Show Process</span>
-                                <i class="fas fa-chevron-down deep-think-chevron"></i>
+                                <span class="bot-name-display">Dardcor AI : Show Process</span>
+                                <i class="fas fa-chevron-down toggle-chevron"></i>
                             </div>
                         </summary>
-                        <div class="deep-think-content">
-                            <div class="whitespace-pre-wrap">${thinkText}</div>
+                        <div class="think-content-box">
+                            <div class="whitespace-pre-wrap">${parsed.think}</div>
                         </div>
                     </details>
                 `;
             }
 
             const identityHtml = `
-                <div class="bot-identity">
-                    <img src="/logo.png" class="bot-identity-logo">
-                    <span class="bot-identity-name">Dardcor AI</span>
+                <div class="unified-header" style="cursor: default;">
+                    <div class="header-content-wrapper static-mode">
+                        <div class="logo-stack">
+                            <img src="/logo.png" class="main-logo">
+                        </div>
+                        <span class="bot-name-display">Dardcor AI</span>
+                    </div>
                 </div>
             `;
 
             if (deepThinkHtml) {
                 contentHtml = deepThinkHtml;
             } else {
-                if (mainText || !deepThinkHtml) {
-                    contentHtml = identityHtml; 
-                }
+                contentHtml = identityHtml; 
             }
             
-            if (mainText || (!deepThinkHtml && !mainText)) {
+            if (parsed.answer || (!deepThinkHtml && !parsed.answer)) {
                  contentHtml += `<div class="chat-content-box relative rounded-2xl px-5 py-3.5 shadow-md text-sm ${bubbleClass} w-fit min-w-0 max-w-full overflow-hidden leading-7">
-                    <div class="markdown-body w-full max-w-full overflow-hidden break-words">${typeof marked !== 'undefined' ? marked.parse(mainText) : mainText}</div>
+                    <div class="markdown-body w-full max-w-full overflow-hidden break-words">${typeof marked !== 'undefined' ? marked.parse(parsed.answer) : parsed.answer}</div>
                  </div>`;
             }
         }
@@ -789,7 +766,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderEmptyState() { 
         if (!messageList) return; 
-        messageList.innerHTML = `<div id="empty-state" class="flex flex-col items-center justify-center min-h-[50vh] w-full"><div class="relative w-48 h-48 md:w-56 md:h-56 flex items-center justify-center mb-6 md:mb-8 perspective-[1000px]"><div class="absolute inset-0 bg-purple-900/20 rounded-full blur-3xl animate-pulse"></div><div class="absolute w-[110%] h-[110%] rounded-full border border-purple-500/60 shadow-[0_0_15px_rgba(168,85,247,0.3)] animate-orbit-1 border-t-transparent border-l-transparent"></div><div class="absolute w-[110%] h-[110%] rounded-full border border-fuchsia-500/50 shadow-[0_0_15px_rgba(217,70,239,0.3)] animate-orbit-2 border-b-transparent border-r-transparent"></div><div class="absolute w-[110%] h-[110%] rounded-full border border-violet-500/50 animate-orbit-3 border-t-transparent border-r-transparent"></div><div class="absolute w-[110%] h-[110%] rounded-full border border-indigo-500/40 animate-orbit-4 border-b-transparent border-l-transparent"></div><div class="absolute w-[110%] h-[110%] rounded-full border border-pink-500/40 animate-orbit-5 border-l-transparent border-r-transparent"></div><div class="absolute w-[110%] h-[110%] rounded-full border border-cyan-500/40 animate-orbit-6 border-t-transparent border-b-transparent"></div><div class="w-24 h-24 md:w-28 md:h-28 rounded-full overflow-hidden border-2 border-purple-400/20 bg-[#050508] relative z-10 shadow-[0_0_40px_rgba(147,51,234,0.3)]"><div class="absolute inset-0 bg-gradient-to-b from-purple-900/30 via-transparent to-black z-10"></div><img src="/logo.png" alt="Logo" class="relative w-full h-full object-cover opacity-90"></div></div><h2 class="text-3xl md:text-5xl font-bold mb-2 text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-200 via-white to-purple-400 drop-shadow-[0_0_10px_rgba(168,85,247,0.5)]">Dardcor AI</h2><p class="text-sm md:text-base text-purple-300/60 text-center max-w-xs md:max-w-md px-4 leading-relaxed font-light tracking-wide">Apa yang bisa saya bantu?</p></div>`; 
+        messageList.innerHTML = `<div id="empty-state" class="flex flex-col items-center justify-center flex-grow h-full w-full min-h-[60vh] pt-10"><div class="relative w-48 h-48 md:w-56 md:h-56 flex items-center justify-center mb-6 md:mb-8 perspective-[1000px]"><div class="absolute inset-0 bg-purple-900/20 rounded-full blur-3xl animate-pulse"></div><div class="absolute w-[110%] h-[110%] rounded-full border border-purple-500/60 shadow-[0_0_15px_rgba(168,85,247,0.3)] animate-orbit-1 border-t-transparent border-l-transparent"></div><div class="absolute w-[110%] h-[110%] rounded-full border border-fuchsia-500/50 shadow-[0_0_15px_rgba(217,70,239,0.3)] animate-orbit-2 border-b-transparent border-r-transparent"></div><div class="absolute w-[110%] h-[110%] rounded-full border border-violet-500/50 animate-orbit-3 border-t-transparent border-r-transparent"></div><div class="absolute w-[110%] h-[110%] rounded-full border border-indigo-500/40 animate-orbit-4 border-b-transparent border-l-transparent"></div><div class="absolute w-[110%] h-[110%] rounded-full border border-pink-500/40 animate-orbit-5 border-l-transparent border-r-transparent"></div><div class="absolute w-[110%] h-[110%] rounded-full border border-cyan-500/40 animate-orbit-6 border-t-transparent border-b-transparent"></div><div class="w-24 h-24 md:w-28 md:h-28 rounded-full overflow-hidden border-2 border-purple-400/20 bg-[#050508] relative z-10 shadow-[0_0_40px_rgba(147,51,234,0.3)]"><div class="absolute inset-0 bg-gradient-to-b from-purple-900/30 via-transparent to-black z-10"></div><img src="/logo.png" alt="Logo" class="relative w-full h-full object-cover opacity-90"></div></div><h2 class="text-3xl md:text-5xl font-bold mb-2 text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-200 via-white to-purple-400 drop-shadow-[0_0_10px_rgba(168,85,247,0.5)]">Dardcor AI</h2><p class="text-sm md:text-base text-purple-300/60 text-center max-w-xs md:max-w-md px-4 leading-relaxed font-light tracking-wide">Apa yang bisa saya bantu?</p></div>`; 
         messageList.className = "w-full max-w-3xl mx-auto flex flex-col h-full items-center justify-center pb-4"; 
     }
 
@@ -836,28 +813,28 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isDeepThinkEnabled) {
             loaderDiv.innerHTML = `
                 <div class="flex flex-col items-start w-full max-w-full min-w-0">
-                    <details class="deep-think-box group w-full max-w-full">
-                        <summary style="pointer-events: none;">
-                            <div class="deep-think-header-content">
-                                <div class="think-spinner-container">
-                                    <div class="think-spinner-ring"></div>
-                                    <img src="/logo.png" class="think-logo-inner">
-                                </div>
-                                <span class="deep-think-title animate-pulse">Dardcor AI Thinking...</span>
-                                <i class="fas fa-chevron-down deep-think-chevron"></i>
+                    <div class="unified-header">
+                        <div class="header-content-wrapper" style="cursor: default;">
+                            <div class="logo-stack">
+                                <div class="spinner-ring active"></div>
+                                <img src="/logo.png" class="main-logo">
                             </div>
-                        </summary>
-                    </details>
+                            <span class="bot-name-display animate-pulse">Dardcor AI Thinking...</span>
+                            <i class="fas fa-chevron-down toggle-chevron"></i>
+                        </div>
+                    </div>
                 </div>`;
         } else {
             loaderDiv.innerHTML = `
                 <div class="flex flex-col items-start w-full max-w-full min-w-0">
-                    <div class="flex items-center gap-2 mb-2">
-                         <div class="think-spinner-container">
-                             <div class="think-spinner-ring"></div>
-                             <img src="/logo.png" class="think-logo-inner">
-                         </div>
-                         <span class="text-xs font-bold text-purple-200 animate-pulse">Dardcor AI Thinking...</span>
+                    <div class="unified-header">
+                        <div class="header-content-wrapper static-mode">
+                            <div class="logo-stack">
+                                <div class="spinner-ring active"></div>
+                                <img src="/logo.png" class="main-logo">
+                            </div>
+                            <span class="bot-name-display animate-pulse">Dardcor AI Thinking...</span>
+                        </div>
                     </div>
                 </div>`;
         }
@@ -887,11 +864,7 @@ document.addEventListener('DOMContentLoaded', () => {
             botDiv.className = "flex w-full justify-start message-bubble-container group min-w-0";
             
             botDiv.innerHTML = `<div class="flex flex-col items-start w-full max-w-full min-w-0">
-                <div id="deep-think-container"></div>
-                <div id="bot-identity-container" class="bot-identity hidden">
-                    <img src="/logo.png" class="bot-identity-logo">
-                    <span class="bot-identity-name">Dardcor AI</span>
-                </div>
+                <div id="dynamic-header"></div>
                 <div id="main-content-container" class="chat-content-box relative rounded-2xl px-5 py-3.5 shadow-md text-sm bg-transparent text-gray-200 rounded-bl-sm border-none w-fit min-w-0 max-w-full overflow-hidden leading-7 hidden">
                     <div class="markdown-body w-full max-w-full overflow-hidden break-words"></div>
                 </div>
@@ -903,29 +876,48 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (messageList) messageList.appendChild(botDiv);
             
-            const thinkContainer = botDiv.querySelector('#deep-think-container');
-            const identityContainer = botDiv.querySelector('#bot-identity-container');
+            const headerContainer = botDiv.querySelector('#dynamic-header');
             const mainContainer = botDiv.querySelector('#main-content-container');
             const botContent = botDiv.querySelector('.markdown-body');
             
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
-            let fullText = "";
+            
+            let accumulatedThink = "";
+            let accumulatedAnswer = "";
+            let isThinking = isDeepThinkEnabled;
             let buffer = "";
             let isStreaming = true;
             let lastUpdate = 0;
             let isIdentityShown = false;
-            
-            const TRAP_KEYWORD = "===END_THINKING===";
 
-            if (!isDeepThinkEnabled) {
-                thinkContainer.innerHTML = `
-                    <div class="flex items-center gap-2 mb-2">
-                         <div class="think-spinner-container">
-                             <div class="think-spinner-ring"></div>
-                             <img src="/logo.png" class="think-logo-inner">
-                         </div>
-                         <span class="text-xs font-bold text-purple-200 animate-pulse">Dardcor AI Thinking...</span>
+            if (isDeepThinkEnabled) {
+                headerContainer.innerHTML = `
+                    <details class="unified-header group w-full max-w-full">
+                        <summary>
+                            <div class="header-content-wrapper">
+                                <div class="logo-stack">
+                                    <div class="spinner-ring active"></div>
+                                    <img src="/logo.png" class="main-logo">
+                                </div>
+                                <span class="bot-name-display animate-pulse">Dardcor AI Thinking...</span>
+                                <i class="fas fa-chevron-down toggle-chevron"></i>
+                            </div>
+                        </summary>
+                        <div class="think-content-box">
+                            <div class="whitespace-pre-wrap"></div>
+                        </div>
+                    </details>`;
+            } else {
+                headerContainer.innerHTML = `
+                    <div class="unified-header">
+                        <div class="header-content-wrapper static-mode">
+                            <div class="logo-stack">
+                                <div class="spinner-ring active"></div>
+                                <img src="/logo.png" class="main-logo">
+                            </div>
+                            <span class="bot-name-display animate-pulse">Dardcor AI Thinking...</span>
+                        </div>
                     </div>`;
             }
 
@@ -934,79 +926,55 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (timestamp - lastUpdate < 50) { requestAnimationFrame(render); return; }
                 lastUpdate = timestamp;
                 
-                let textToParse = fullText;
-                let thinkText = "";
-                let mainText = "";
-
-                if (textToParse.includes(TRAP_KEYWORD)) {
-                    let parts = textToParse.split(TRAP_KEYWORD);
-                    thinkText = parts[0].replace(/<think>|<\/think>/g, "").trim();
-                    mainText = parts.slice(1).join(TRAP_KEYWORD).trim();
+                if (isDeepThinkEnabled) {
+                    const details = headerContainer.querySelector('details');
+                    if (details) {
+                        const contentDiv = details.querySelector('.think-content-box .whitespace-pre-wrap');
+                        const spinner = details.querySelector('.spinner-ring');
+                        const nameDisplay = details.querySelector('.bot-name-display');
+                        
+                        if (contentDiv && accumulatedThink) contentDiv.innerText = accumulatedThink;
+                        
+                        if (!isThinking) {
+                            if (spinner) spinner.classList.remove('active');
+                            if (nameDisplay) {
+                                nameDisplay.innerText = "Dardcor AI : Show Process";
+                                nameDisplay.classList.remove('animate-pulse');
+                            }
+                        }
+                    }
                 } else {
-                    if (isDeepThinkEnabled && (textToParse.includes('<think>') || !textToParse.includes('</think>'))) {
-                         thinkText = textToParse.replace(/<think>|<\/think>/g, "").trim();
-                    } else {
-                         mainText = textToParse;
+                    const staticHeader = headerContainer.querySelector('.unified-header');
+                    if (staticHeader && accumulatedAnswer) {
+                         const spinner = staticHeader.querySelector('.spinner-ring');
+                         const nameDisplay = staticHeader.querySelector('.bot-name-display');
+                         if(spinner) spinner.classList.remove('active');
+                         if(nameDisplay) {
+                             nameDisplay.innerText = "Dardcor AI";
+                             nameDisplay.classList.remove('animate-pulse');
+                         }
                     }
                 }
-                
-                if (isDeepThinkEnabled || thinkText) {
-                    const isThinking = !textToParse.includes(TRAP_KEYWORD) && !textToParse.includes('</think>');
-                    
-                    thinkContainer.innerHTML = `
-                        <details class="deep-think-box group w-full max-w-full" ${isThinking ? 'open' : ''}>
-                            <summary>
-                                <div class="deep-think-header-content">
-                                    <div class="think-spinner-container">
-                                        ${isThinking ? '<div class="think-spinner-ring"></div>' : ''}
-                                        <img src="/logo.png" class="think-logo-inner">
-                                    </div>
-                                    <span class="deep-think-title">${isThinking ? 'Dardcor AI Thinking...' : 'Dardcor AI : Show Process'}</span>
-                                    <i class="fas fa-chevron-down deep-think-chevron"></i>
-                                </div>
-                            </summary>
-                            <div class="deep-think-content">
-                                <div class="whitespace-pre-wrap">${thinkText}</div>
-                            </div>
-                        </details>
-                    `;
-                } else {
-                    if (mainText && !isIdentityShown) {
-                        thinkContainer.innerHTML = `
-                            <div class="bot-identity">
-                                <img src="/logo.png" class="bot-identity-logo">
-                                <span class="bot-identity-name">Dardcor AI</span>
-                            </div>`;
+
+                if (accumulatedAnswer) {
+                    if (isDeepThinkEnabled && !isIdentityShown) {
                         isIdentityShown = true;
                     }
-                }
-
-                if (mainText) {
-                    if (!isDeepThinkEnabled && !isIdentityShown) {
-                         thinkContainer.innerHTML = `
-                            <div class="bot-identity">
-                                <img src="/logo.png" class="bot-identity-logo">
-                                <span class="bot-identity-name">Dardcor AI</span>
-                            </div>`;
-                         isIdentityShown = true;
-                    }
-                    if (!isDeepThinkEnabled) {
-                        identityContainer.classList.add('hidden');
-                    }
-                    
-                    mainContainer.classList.remove('hidden');
-                    let tempFormatted = mainText;
-                    const codeBlockCount = (tempFormatted.match(/```/g) || []).length;
-                    if (codeBlockCount % 2 !== 0) {
-                        tempFormatted += "\n```"; 
-                    }
-                    if (typeof marked !== 'undefined') {
-                        botContent.innerHTML = marked.parse(tempFormatted);
-                        if (typeof hljs !== 'undefined') botContent.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
+                    if (mainContainer) {
+                        mainContainer.classList.remove('hidden');
+                        
+                        let tempFormatted = accumulatedAnswer;
+                        const codeBlockCount = (tempFormatted.match(/```/g) || []).length;
+                        if (codeBlockCount % 2 !== 0) tempFormatted += "\n```";
+                        
+                        if (typeof marked !== 'undefined') {
+                            botContent.innerHTML = marked.parse(tempFormatted);
+                            if (typeof hljs !== 'undefined') botContent.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
+                        }
                     }
                 }
                 
-                if (!userIsScrolling) {
+                if (!userIsScrolling && chatContainer) {
                     const threshold = 150;
                     const position = chatContainer.scrollTop + chatContainer.clientHeight;
                     const height = chatContainer.scrollHeight;
@@ -1022,69 +990,73 @@ document.addEventListener('DOMContentLoaded', () => {
                 const { done, value } = await reader.read();
                 if (done) break;
                 buffer += decoder.decode(value, { stream: true });
-                const lines = buffer.split('\n\n');
-                buffer = lines.pop();
-                for (const line of lines) {
-                    if (line.startsWith('data: ')) {
-                        try {
-                            const json = JSON.parse(line.replace('data: ', ''));
-                            if (json.chunk && typeof json.chunk === 'string') fullText += json.chunk;
-                        } catch (e) {}
+                const chunks = buffer.split('\n\n');
+                buffer = chunks.pop(); 
+
+                for (const chunkBlock of chunks) {
+                    const lines = chunkBlock.split('\n');
+                    let eventType = 'message'; 
+                    let data = null;
+
+                    for (const line of lines) {
+                        if (line.startsWith('event: ')) {
+                            eventType = line.substring(7).trim();
+                        } else if (line.startsWith('data: ')) {
+                            try {
+                                data = JSON.parse(line.substring(6));
+                            } catch(e) {}
+                        }
+                    }
+
+                    if (data) {
+                        if (eventType === 'deep-think') {
+                            if (data.chunk) accumulatedThink += data.chunk;
+                        } else if (eventType === 'message') {
+                            isThinking = false;
+                            if (data.chunk) accumulatedAnswer += data.chunk;
+                        } else if (eventType === 'error') {
+                            window.showNavbarAlert(data.error || 'Error', 'error');
+                        }
                     }
                 }
             }
             isStreaming = false; 
+            isThinking = false;
             
-            let textToParse = fullText;
-            let thinkText = "";
-            let mainText = "";
+            if (isDeepThinkEnabled) {
+                const details = headerContainer.querySelector('details');
+                if (details) {
+                    const spinner = details.querySelector('.spinner-ring');
+                    const nameDisplay = details.querySelector('.bot-name-display');
+                    
+                    if (spinner) spinner.classList.remove('active');
+                    if (nameDisplay) {
+                        nameDisplay.innerText = "Dardcor AI : Show Process";
+                        nameDisplay.classList.remove('animate-pulse');
+                    }
+                    
+                    const contentDiv = details.querySelector('.think-content-box .whitespace-pre-wrap');
+                    if (contentDiv && accumulatedThink) contentDiv.innerText = accumulatedThink;
+                }
+            } else {
+                const staticHeader = headerContainer.querySelector('.unified-header');
+                if (staticHeader) {
+                     const spinner = staticHeader.querySelector('.spinner-ring');
+                     const nameDisplay = staticHeader.querySelector('.bot-name-display');
+                     if(spinner) spinner.classList.remove('active');
+                     if(nameDisplay) {
+                         nameDisplay.innerText = "Dardcor AI";
+                         nameDisplay.classList.remove('animate-pulse');
+                     }
+                }
+            }
 
-            if (textToParse.includes(TRAP_KEYWORD)) {
-                let parts = textToParse.split(TRAP_KEYWORD);
-                thinkText = parts[0].replace(/<think>|<\/think>/g, "").trim();
-                mainText = parts.slice(1).join(TRAP_KEYWORD).trim();
-            } else {
-                 if (isDeepThinkEnabled && textToParse.includes('<think>')) {
-                      thinkText = textToParse.replace(/<think>|<\/think>/g, "").trim();
-                 } else {
-                      mainText = textToParse;
-                 }
-            }
-            
-            if (isDeepThinkEnabled || thinkText) {
-                const isThinking = !textToParse.includes(TRAP_KEYWORD) && !textToParse.includes('</think>');
-                thinkContainer.innerHTML = `
-                    <details class="deep-think-box group w-full max-w-full" ${isThinking ? 'open' : ''}>
-                        <summary>
-                            <div class="deep-think-header-content">
-                                <div class="think-spinner-container">
-                                    ${isThinking ? '<div class="think-spinner-ring"></div>' : ''}
-                                    <img src="/logo.png" class="think-logo-inner">
-                                </div>
-                                <span class="deep-think-title">${isThinking ? 'Dardcor AI Thinking...' : 'Dardcor AI : Show Process'}</span>
-                                <i class="fas fa-chevron-down deep-think-chevron"></i>
-                            </div>
-                        </summary>
-                        <div class="deep-think-content">
-                            <div class="whitespace-pre-wrap">${thinkText}</div>
-                        </div>
-                    </details>
-                `;
-            } else {
-                thinkContainer.innerHTML = `
-                    <div class="bot-identity">
-                        <img src="/logo.png" class="bot-identity-logo">
-                        <span class="bot-identity-name">Dardcor AI</span>
-                    </div>`;
-                identityContainer.classList.add('hidden');
-            }
-            
-            if (mainText || (!thinkText && isDeepThinkEnabled && !textToParse.includes('<think>'))) {
-                if(!isDeepThinkEnabled) identityContainer.classList.add('hidden');
+            if (accumulatedAnswer && mainContainer) {
                 mainContainer.classList.remove('hidden');
-                botContent.innerHTML = marked.parse(mainText);
+                botContent.innerHTML = marked.parse(accumulatedAnswer);
                 if (typeof hljs !== 'undefined') botContent.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
             }
+            
             scrollToBottom(true);
 
         } catch (e) {
@@ -1096,7 +1068,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 abortController = null;
                 return;
             }
-            
             document.getElementById('loading-indicator')?.remove();
             window.showNavbarAlert('Gagal mengirim pesan', 'error');
         } finally {
@@ -1118,17 +1089,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (target && (target.classList.contains('markdown-body') || target.querySelector('.markdown-body'))) { 
                 const mdBody = target.classList.contains('markdown-body') ? target : target.querySelector('.markdown-body');
                 if (mdBody && typeof marked !== 'undefined') { 
-                    let rawVal = String(raw.value || '');
-                    
-                    const TRAP_KEYWORD = "===END_THINKING===";
-                    let mainText = "";
-                    if (rawVal.includes(TRAP_KEYWORD)) {
-                        mainText = rawVal.split(TRAP_KEYWORD).slice(1).join(TRAP_KEYWORD).trim();
-                    } else {
-                        mainText = rawVal.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim();
-                    }
-                    
-                    mdBody.innerHTML = marked.parse(mainText); 
+                    const parsed = parseMessageContent(String(raw.value || ''));
+                    mdBody.innerHTML = marked.parse(parsed.answer); 
                     if (window.renderMathInElement) renderMathInElement(mdBody, { delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }], throwOnError: false }); 
                     mdBody.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
                 } 
