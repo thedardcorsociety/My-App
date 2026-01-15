@@ -2,9 +2,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const style = document.createElement('style');
     style.innerHTML = `
         .terminal-code { overflow-x: auto; scrollbar-width: thin; scrollbar-color: #4b5563 transparent; }
-        .terminal-code::-webkit-scrollbar { height: 4px !important; width: 4px !important; background: transparent !important; display: block !important; }
+        .terminal-code::-webkit-scrollbar { height: 2px !important; width: 2px !important; background: transparent !important; display: block !important; }
         .terminal-code::-webkit-scrollbar-track { background: transparent !important; }
-        .terminal-code::-webkit-scrollbar-thumb { background-color: #4b5563 !important; border-radius: 4px !important; }
+        .terminal-code::-webkit-scrollbar-thumb { background-color: #4b5563 !important; border-radius: 2px !important; }
         .hljs { color: #e2e8f0 !important; background: transparent !important; }
         .hljs-keyword, .hljs-selector-tag, .hljs-built_in, .hljs-name, .hljs-tag { color: #a855f7 !important; font-weight: bold; text-shadow: 0 0 5px rgba(168, 85, 247, 0.3); }
         .hljs-string, .hljs-title, .hljs-section, .hljs-attribute, .hljs-literal, .hljs-template-tag, .hljs-template-variable, .hljs-type, .hljs-addition { color: #22c55e !important; }
