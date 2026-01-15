@@ -122,8 +122,9 @@ Wajib gunakan bahasa gaul sopan, dan ekspresi menggunakan stiker.
             
             const model = genAI.getGenerativeModel({ 
                 model: "gemini-2.5-flash",
-                systemInstruction: baseInstruction
-            });
+                systemInstruction: baseInstruction,
+                generationConfig: { temperature: 0.9 }
+            }, { timeout: 0 });
 
             const chatHistory = historyData.map(h => ({
                 role: h.role === 'bot' ? 'model' : 'user',
@@ -169,7 +170,7 @@ Wajib gunakan bahasa gaul sopan, dan ekspresi menggunakan stiker.
         } catch (error) {
             lastError = error;
             const errorStr = error.toString();
-            if (errorStr.includes("429") || errorStr.includes("503") || errorStr.includes("quota") || errorStr.includes("Maaf, Basic Model sedang sibuk.")) {
+            if (errorStr.includes("429") || errorStr.includes("503") || errorStr.includes("Maaf, Basic Model sedang sibuk.")) {
                 attempt++;
                 await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
             } else {
@@ -185,20 +186,21 @@ Wajib gunakan bahasa gaul sopan, dan ekspresi menggunakan stiker.
         const errStr = lastError?.toString() || "";
 
         if (errStr.includes("400")) {
-            errorMsg = "Permintaan tidak valid. Mohon periksa input Anda.";
+            errorMsg = "Maaf, Basic Model sedang sibuk.";
         } else if (errStr.includes("401")) {
             errorMsg = "Maaf, Basic Model sedang sibuk.";
         } else if (errStr.includes("403")) {
             errorMsg = "Maaf, Basic Model sedang sibuk.";
         } else if (errStr.includes("404")) {
             errorMsg = "Maaf, Basic Model sedang sibuk.";
-        } else if (errStr.includes("429") || errStr.includes("quota") || errStr.includes("Maaf, Basic Model sedang sibuk.")) {
+        } else if (errStr.includes("429")) {
             errorMsg = "Maaf, Basic Model sedang sibuk.";
         } else if (errStr.includes("500")) {
             errorMsg = "Maaf, Basic Model sedang sibuk.";
         } else if (errStr.includes("503")) {
             errorMsg = "Maaf, Basic Model sedang sibuk.";
         }
+        
         yield { text: () => `\n\n[System Alert: ${errorMsg}]` };
     }
 }

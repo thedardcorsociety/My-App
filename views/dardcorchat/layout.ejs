@@ -69,10 +69,8 @@
         
         .terminal-container { background: #050508 !important; border: 1px solid #581c87 !important; border-radius: 6px; margin: 16px 0; font-family: 'Consolas', 'Monaco', monospace; width: 100%; max-width: 100%; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 4px 12px rgba(88, 28, 135, 0.3); }
         .terminal-head { display: flex; justify-content: space-between; align-items: center; background: #0a0a12 !important; padding: 6px 12px; border-bottom: 1px solid #581c87 !important; height: 32px; flex-shrink: 0; }
-        
         .terminal-code { padding: 0; width: 100%; background: #050508 !important; overflow-x: auto; display: block; scrollbar-width: none; -ms-overflow-style: none; }
         .terminal-code::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; background: transparent !important; -webkit-appearance: none !important; }
-        
         .terminal-code pre { margin: 0; padding: 0; width: 100%; background: transparent !important; }
         .terminal-code code { padding: 14px 18px !important; display: block; background: transparent !important; font-size: 13px; line-height: 1.55; font-family: 'Consolas', monospace; white-space: pre; color: #e9d5ff; }
         
@@ -91,45 +89,18 @@
         @keyframes spin { to { transform: rotate(360deg); } }
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10000; display: none; align-items: center; justify-content: center; }
         .modal.active { display: flex; }
-        
         @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        
         .think-spinner-container { position: relative; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
         .think-spinner-ring { position: absolute; inset: 0; border: 2px solid transparent; border-top-color: #a855f7; border-right-color: #ec4899; border-radius: 50%; animation: spin-slow 1.5s linear infinite; }
         .think-logo-inner { width: 14px; height: 14px; border-radius: 50%; object-fit: cover; z-index: 2; }
-        
         .deep-think-box { margin-bottom: 12px; background: transparent; border: none; width: 100%; display: block; }
-        
-        .deep-think-box summary { 
-            list-style: none; display: flex; align-items: center; justify-content: flex-start; 
-            cursor: pointer; user-select: none; padding: 4px 0; outline: none; 
-            pointer-events: auto !important; width: 100%;
-        }
-        
+        .deep-think-box summary { list-style: none; display: flex; align-items: center; justify-content: flex-start; cursor: pointer; user-select: none; padding: 4px 0; outline: none; pointer-events: auto !important; width: 100%; }
         .deep-think-box summary::-webkit-details-marker { display: none; }
-        
         .deep-think-header-content { display: flex; align-items: center; gap: 10px; }
-        
-        .deep-think-title { 
-            font-weight: 600; font-size: 0.9rem; 
-            background: linear-gradient(to right, #e9d5ff, #c084fc); 
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent; 
-            letter-spacing: 0.02em;
-        }
-        
-        .deep-think-chevron { 
-            color: #6b7280; font-size: 0.75rem; 
-            transition: transform 0.2s ease; margin-left: 0; display: inline-block;
-        }
-        
+        .deep-think-title { font-weight: 600; font-size: 0.9rem; background: linear-gradient(to right, #e9d5ff, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 0.02em; }
+        .deep-think-chevron { color: #6b7280; font-size: 0.75rem; transition: transform 0.2s ease; margin-left: 0; display: inline-block; }
         .deep-think-box[open] .deep-think-chevron { transform: rotate(180deg); }
-        
-        .deep-think-content { 
-            padding: 12px 0 12px 34px; color: #9ca3af; 
-            font-size: 0.85rem; line-height: 1.6; 
-            border-left: 2px solid rgba(168, 85, 247, 0.2); 
-            margin-left: 10px; margin-top: 4px; display: block;
-        }
+        .deep-think-content { padding: 12px 0 12px 34px; color: #9ca3af; font-size: 0.85rem; line-height: 1.6; border-left: 2px solid rgba(168, 85, 247, 0.2); margin-left: 10px; margin-top: 4px; display: block; }
 
         .bot-identity { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; margin-top: 4px; }
         .bot-identity-logo { width: 18px; height: 18px; border-radius: 50%; object-fit: cover; }
@@ -142,7 +113,9 @@
             body:not(.sidebar-closed) #sidebar { transform: translateX(0); }
         }
         #sidebar, #main-content { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        #chat-container { overscroll-behavior-y: contain; scroll-behavior: smooth; }
+        
+        #chat-container { overscroll-behavior-y: contain; overflow-anchor: none; }
+        
         #message-list .chat-content-box { background-color: transparent !important; background-image: none !important; }
         #message-list .justify-end .chat-content-box { border: 1px solid rgba(88, 28, 135, 0.8) !important; box-shadow: 0 0 15px rgba(59, 7, 100, 0.2) !important; color: white !important; border-bottom-right-radius: 0.125rem !important; background-color: transparent !important; }
         #message-list .justify-start .chat-content-box { border: none !important; box-shadow: none !important; color: #e5e7eb !important; background-color: transparent !important; padding-left: 0 !important; padding-top: 0 !important; border-radius: 0 !important; width: 100%; }
@@ -188,6 +161,7 @@
          
                 <% if (conversationList) { conversationList.forEach(chat => { %>
                      <div id="chat-item-<%= chat.id %>" onclick="window.loadChat('<%= chat.id %>')" class="chat-item group relative flex items-center px-3 py-2.5 rounded-lg cursor-pointer w-full transition-all <%= chat.id === activeConversationId ? 'bg-[#202336] text-white border-l-2 border-purple-900' : 'text-gray-400 border-l-2 border-transparent hover:bg-white/5' %>">
+                        
                         <div class="flex-1 min-w-0 flex items-center">
                             <span id="title-<%= chat.id %>" class="text-xs truncate"><%= chat.title ? chat.title.substring(0, 25) : 'Percakapan' %></span>
                             <input type="hidden" id="raw-title-<%= chat.id %>" value="<%= chat.title %>">
@@ -198,6 +172,7 @@
                             <button onclick="window.openDeleteModal('<%= chat.id %>')" class="w-full text-left px-3 py-2 text-xs text-red-400 hover:bg-white/10 flex gap-2 items-center"><i class="fas fa-trash"></i> Hapus</button>
                         </div>
                     </div>
+        
                 <% }) } %>
             </div>
         </div>
@@ -210,7 +185,7 @@
     <main id="main-content" class="absolute inset-0 right-0 h-full bg-[#050508] lg:left-72 w-full lg:w-[calc(100%-18rem)] flex flex-col overflow-hidden">
         <div class="absolute inset-0 pointer-events-none overflow-hidden z-0">
             <div class="star w-0.5 h-0.5 top-10 left-20 animate-star" style="animation-delay: 0s;"></div>
-            <div class="star w-1 h-1 top-1/4 right-1/4 animate-star" style="animation-delay: 1s;"></div>
+             <div class="star w-1 h-1 top-1/4 right-1/4 animate-star" style="animation-delay: 1s;"></div>
             <div class="star w-0.5 h-0.5 bottom-1/3 left-1/3 animate-star" style="animation-delay: 2s;"></div>
             <div class="star w-1 h-1 top-20 right-10 animate-star" style="animation-delay: 1.5s;"></div>
             <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] md:w-[500px] md:h-[500px] bg-purple-900/10 rounded-full blur-[80px] md:blur-[100px] pointer-events-none"></div>
@@ -222,7 +197,7 @@
                 <button onclick="window.toggleSidebar()" class="text-gray-400 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-colors mr-3 hidden lg:flex items-center justify-center"><i class="fas fa-bars text-lg"></i></button>
             </div>
  
-           <div id="navbar-alert" class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-4 py-1.5 bg-[#1c1c2e] border border-purple-900/30 rounded-full shadow-lg flex items-center gap-2 transition-all duration-300 opacity-0 pointer-events-none transform scale-90 z-[10000]">
+            <div id="navbar-alert" class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-4 py-1.5 bg-[#1c1c2e] border border-purple-900/30 rounded-full shadow-lg flex items-center gap-2 transition-all duration-300 opacity-0 pointer-events-none transform scale-90 z-[10000]">
                 <i id="navbar-alert-icon" class="fas fa-info-circle text-purple-400 text-xs"></i><span id="navbar-alert-text" class="text-xs font-bold text-gray-200 whitespace-nowrap">Notification</span>
             </div>
             <div class="flex items-center gap-2 ml-auto">
@@ -230,7 +205,7 @@
                 <button id="refresh-chat-btn" class="w-9 h-9 flex items-center justify-center rounded-lg border border-purple-900 bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white transition-all"><i id="refresh-icon" class="fas fa-sync-alt text-xs"></i></button>
                 <div class="relative">
                     <button id="model-dropdown-btn" class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-purple-900 bg-white/5 text-gray-400 text-xs font-medium hover:bg-white/10 hover:text-white h-[36px] w-auto whitespace-nowrap transition-colors">
-                     <span id="tool-label" class="block truncate"><%= typeof toolType !== 'undefined' && toolType === 'dark' ? 'Dark Model' : (typeof toolType !== 'undefined' && toolType === 'pro' ? 'Pro Model' : 'Basic Model') %></span><i class="fas fa-chevron-down text-[10px] ml-1 flex-shrink-0" id="tools-chevron"></i>
+                      <span id="tool-label" class="block truncate"><%= typeof toolType !== 'undefined' && toolType === 'dark' ? 'Dark Model' : (typeof toolType !== 'undefined' && toolType === 'pro' ? 'Pro Model' : 'Basic Model') %></span><i class="fas fa-chevron-down text-[10px] ml-1 flex-shrink-0" id="tools-chevron"></i>
                      </button>
                      <div id="tools-menu" class="hidden absolute right-0 top-full mt-1 w-max flex flex-col bg-[#0a0a12] border border-purple-900 rounded-lg shadow-2xl z-[9999] overflow-hidden backdrop-blur-sm p-1">
                         <button data-model="basic" class="model-select-btn w-full text-left px-4 py-2 text-xs font-bold text-gray-300 hover:text-white hover:bg-white/10 rounded-md transition-all whitespace-nowrap">Basic Model</button>

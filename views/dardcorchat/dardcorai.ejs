@@ -44,31 +44,35 @@
                 %>
 
                 <% if (deepThinkContent) { %>
-                    <details class="deep-think-box group w-full max-w-full">
+                    <details class="unified-header group w-full max-w-full">
                         <summary>
-                            <div class="deep-think-header-content">
-                                <div class="think-spinner-container">
-                                    <img src="/logo.png" class="think-logo-inner">
+                            <div class="header-content-wrapper">
+                                <div class="logo-stack">
+                                    <img src="/logo.png" class="main-logo">
                                 </div>
-                                <span class="deep-think-title">Dardcor AI : Show Process</span>
-                                <i class="fas fa-chevron-down deep-think-chevron"></i>
+                                <span class="bot-name-display">Dardcor AI : Show Process</span>
+                                <i class="fas fa-chevron-down toggle-chevron"></i>
                             </div>
                         </summary>
-                        <div class="deep-think-content">
+                        <div class="think-content-box">
                             <div class="whitespace-pre-wrap"><%= deepThinkContent %></div>
                         </div>
                     </details>
                 <% } else if (msg.role === 'bot') { %>
-                    <div class="bot-identity">
-                        <img src="/logo.png" class="bot-identity-logo">
-                        <span class="bot-identity-name">Dardcor AI</span>
+                    <div class="unified-header" style="cursor: default;">
+                        <div class="header-content-wrapper static-mode">
+                            <div class="logo-stack">
+                                <img src="/logo.png" class="main-logo">
+                            </div>
+                            <span class="bot-name-display">Dardcor AI</span>
+                        </div>
                     </div>
                 <% } %>
 
                 <% if (cleanMessage || msg.role === 'user') { %>
                     <div class="chat-content-box relative rounded-2xl px-5 py-3.5 shadow-md text-sm <%= msg.role === 'user' ? 'bg-transparent border border-purple-600/50 text-white rounded-br-sm shadow-[0_0_15px_rgba(147,51,234,0.15)]' : 'bg-transparent text-gray-200 rounded-bl-sm border-none' %> w-fit min-w-0 max-w-full overflow-hidden leading-7">
                         <% if (msg.role === 'user') { %>
-                            <div class="whitespace-pre-wrap break-words user-text"><%= cleanMessage %></div>
+                            <div class="whitespace-pre-wrap break-words user-text"><%- cleanMessage.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" class="text-purple-500 hover:text-purple-300 hover:underline break-all">$1</a>') %></div>
                         <% } else { %>
                             <textarea class="hidden raw-message-content"><%= cleanMessage %></textarea>
                             <div class="overflow-guard w-full min-w-0 max-w-full">

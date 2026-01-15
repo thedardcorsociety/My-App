@@ -280,9 +280,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function handleFiles(files) {
         if (!files || files.length === 0) return;
-        const toAdd = Array.from(files).slice(0, 10 - selectedFiles.length);
+        if (selectedFiles.length >= 10) {
+            window.showNavbarAlert('Maksimal 10 file', 'error');
+            return;
+        }
+        const remainingSlots = 10 - selectedFiles.length;
+        const toAdd = Array.from(files).slice(0, remainingSlots);
         toAdd.forEach(file => { if (file.size <= 50 * 1024 * 1024) selectedFiles.push(file); });
         updateFilePreviews();
+        if (files.length > remainingSlots) {
+             window.showNavbarAlert('Hanya 10 file yang diizinkan', 'info');
+        }
     }
 
     if (fileUploadBtn && fileInput) {

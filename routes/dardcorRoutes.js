@@ -22,7 +22,7 @@ const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: "Ter
 
 const uploadMiddleware = (req, res, next) => { 
     upload.array('file_attachment', 10)(req, res, function (err) { 
-        if (err) return res.status(400).json({ success: false, message: "Upload Error" }); 
+        if (err) return res.status(400).json({ success: false, message: "Upload Error: Maksimal 10 file diizinkan." }); 
         next(); 
     }); 
 };
@@ -361,6 +361,20 @@ router.post('/dardcorchat/ai/chat-stream', checkUserAuth, uploadMiddleware, asyn
     let fullResponse = "";
     let isStreamCompleted = false;
     let thoughtBuffer = "";
+
+    req.on('close', async () => {
+        if (!isStreamCompleted && botMessageId && (fullResponse || thoughtBuffer)) {
+             let savedResponse = fullResponse;
+             if (useDeepThink && thoughtBuffer && !fullResponse.includes('<think>')) {
+                 savedResponse = `<think>${thoughtBuffer}</think>\n${fullResponse}`;
+             }
+             if (savedResponse) {
+                try {
+                    await supabase.from('history_chat').update({ message: savedResponse }).eq('id', botMessageId);
+                } catch(e) {}
+             }
+        }
+    });
 
     try {
         const uptime = process.uptime();
