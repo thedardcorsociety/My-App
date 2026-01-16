@@ -565,7 +565,7 @@ TUGAS: Lakukan analisis mendalam terhadap input user berikut.
 2. DILARANG MEMBERIKAN KODE ATAU SYNTAX SAMA SEKALI.
 3. DILARANG KERAS menggunakan blok kode (markdown code blocks), simbol-simbol aneh, atau format hiasan.
 4. OUTPUT WAJIB berupa TEKS BIASA (Plain Text) yang naratif dan analitis.
-5. WAJIB BERIKAN 20 KALIMAT SAJA AGAR EFISIEN ENERGI.
+5. WAJIB BERIKAN 10 KALIMAT SAJA AGAR EFISIEN ENERGI.
 6. JANGAN berikan jawaban akhir atau sapaan kepada user di tahap ini.
 
 INPUT USER:
