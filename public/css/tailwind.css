@@ -2106,6 +2106,11 @@ video {
   color: rgb(192 132 252 / 0.8);
 }
 
+.text-purple-500 {
+  --tw-text-opacity: 1;
+  color: rgb(168 85 247 / var(--tw-text-opacity, 1));
+}
+
 .text-purple-500\/30 {
   color: rgb(168 85 247 / 0.3);
 }
@@ -2163,11 +2168,6 @@ video {
 
 .text-yellow-500\/90 {
   color: rgb(234 179 8 / 0.9);
-}
-
-.text-purple-500 {
-  --tw-text-opacity: 1;
-  color: rgb(168 85 247 / var(--tw-text-opacity, 1));
 }
 
 .underline {

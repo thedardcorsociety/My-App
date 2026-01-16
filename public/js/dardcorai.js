@@ -32,6 +32,11 @@ document.addEventListener('DOMContentLoaded', () => {
         
         .think-content-box { margin-top: 6px; margin-bottom: 12px; margin-left: 8px; padding: 10px 14px; background: rgba(15, 15, 20, 0.5); border-left: 2px solid #a855f7; border-radius: 0 6px 6px 0; font-family: 'Consolas', monospace; font-size: 11px; line-height: 1.6; color: #cbd5e1; width: 100%; max-width: 95%; overflow-x: hidden; white-space: pre-wrap; }
         
+        .terminal-wrapper-outer { position: relative; width: 100%; overflow: hidden; margin: 10px 0; border-radius: 6px; z-index: 1; }
+        .terminal-wrapper-inner { position: relative; width: 100%; overflow: hidden; display: block; }
+        .think-layer-outer { position: relative; width: 100%; overflow: hidden; display: block; }
+        .think-layer-inner { position: relative; width: 100%; overflow-wrap: break-word; word-break: break-word; display: block; }
+
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         @keyframes orbit-1 { 0% { transform: rotate3d(1, 1, 1, 0deg); } 100% { transform: rotate3d(1, 1, 1, 360deg); } }
         @keyframes orbit-2 { 0% { transform: rotate3d(1, -1, 1, 0deg); } 100% { transform: rotate3d(1, -1, 1, 360deg); } }
@@ -170,17 +175,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 btnHtml = `<button onclick="window.previewDiagram(this)" class="cmd-btn btn-diagram" style="font-size: 10px; padding: 2px 8px; background-color: #2e1065; color: white;"><i class="fas fa-project-diagram"></i> Preview Diagram</button>`;
             }
             const escapedCode = validCode.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-            return `<div class="terminal-container" style="background-color: #000000 !important; border: 1px solid #333; margin: 10px 0; max-width: 100%;">
-                        <div class="terminal-head" style="height: 32px; padding: 0 12px; background-color: #000000 !important; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #333;">
-                            <div class="text-[10px] font-bold text-gray-400 uppercase flex items-center"><i class="fas fa-code mr-2"></i> ${lang}</div>
-                            <div class="terminal-actions flex gap-2">
-                                ${btnHtml}
-                                <button onclick="window.copyCode(this)" class="cmd-btn btn-copy" style="font-size: 10px; padding: 2px 8px; background-color: #21262d; color: #c9d1d9;" title="Salin Kode"><i class="fas fa-copy"></i></button>
+            return `<div class="terminal-wrapper-outer">
+                        <div class="terminal-wrapper-inner">
+                            <div class="terminal-container" style="background-color: #000000 !important; border: 1px solid #333; margin: 0; max-width: 100%;">
+                                <div class="terminal-head" style="height: 32px; padding: 0 12px; background-color: #000000 !important; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #333;">
+                                    <div class="text-[10px] font-bold text-gray-400 uppercase flex items-center"><i class="fas fa-code mr-2"></i> ${lang}</div>
+                                    <div class="terminal-actions flex gap-2">
+                                        ${btnHtml}
+                                        <button onclick="window.copyCode(this)" class="cmd-btn btn-copy" style="font-size: 10px; padding: 2px 8px; background-color: #21262d; color: #c9d1d9;" title="Salin Kode"><i class="fas fa-copy"></i></button>
+                                    </div>
+                                </div>
+                                <div class="terminal-code" style="background-color: #000000 !important;">
+                                    <pre style="background: transparent !important; margin: 0;"><code class="hljs ${lang}" style="background: transparent !important; font-family: 'Consolas', monospace; font-size: 12px; color: #e6edf3;">${escapedCode}</code></pre>
+                                    <textarea class="hidden raw-code">${escapedCode}</textarea>
+                                </div>
                             </div>
-                        </div>
-                        <div class="terminal-code" style="background-color: #000000 !important;">
-                            <pre style="background: transparent !important; margin: 0;"><code class="hljs ${lang}" style="background: transparent !important; font-family: 'Consolas', monospace; font-size: 12px; color: #e6edf3;">${escapedCode}</code></pre>
-                            <textarea class="hidden raw-code">${escapedCode}</textarea>
                         </div>
                     </div>`;
         };
@@ -726,7 +735,11 @@ document.addEventListener('DOMContentLoaded', () => {
                             </div>
                         </summary>
                         <div class="think-content-box">
-                            <div class="whitespace-pre-wrap">${parsed.think}</div>
+                            <div class="think-layer-outer">
+                                <div class="think-layer-inner">
+                                    <div class="whitespace-pre-wrap">${parsed.think}</div>
+                                </div>
+                            </div>
                         </div>
                     </details>
                 `;
@@ -913,7 +926,11 @@ document.addEventListener('DOMContentLoaded', () => {
                             </div>
                         </summary>
                         <div class="think-content-box">
-                            <div class="whitespace-pre-wrap"></div>
+                            <div class="think-layer-outer">
+                                <div class="think-layer-inner">
+                                    <div class="whitespace-pre-wrap"></div>
+                                </div>
+                            </div>
                         </div>
                     </details>`;
             } else {
@@ -937,7 +954,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (isDeepThinkEnabled) {
                     const details = headerContainer.querySelector('details');
                     if (details) {
-                        const contentDiv = details.querySelector('.think-content-box .whitespace-pre-wrap');
+                        const contentDiv = details.querySelector('.think-content-box .think-layer-inner .whitespace-pre-wrap');
                         const spinner = details.querySelector('.spinner-ring');
                         const nameDisplay = details.querySelector('.bot-name-display');
                         
@@ -1043,7 +1060,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         nameDisplay.classList.remove('animate-pulse');
                     }
                     
-                    const contentDiv = details.querySelector('.think-content-box .whitespace-pre-wrap');
+                    const contentDiv = details.querySelector('.think-content-box .think-layer-inner .whitespace-pre-wrap');
                     if (contentDiv && accumulatedThink) contentDiv.innerText = accumulatedThink;
                 }
             } else {

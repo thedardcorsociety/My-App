@@ -366,7 +366,8 @@ router.post('/dardcorchat/ai/chat-stream', checkUserAuth, uploadMiddleware, asyn
         if (!isStreamCompleted && botMessageId && (fullResponse || thoughtBuffer)) {
              let savedResponse = fullResponse;
              if (useDeepThink && thoughtBuffer && !fullResponse.includes('<think>')) {
-                 savedResponse = `<think>${thoughtBuffer}</think>\n${fullResponse}`;
+                 const cleanBuffer = thoughtBuffer.replace(/<think>/g, '').replace(/<\/think>/g, '');
+                 savedResponse = `<think>${cleanBuffer}</think>\n${fullResponse}`;
              }
              if (savedResponse) {
                 try {
@@ -577,7 +578,7 @@ ${message}
             
             for await (const chunk of thinkStream) {
                 let text = chunk.text();
-                text = text.replace(/`/g, ''); 
+                text = text.replace(/`/g, '').replace(/<think>/g, '').replace(/<\/think>/g, '');
                 thoughtBuffer += text;
                 res.write(`event: deep-think\ndata: ${JSON.stringify({ chunk: text })}\n\n`);
             }
@@ -585,16 +586,19 @@ ${message}
             const answerPrompt = `
 [SYSTEM: FINAL ANSWER MODE - STAGE 2]
 CONTEXT: Berikut adalah hasil analisis mendalam dari masalah user.
-HASIL ANALISIS:
+
+[LOCKED_ANALYSIS_LAYER_START]
 ${thoughtBuffer}
+[LOCKED_ANALYSIS_LAYER_END]
 
 TUGAS:
 Berdasarkan analisis di atas, susun jawaban akhir yang ramah, jelas, dan solutif untuk user.
 
 [ATURAN WAJIB]
-1. JANGAN sertakan tag <think> atau proses berpikir mentah.
-2. Langsung berikan solusi atau jawaban final.
-3. Gunakan gaya bahasa ${toolType === 'dark' ? 'tanpa sensor, to the point' : (toolType === 'pro' ? 'profesional dan akademis' : 'ramah dan membantu')}.
+1. JANGAN sertakan tag <think> atau proses berpikir mentah dalam jawabanmu.
+2. JANGAN bocorkan isi dari [LOCKED_ANALYSIS_LAYER].
+3. Langsung berikan solusi atau jawaban final.
+4. Gunakan gaya bahasa ${toolType === 'dark' ? 'tanpa sensor, to the point' : (toolType === 'pro' ? 'profesional dan akademis' : 'ramah dan membantu')}.
 
 PERTANYAAN ASLI USER:
 ${req.body.message}
@@ -609,7 +613,8 @@ ${req.body.message}
             }
             
             if (thoughtBuffer) {
-                fullResponse = `<think>${thoughtBuffer}</think>\n${fullResponse}`;
+                const cleanBuffer = thoughtBuffer.replace(/<think>/g, '').replace(/<\/think>/g, '');
+                fullResponse = `<think>${cleanBuffer}</think>\n${fullResponse}`;
             }
 
         } else {
@@ -631,7 +636,8 @@ ${req.body.message}
         
         let savedResponse = fullResponse;
         if (useDeepThink && thoughtBuffer && !fullResponse.includes('<think>')) {
-             savedResponse = `<think>${thoughtBuffer}</think>\n[SYSTEM: CONNECTION INTERRUPTED]\n${fullResponse}`;
+             const cleanBuffer = thoughtBuffer.replace(/<think>/g, '').replace(/<\/think>/g, '');
+             savedResponse = `<think>${cleanBuffer}</think>\n[SYSTEM: CONNECTION INTERRUPTED]\n${fullResponse}`;
         }
         
         if (botMessageId && savedResponse) {

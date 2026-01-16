@@ -245,7 +245,7 @@ Wajib gunakan bahasa gaul sopan, dan ekspresi menggunakan stiker.
           const model = genAI.getGenerativeModel({ 
               model: "gemini-2.5-flash",
               systemInstruction: geminiInstruction,
-              generationConfig: { temperature: 0.9 }
+              generationConfig: { temperature: 0.5 }
           }, { timeout: 0 });
 
           const historyForGemini = chatHistory.map(h => ({
@@ -301,7 +301,7 @@ Wajib gunakan bahasa gaul sopan, dan ekspresi menggunakan stiker.
             model: activeModel || randomModel,
             messages: messages,
             stream: true,
-            temperature: 0.9,
+            temperature: 0.5,
             max_tokens: 0,
             include_reasoning: true
           }, {
@@ -365,7 +365,7 @@ Wajib gunakan bahasa gaul sopan, dan ekspresi menggunakan stiker.
         errorMsg = "Maaf, Pro Model sedang sibuk.";
     } else if (errStr.includes("404")) {
         errorMsg = "Maaf, Pro Model sedang sibuk.";
-    } else if (errStr.includes("429") || errStr.includes("quota")) {
+    } else if (errStr.includes("429")) {
         errorMsg = "Maaf, Pro Model sedang sibuk.";
     } else if (errStr.includes("500")) {
         errorMsg = "Maaf, Pro Model sedang sibuk.";

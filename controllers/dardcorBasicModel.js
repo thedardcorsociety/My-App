@@ -123,7 +123,7 @@ Wajib gunakan bahasa gaul sopan, dan ekspresi menggunakan stiker.
             const model = genAI.getGenerativeModel({ 
                 model: "gemini-2.5-flash",
                 systemInstruction: baseInstruction,
-                generationConfig: { temperature: 0.9 }
+                generationConfig: { temperature: 0.5 }
             }, { timeout: 0 });
 
             const chatHistory = historyData.map(h => ({
